@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Maswer Attend – Scan</title>
+<link rel="icon" href="data:,"/>
+<link rel="stylesheet" href="/neo.css"/>
+<script src="/neo.js"></script>
+</head>
+<body class="scan">
+<div class="card">
+  <div class="card-header">
+    <div class="logo-row">
+      <span class="plus">+</span><span class="name">maswer</span><span class="tag">attend</span>
+    </div>
+    <div class="sub">Record your attendance</div>
+  </div>
+  <div class="form-body">
+    <div class="time-bar">
+      <span class="tbl">⏰ Current time</span>
+      <span class="tval" id="liveClock">--:-- --</span>
+    </div>
+ 
+    <div class="field">
+      <label>EMP ID <span class="req">*</span></label>
+      <input type="text" id="empId" placeholder="e.g. MW001" autocomplete="off" autocapitalize="characters" oninput="onEmpIdChange()"/>
+      <div class="hint">Enter the EMP ID provided by your admin</div>
+    </div>
+ 
+    <div class="field" id="shiftField" style="display:none;">
+      <label>Your Shift <span class="req">*</span></label>
+      <div class="shift-grid">
+        <button type="button" class="shift-btn" onclick="selectShift('A')" id="shift-A">🌅 A Shift<br><small>6:30 AM</small></button>
+        <button type="button" class="shift-btn" onclick="selectShift('B')" id="shift-B">🌤️ B Shift<br><small>3:15 PM</small></button>
+        <button type="button" class="shift-btn" onclick="selectShift('G')" id="shift-G">☀️ G Shift<br><small>8:45 AM</small></button>
+        <button type="button" class="shift-btn" onclick="selectShift('C')" id="shift-C">🌙 C Shift<br><small>11:45 PM</small></button>
+      </div>
+    </div>
+ 
+    <div id="statusBadge"></div>
+ 
+    <!-- Attendance Summary (shown after EMP ID entered) -->
+    <div id="attSummary" style="display:none;background:#f0f4ff;border-radius:12px;padding:12px 14px;margin-bottom:14px;border:1px solid #d0d8f0;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <span style="font-size:12px;font-weight:700;color:#1E2D4E;">📊 Your Attendance</span>
+        <button onclick="document.getElementById('attSummary').style.display='none'" style="background:none;border:none;font-size:14px;cursor:pointer;color:#7b8299;">✕</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px;">
+        <div style="background:#EAF3DE;border-radius:8px;padding:8px;text-align:center;">
+          <div style="font-size:18px;font-weight:700;color:#3B6D11;" id="sumPresent">0</div>
+          <div style="font-size:9px;color:#5a8a2a;">Present</div>
+        </div>
+        <div style="background:#FAEEDA;border-radius:8px;padding:8px;text-align:center;">
+          <div style="font-size:18px;font-weight:700;color:#854F0B;" id="sumLate">0</div>
+          <div style="font-size:9px;color:#854F0B;">Late</div>
+        </div>
+        <div style="background:#E6F1FB;border-radius:8px;padding:8px;text-align:center;">
+          <div style="font-size:14px;font-weight:700;color:#185FA5;" id="sumAvg">—</div>
+          <div style="font-size:9px;color:#185FA5;">Avg Hours</div>
+        </div>
+      </div>
+      <div id="sumRecent" style="font-size:11px;color:#7b8299;"></div>
+    </div>
+ 
+    <div class="loc-bar" id="locationStatus">
+      <span id="locIcon">📍</span>
+      <span id="locText">Checking location...</span>
+    </div>
+ 
+    <div id="autoBox" style="display:none;">
+      <div class="auto-title" id="autoTitle"></div>
+      <div class="auto-sub" id="autoSub"></div>
+      <div class="auto-actions" id="autoActions">
+        <button type="button" class="auto-go" onclick="runAutoNow()">Do it now</button>
+        <button type="button" class="auto-cancel" onclick="cancelAuto()">Cancel</button>
+      </div>
+    </div>
+
+    <button class="submit-btn in-btn" id="mainBtn" onclick="smartSubmit()" disabled style="opacity:0.6;">
+      ✓ Record Attendance
+    </button>
+    <div class="err-msg" id="errMsg"></div>
+    <div id="forgetRow" style="display:none;text-align:center;margin-top:8px;"><a href="#" onclick="forgetEmp();return false;" style="font-size:12px;font-weight:700;color:var(--muted);text-decoration:none;">🔄 This is not my EMP ID — change it</a></div>
+  </div>
+</div>
+ 
+<!-- PUNCH IN SUCCESS -->
+<div class="overlay" id="punchInOverlay">
+  <div class="thumb-emoji">👍</div>
+  <div class="confetti-row"><span style="font-size:22px;">🎉</span><span style="font-size:22px;">✨</span><span style="font-size:22px;">🎊</span></div>
+  <div class="ov-name" id="piName">—</div>
+  <div class="ov-msg" id="piMsg">Punched in successfully!</div>
+  <div class="ov-time" id="piTime">—</div>
+  <button class="ov-btn" onclick="resetForm()">← Back</button>
+</div>
+ 
+<!-- PUNCH OUT SUCCESS -->
+<div class="overlay" id="punchOutOverlay">
+  <div style="font-size:80px;">👋</div>
+  <div class="confetti-row"><span style="font-size:22px;">✅</span><span style="font-size:22px;">🏠</span><span style="font-size:22px;">✅</span></div>
+  <div class="ov-name" id="poName">—</div>
+  <div class="ov-msg">Punched out successfully! Have a relaxing evening 😊</div>
+  <div class="ov-time" id="poTime">—</div>
+  <button class="ov-btn" onclick="resetForm()">← Back</button>
+</div>
+ 
+<!-- NOT REGISTERED -->
+<div class="overlay" id="notListedOverlay">
+  <div style="font-size:70px;">🚫</div>
+  <div class="ov-name" style="color:#FF6B6B;">Not Registered</div>
+  <div class="ov-msg"><span id="notListedId"></span> is not in the system.<br/>Please contact your admin.</div>
+  <div class="ov-back" style="margin-top:30px;" onclick="document.getElementById('notListedOverlay').classList.remove('show');resetForm()">← Back</div>
+</div>
+ 
+<script>
+let selectedShift = '';
+let currentMode = 'punch_in';
+const QR_LOC = new URLSearchParams(window.location.search).get('loc') || '';
+let locationAllowed = false;
+let locationChecked = false;
+let statusCheckTimer = null;
+let lastStatus = null, autoDone = false, autoCancelled = false, autoTimer = null, autoKind = '';
+ 
+// Generate/get stable device ID stored in localStorage
+function getDeviceId() {
+  let did = localStorage.getItem('mw_device_id');
+  if (!did) {
+    did = 'dev_' + Date.now() + '_' + Math.random().toString(36).substr(2,9);
+    localStorage.setItem('mw_device_id', did);
+  }
+  return did;
+}
+const DEVICE_ID = getDeviceId();
+ 
+// Live clock
+function updateClock() {
+  document.getElementById('liveClock').textContent =
+    new Date().toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:true, timeZone:'Asia/Kolkata' });
+}
+updateClock();
+setInterval(updateClock, 1000);
+ 
+// Check device session on load
+async function checkDeviceSession() {
+  try {
+    const res = await fetch('/api/device-session?did=' + DEVICE_ID);
+    const data = await res.json();
+    if (data.hasSession) {
+      document.getElementById('empId').value = data.empId;
+      document.getElementById('empId').readOnly = true;
+      applyStatus({ status: 'punch_out', employee: { name: data.empName, id: data.empId }, record: data.record });
+      lastStatus = { status: 'punch_out', record: data.record }; maybeAutoMark();
+      // Check bypass for auto-detected session too
+      loadAttSummary(data.empId);
+      checkBypass(data.empId);
+    }
+  } catch(e) {}
+}
+ 
+function onEmpIdChange() {
+  clearTimeout(statusCheckTimer);
+  const empId = document.getElementById('empId').value.trim();
+  if (empId.length < 2) { resetBadge(); return; }
+  statusCheckTimer = setTimeout(() => checkStatus(empId), 600);
+}
+ 
+async function checkStatus(empId) {
+  try {
+    const res = await fetch('/api/status/' + encodeURIComponent(empId.toUpperCase()) + '?did=' + DEVICE_ID);
+    const data = await res.json();
+    applyStatus(data);
+    lastStatus = data; maybeAutoMark();
+    // Load attendance summary
+    loadAttSummary(empId);
+    // Check location bypass
+    checkBypass(empId);
+  } catch(e) { applyStatus({ status: 'punch_in' }); }
+}
+ 
+async function loadAttSummary(empId) {
+  try {
+    const res = await fetch('/api/attendance/summary/' + encodeURIComponent(empId.toUpperCase()));
+    if (!res.ok) return;
+    const d = await res.json();
+    document.getElementById('sumPresent').textContent = d.present;
+    document.getElementById('sumLate').textContent = d.late;
+    document.getElementById('sumAvg').textContent = d.avgHours;
+    // Recent 7 days
+    const days = d.recent.map(r => {
+      const color = r.status==='present'?'#3B6D11':r.status==='late'?'#854F0B':'#A32D2D';
+      const bg = r.status==='present'?'#EAF3DE':r.status==='late'?'#FAEEDA':'#FCEBEB';
+      const dt = new Date(r.date);
+      return `<span style="display:inline-block;padding:2px 6px;background:${bg};color:${color};border-radius:5px;font-size:9px;font-weight:700;margin:2px;">${dt.getDate()}/${dt.getMonth()+1} ${r.totalHours||'—'}</span>`;
+    }).join('');
+    document.getElementById('sumRecent').innerHTML = '<span style="font-size:10px;font-weight:600;color:#1E2D4E;display:block;margin-bottom:3px;">Recent days:</span>' + (days || '<span style="color:#aaa;">No records</span>');
+    document.getElementById('attSummary').style.display = 'block';
+  } catch(e) {}
+}
+ 
+async function checkBypass(empId) {
+  try {
+    const res = await fetch('/api/location-bypass/check/' + encodeURIComponent(empId.toUpperCase()));
+    const d = await res.json();
+    if (d.bypassed) {
+      locationAllowed = true;
+      const btn = document.getElementById('mainBtn');
+      const locBar = document.getElementById('locationStatus');
+      const locIcon = document.getElementById('locIcon');
+      const locText = document.getElementById('locText');
+      locIcon.textContent = '✅';
+      locText.textContent = 'Location bypass ON (approved by admin)';
+      locBar.style.background = '#EAF3DE';
+      locText.style.color = '#3B6D11';
+      // Enable button for both punch in AND punch out
+      if (currentMode !== 'already_out' && currentMode !== 'blocked') {
+        btn.disabled = false; btn.style.opacity = '1';
+      }
+      // If punch out mode — also enable
+      if (currentMode === 'punch_out') {
+        btn.disabled = false; btn.style.opacity = '1';
+      }
+      maybeAutoMark();
+    }
+  } catch(e) {}
+}
+ 
+function applyStatus(data) {
+  const badge = document.getElementById('statusBadge');
+  const shiftField = document.getElementById('shiftField');
+  badge.style.display = 'block';
+ 
+  if (data.status === 'not_registered') {
+    badge.className = 'done-mode';
+    badge.innerHTML = '⚠️ This EMP ID is not registered<br><small style="font-weight:400;font-size:11px;">Please confirm with your admin</small>';
+    setButtonIn(); currentMode = 'punch_in';
+    shiftField.style.display = 'block';
+ 
+  } else if (data.status === 'punch_in') {
+    badge.className = 'in-mode';
+    badge.innerHTML = `🟢 ${data.employee?.name || ''} — Not checked in today<br><small style="font-weight:400;font-size:11px;">Select your shift and Punch In</small>`;
+    setButtonIn(); currentMode = 'punch_in';
+    shiftField.style.display = 'block';
+ 
+  } else if (data.status === 'punch_out') {
+    badge.className = 'out-mode';
+    badge.innerHTML = `🔵 ${data.employee?.name || ''} — Check-in: ${data.record?.time || ''} (${data.record?.shift || ''})<br><small style="font-weight:400;font-size:11px;">Please Punch Out</small>`;
+    setButtonOut(); currentMode = 'punch_out';
+    shiftField.style.display = 'none';
+ 
+  } else if (data.status === 'different_device') {
+    badge.className = 'warn-mode';
+    badge.innerHTML = `⚠️ ${data.employee?.name || ''} 's attendance was marked from a different phone<br><small style="font-weight:400;font-size:11px;">Please punch out from that same phone</small>`;
+    const btn = document.getElementById('mainBtn');
+    btn.disabled = true; btn.style.opacity = '0.5';
+    currentMode = 'blocked';
+    shiftField.style.display = 'none';
+ 
+  } else if (data.status === 'already_out') {
+    badge.className = 'done-mode';
+    badge.innerHTML = `✅ ${data.employee?.name || ''} — Done for today<br><small style="font-weight:400;font-size:11px;">You can Punch In again tomorrow</small>`;
+    const btn = document.getElementById('mainBtn');
+    btn.disabled = true; btn.style.opacity = '0.5';
+    btn.className = 'submit-btn in-btn';
+    btn.innerHTML = '✅ Done for today';
+    currentMode = 'already_out';
+    shiftField.style.display = 'none';
+  }
+}
+ 
+function setButtonIn() {
+  const btn = document.getElementById('mainBtn');
+  btn.className = 'submit-btn in-btn';
+  btn.innerHTML = '🟢 Punch In – Record Attendance';
+  if (locationAllowed) { btn.disabled = false; btn.style.opacity = '1'; }
+}
+function setButtonOut() {
+  const btn = document.getElementById('mainBtn');
+  btn.className = 'submit-btn out-btn';
+  btn.innerHTML = '🔵 Punch Out – Check Out';
+  if (locationAllowed) { btn.disabled = false; btn.style.opacity = '1'; }
+}
+function resetBadge() {
+  document.getElementById('statusBadge').style.display = 'none';
+  document.getElementById('shiftField').style.display = 'none';
+  setButtonIn(); currentMode = 'punch_in';
+}
+ 
+function selectShift(shift) {
+  selectedShift = shift;
+  document.querySelectorAll('.shift-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('shift-' + shift).classList.add('active');
+}
+ 
+async function smartSubmit() {
+  if (currentMode === 'punch_out') await doPunchOut();
+  else if (currentMode === 'punch_in') await doPunchIn();
+}
+ 
+async function doPunchIn() {
+  const empId = document.getElementById('empId').value.trim().toUpperCase();
+  const errEl = document.getElementById('errMsg');
+  const btn = document.getElementById('mainBtn');
+  if (!empId) { errEl.textContent = '❌ EMP ID is required.'; return; }
+  if (!selectedShift) { errEl.textContent = '❌ Please select your shift first!'; return; }
+  if (!locationAllowed) { errEl.textContent = '🚫 Please allow location access — attendance can only be recorded with it!'; return; }
+ 
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Recording...';
+  errEl.textContent = '';
+ 
+  try {
+    const pos = await getPos();
+    const res = await fetch('/api/attendance', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ empId, shift: selectedShift, deviceId: DEVICE_ID, locId: QR_LOC, ...pos })
+    });
+    const data = await res.json();
+ 
+    if (res.status === 403 && data.error === 'not_listed') {
+      document.getElementById('notListedId').textContent = empId;
+      document.getElementById('notListedOverlay').classList.add('show');
+      btn.disabled = false; setButtonIn(); return;
+    }
+    if (res.status === 409 && data.error === 'device_busy') {
+      errEl.textContent = '❌ ' + data.message;
+      btn.disabled = false; setButtonIn(); return;
+    }
+    if (!res.ok) {
+      errEl.textContent = '❌ ' + (data.message || data.error || 'Something went wrong');
+      btn.disabled = false; setButtonIn(); return;
+    }
+ 
+    const rec = data.record;
+    saveEmp(empId);
+    document.getElementById('piName').textContent = data.employee.name;
+    document.getElementById('piMsg').textContent = rec.status === 'late'
+      ? `${rec.shift} Shift — You arrived a little late! ⚠️`
+      : `${rec.shift} Shift — You are on time! 👏`;
+    document.getElementById('piTime').textContent = `Punch In: ${rec.time} · ${rec.status === 'late' ? 'Late' : 'Present ✅'}`;
+    document.getElementById('punchInOverlay').classList.add('show');
+ 
+  } catch(e) {
+    errEl.textContent = '❌ Unable to connect to the server.';
+    btn.disabled = false; setButtonIn();
+  }
+}
+ 
+async function doPunchOut() {
+  const empId = document.getElementById('empId').value.trim().toUpperCase();
+  const errEl = document.getElementById('errMsg');
+  const btn = document.getElementById('mainBtn');
+  if (!empId) { errEl.textContent = '❌ EMP ID is required.'; return; }
+ 
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Checking out...';
+  errEl.textContent = '';
+ 
+  try {
+    const pos = await getPos();
+    const res = await fetch('/api/checkout', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ empId, deviceId: DEVICE_ID, locId: QR_LOC, ...pos })
+    });
+    const data = await res.json();
+ 
+    if (res.status === 403 && data.error === 'wrong_device') {
+      errEl.textContent = '❌ ' + data.message;
+      btn.disabled = false; setButtonOut(); return;
+    }
+    if (!res.ok) {
+      errEl.textContent = '❌ ' + (data.message || data.error);
+      btn.disabled = false; setButtonOut(); return;
+    }
+ 
+    saveEmp(empId);
+    document.getElementById('poName').textContent = data.employee.name;
+    document.getElementById('poTime').textContent = `Check-out: ${data.record.checkOut} · Worked: ${data.record.totalHours}`;
+    document.getElementById('punchOutOverlay').classList.add('show');
+ 
+  } catch(e) {
+    errEl.textContent = '❌ Unable to connect to the server.';
+    btn.disabled = false; setButtonOut();
+  }
+}
+ 
+function resetForm() {
+  document.getElementById('punchInOverlay').classList.remove('show');
+  document.getElementById('punchOutOverlay').classList.remove('show');
+  const empInput = document.getElementById('empId');
+  empInput.value = ''; empInput.readOnly = false;
+  document.getElementById('errMsg').textContent = '';
+  document.getElementById('shiftField').style.display = 'none';
+  document.getElementById('statusBadge').style.display = 'none';
+  document.getElementById('attSummary').style.display = 'none';
+  selectedShift = '';
+  cancelAuto(true);
+  document.querySelectorAll('.shift-btn').forEach(b => b.classList.remove('active'));
+  setButtonIn();
+  empInput.focus();
+}
+ 
+document.getElementById('empId').addEventListener('keydown', e => {
+  if (e.key === 'Enter') smartSubmit();
+});
+ 
+
+// ── AUTO ATTENDANCE (on QR scan) ─────────────────────
+function savedEmp() { try { return (localStorage.getItem('mw_emp') || '').toUpperCase(); } catch (e) { return ''; } }
+function saveEmp(id) { try { localStorage.setItem('mw_emp', id.toUpperCase()); } catch (e) {} }
+function forgetEmp() {
+  try { localStorage.removeItem('mw_emp'); } catch (e) {}
+  cancelAuto(true); autoDone = true;
+  document.getElementById('forgetRow').style.display = 'none';
+  const i = document.getElementById('empId'); i.readOnly = false; i.value = ''; resetBadge(); i.focus();
+}
+function loadSavedEmp() {
+  const id = savedEmp();
+  if (!id) return;
+  document.getElementById('empId').value = id;
+  document.getElementById('forgetRow').style.display = 'block';
+  checkStatus(id);
+}
+function getPos() {
+  return new Promise(resolve => {
+    if (!navigator.geolocation) return resolve({});
+    navigator.geolocation.getCurrentPosition(
+      p => resolve({ lat: p.coords.latitude, lng: p.coords.longitude, accuracy: p.coords.accuracy }),
+      () => resolve({}), { enableHighAccuracy: true, timeout: 8000, maximumAge: 5000 });
+  });
+}
+function autoShift() {
+  const starts = { A: 390, G: 525, B: 915, C: 1425 };
+  const parts = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Kolkata' }).formatToParts(new Date());
+  const now = (parseInt(parts.find(x => x.type === 'hour').value) % 24) * 60 + parseInt(parts.find(x => x.type === 'minute').value);
+  let best = 'G', bd = 1e9;
+  for (const k in starts) { let d = Math.abs(now - starts[k]); d = Math.min(d, 1440 - d); if (d < bd) { bd = d; best = k; } }
+  return best;
+}
+function maybeAutoMark() {
+  if (autoDone || autoCancelled || !locationAllowed || !lastStatus) return;
+  const saved = savedEmp();
+  if (!saved || document.getElementById('empId').value.trim().toUpperCase() !== saved) return;
+  if (lastStatus.status === 'punch_in') {
+    autoDone = true; selectShift(autoShift()); startAuto('in');
+  } else if (lastStatus.status === 'punch_out') {
+    autoDone = true;
+    const t = lastStatus.record && lastStatus.record.markedAt;
+    const mins = t ? (Date.now() - new Date(t).getTime()) / 60000 : 9999;
+    if (mins < 120) showAutoInfo('✅ You have already punched in', `${Math.max(1, Math.round(mins))} min ago (${lastStatus.record.time}). Please scan again when you leave.`);
+    else startAuto('out');
+  }
+}
+function showAutoInfo(title, sub) {
+  document.getElementById('autoTitle').textContent = title;
+  document.getElementById('autoSub').textContent = sub;
+  document.getElementById('autoActions').style.display = 'none';
+  document.getElementById('autoBox').style.display = 'block';
+}
+function startAuto(kind) {
+  autoKind = kind;
+  let n = kind === 'in' ? 3 : 5;
+  const name = (lastStatus.employee && lastStatus.employee.name) || savedEmp();
+  document.getElementById('autoActions').style.display = 'flex';
+  document.getElementById('autoBox').style.display = 'block';
+  const paint = () => {
+    document.getElementById('autoTitle').textContent = kind === 'in'
+      ? `⚡ ${name} — Punching in in ${n} sec (${selectedShift} Shift)`
+      : `⚡ ${name} — Punching out in ${n} sec`;
+    document.getElementById('autoSub').textContent = kind === 'in'
+      ? 'Press Cancel if the shift is wrong or you do not want to punch in now.'
+      : 'Press Cancel if you scanned by mistake.';
+  };
+  paint();
+  autoTimer = setInterval(() => { n--; if (n <= 0) runAutoNow(); else paint(); }, 1000);
+}
+function cancelAuto(silent) {
+  clearInterval(autoTimer); autoTimer = null;
+  document.getElementById('autoBox').style.display = 'none';
+  if (!silent) autoCancelled = true;
+}
+function runAutoNow() {
+  const kind = autoKind;
+  cancelAuto(true);
+  if (kind === 'in') doPunchIn(); else if (kind === 'out') doPunchOut();
+}
+
+// ── LOCATION ──────────────────────────────────────────────
+function getDistance(lat1, lng1, lat2, lng2) {
+  const R = 6371000;
+  const dLat = (lat2-lat1)*Math.PI/180;
+  const dLng = (lng2-lng1)*Math.PI/180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+ 
+function blockBtn(icon, msg, showRetry=false) {
+  const locIcon = document.getElementById('locIcon');
+  const locText = document.getElementById('locText');
+  const locBar = document.getElementById('locationStatus');
+  const btn = document.getElementById('mainBtn');
+  locIcon.textContent = icon;
+  locBar.style.background = '#FCEBEB';
+  locText.style.color = '#A32D2D';
+  locationAllowed = false;
+  btn.disabled = true; btn.style.opacity = '0.5';
+  if (showRetry) {
+    locText.innerHTML = msg + ' <button onclick="requestLocationPermission()" style="margin-left:6px;padding:3px 10px;background:#A32D2D;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">📍 Allow</button>';
+  } else {
+    locText.textContent = msg;
+  }
+}
+ 
+function requestLocationPermission() {
+  const locText = document.getElementById('locText');
+  locText.textContent = '📍 Requesting location permission...';
+  navigator.geolocation.getCurrentPosition(
+    () => { checkLocation(); },
+    (err) => {
+      if (err.code === 1) {
+        // Permission permanently denied — instructions dikhao
+        document.getElementById('locationStatus').style.background = '#FAEEDA';
+        locText.innerHTML = '⚙️ Go to Settings → Chrome → Location → Allow, then <button onclick="checkLocation()" style="padding:3px 10px;background:#854F0B;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">Retry</button>';
+        document.getElementById('locText').style.color = '#854F0B';
+      } else {
+        checkLocation();
+      }
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+  );
+}
+ 
+function allowBtn(icon, msg) {
+  const locIcon = document.getElementById('locIcon');
+  const locText = document.getElementById('locText');
+  const locBar = document.getElementById('locationStatus');
+  const btn = document.getElementById('mainBtn');
+  locIcon.textContent = icon;
+  locText.textContent = msg;
+  locBar.style.background = '#EAF3DE';
+  locText.style.color = '#3B6D11';
+  locationAllowed = true;
+  if (currentMode !== 'already_out' && currentMode !== 'blocked') {
+    btn.disabled = false; btn.style.opacity = '1';
+  }
+  maybeAutoMark();
+}
+ 
+async function checkLocation() {
+  const locText = document.getElementById('locText');
+  locText.textContent = 'Checking location...';
+ 
+  // Step 1: Phone ka GPS on hai ya nahi
+  if (!navigator.geolocation) {
+    blockBtn('🚫', 'This phone has no GPS — attendance cannot be recorded!');
+    return;
+  }
+ 
+  // Step 2: IT ne kaunsi locations set ki hain
+  let locs = [];
+  try {
+    const r = await fetch('/api/locations');
+    locs = (await r.json()).filter(l => l.lat && l.lng);
+    if (QR_LOC) { const mine = locs.filter(l => l.id === QR_LOC); if (mine.length) locs = mine; }
+  } catch(e) {}
+
+  // Step 3: GPS se current location lo
+  navigator.geolocation.getCurrentPosition(async (pos) => {
+    // GPS ON hai
+
+    // Koi location set nahi — allow karo
+    if (!locs.length) {
+      allowBtn('✅', 'Location OK');
+      return;
+    }
+
+    // Sabse paas ki location (asli check server me employee ki apni location se hota hai)
+    const ranked = locs.map(l => ({ l, d: getDistance(pos.coords.latitude, pos.coords.longitude, l.lat, l.lng) })).sort((a, b) => a.d - b.d);
+    const near = ranked[0];
+    const inside = ranked.find(x => x.d <= (x.l.radius || 100));
+
+    if (inside) {
+      allowBtn('✅', `${inside.l.name || 'Office'} — you are here (${Math.round(inside.d)}m)`);
+    } else {
+      blockBtn('🚫', `You are ${Math.round(near.d)}m away from ${near.l.name || 'the office'}!`);
+    }
+
+  }, (err) => {
+    // GPS OFF ya permission nahi — retry button dikhao
+    if (err.code === 1) {
+      blockBtn('🚫', 'Please allow location access —', true);
+    } else {
+      blockBtn('🚫', 'Please turn on your phone location —', true);
+    }
+  }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
+}
+ 
+// Init — pehle permission maango, phir check karo
+function init() {
+  if (navigator.geolocation) {
+    // Seedha permission request karo page load pe
+    navigator.geolocation.getCurrentPosition(
+      () => { checkLocation(); checkDeviceSession(); },
+      () => { checkLocation(); checkDeviceSession(); },
+      { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+    );
+  } else {
+    checkLocation(); checkDeviceSession();
+  }
+}
+init();
+loadSavedEmp();
+</script>
+</body>
+</html>

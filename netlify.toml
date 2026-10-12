@@ -1,0 +1,24 @@
+[build]
+  publish = "public"
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+  external_node_modules = ["pdfkit"]
+  included_files = ["server.js", "pgdb.js", "localdb.js", "payroll.js", "node_modules/pdfkit/js/data/**"]
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/scan"
+  to = "/scan.html"
+  status = 200
+
+[[redirects]]
+  from = "/attendance"
+  to = "/attendance.html"
+  status = 200

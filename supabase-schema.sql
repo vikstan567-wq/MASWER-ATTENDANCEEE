@@ -1,0 +1,82 @@
+CREATE TABLE IF NOT EXISTS employees (
+  id TEXT PRIMARY KEY, name TEXT NOT NULL, mobile TEXT, role TEXT DEFAULT 'employee', created_at TEXT
+);
+CREATE TABLE IF NOT EXISTS attendance (
+  id TEXT PRIMARY KEY, emp_id TEXT NOT NULL, emp_name TEXT, date TEXT NOT NULL, time TEXT, shift TEXT, status TEXT,
+  device_id TEXT, marked_at TEXT, check_out TEXT, check_out_at TEXT, total_hours TEXT,
+  manually_added BOOLEAN, edited_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_att_emp_date ON attendance (emp_id, date);
+CREATE INDEX IF NOT EXISTS idx_att_date ON attendance (date);
+CREATE INDEX IF NOT EXISTS idx_att_device ON attendance (device_id, date);
+CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value JSONB);
+CREATE TABLE IF NOT EXISTS it_users (id TEXT PRIMARY KEY, name TEXT NOT NULL, salt TEXT, pass_hash TEXT, created_at TEXT);
+ALTER TABLE attendance ADD COLUMN IF NOT EXISTS unlocked_by TEXT;
+ALTER TABLE attendance ADD COLUMN IF NOT EXISTS unlocked_at TEXT;
+ALTER TABLE employees ADD COLUMN IF NOT EXISTS location_id TEXT;
+ALTER TABLE attendance ADD COLUMN IF NOT EXISTS location_id TEXT;
+ALTER TABLE attendance ADD COLUMN IF NOT EXISTS location_name TEXT;
+ALTER TABLE attendance ADD COLUMN IF NOT EXISTS added_by TEXT;
+ALTER TABLE attendance ADD COLUMN IF NOT EXISTS edited_by TEXT;
+CREATE TABLE IF NOT EXISTS locations (
+  id TEXT PRIMARY KEY, name TEXT NOT NULL, lat DOUBLE PRECISION, lng DOUBLE PRECISION, radius INTEGER DEFAULT 100,
+  created_by TEXT, created_at TEXT, updated_at TEXT
+);
+ALTER TABLE employees ADD COLUMN IF NOT EXISTS department TEXT;
+ALTER TABLE employees ADD COLUMN IF NOT EXISTS location_ids JSONB;
+ALTER TABLE attendance ADD COLUMN IF NOT EXISTS department TEXT;
+CREATE TABLE IF NOT EXISTS counters (key TEXT PRIMARY KEY, n INTEGER NOT NULL);
+ALTER TABLE counters ENABLE ROW LEVEL SECURITY;
+ALTER TABLE employees ADD COLUMN IF NOT EXISTS designation TEXT;
+ALTER TABLE employees ADD COLUMN IF NOT EXISTS joining_date TEXT;
+ALTER TABLE employees ADD COLUMN IF NOT EXISTS monthly_salary DOUBLE PRECISION;
+ALTER TABLE employees ADD COLUMN IF NOT EXISTS active BOOLEAN;
+ALTER TABLE employees ADD COLUMN IF NOT EXISTS photo_doc_id TEXT;
+ALTER TABLE attendance ADD COLUMN IF NOT EXISTS edit_reason TEXT;
+CREATE TABLE IF NOT EXISTS documents (
+  id TEXT PRIMARY KEY, emp_id TEXT NOT NULL, type TEXT, file_name TEXT, mime TEXT, size INTEGER, path TEXT,
+  status TEXT, uploaded_by TEXT, uploaded_at TEXT, replaced_at TEXT
+);
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS replace_of TEXT;
+CREATE INDEX IF NOT EXISTS idx_docs_emp ON documents (emp_id);
+CREATE TABLE IF NOT EXISTS payslips (
+  id TEXT PRIMARY KEY, emp_id TEXT NOT NULL, month TEXT NOT NULL, version INTEGER, snapshot JSONB, net DOUBLE PRECISION,
+  finalized BOOLEAN, finalized_at TEXT, finalized_by TEXT, generated_at TEXT, generated_by TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_payslips_month ON payslips (month);
+CREATE TABLE IF NOT EXISTS advances (id TEXT PRIMARY KEY, emp_id TEXT NOT NULL, month TEXT NOT NULL, amount DOUBLE PRECISION, note TEXT, created_by TEXT, created_at TEXT);
+CREATE TABLE IF NOT EXISTS audit_log (
+  id TEXT PRIMARY KEY, at TEXT, by_id TEXT, by_role TEXT, action TEXT, target TEXT, details JSONB, reason TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_audit_at ON audit_log (at);
+ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
+ALTER TABLE payslips ENABLE ROW LEVEL SECURITY;
+ALTER TABLE advances ENABLE ROW LEVEL SECURITY;
+ALTER TABLE audit_log ENABLE ROW LEVEL SECURITY;
+CREATE TABLE IF NOT EXISTS projects (id TEXT PRIMARY KEY, name TEXT NOT NULL, created_by TEXT, created_at TEXT);
+ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
+ALTER TABLE projects ADD COLUMN IF NOT EXISTS client TEXT;
+ALTER TABLE projects ADD COLUMN IF NOT EXISTS state_code TEXT;
+ALTER TABLE projects ADD COLUMN IF NOT EXISTS state_name TEXT;
+CREATE TABLE IF NOT EXISTS managers (
+  id TEXT PRIMARY KEY, name TEXT NOT NULL, salt TEXT, pass_hash TEXT, state_codes JSONB DEFAULT '[]'::jsonb, created_by TEXT, created_at TEXT
+);
+ALTER TABLE managers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE locations ADD COLUMN IF NOT EXISTS address TEXT;
+ALTER TABLE locations ADD COLUMN IF NOT EXISTS project_id TEXT;
+ALTER TABLE locations ADD COLUMN IF NOT EXISTS project_name TEXT;
+CREATE TABLE IF NOT EXISTS admins (
+  id TEXT PRIMARY KEY, name TEXT NOT NULL, salt TEXT, pass_hash TEXT, all_locations BOOLEAN DEFAULT FALSE,
+  locations JSONB DEFAULT '[]'::jsonb, created_by TEXT, created_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_att_loc ON attendance (location_id, date);
+ALTER TABLE locations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE admins ENABLE ROW LEVEL SECURITY;
+ALTER TABLE admins ADD COLUMN IF NOT EXISTS departments JSONB;
+ALTER TABLE admins ADD COLUMN IF NOT EXISTS can_salary BOOLEAN;
+ALTER TABLE admins ADD COLUMN IF NOT EXISTS can_docs BOOLEAN;
+ALTER TABLE admins ADD COLUMN IF NOT EXISTS can_edit_punch BOOLEAN;
+ALTER TABLE it_users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE employees ENABLE ROW LEVEL SECURITY;
+ALTER TABLE attendance ENABLE ROW LEVEL SECURITY;
+ALTER TABLE settings ENABLE ROW LEVEL SECURITY;

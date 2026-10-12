@@ -1,0 +1,2119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Maswer Attend – Admin</title>
+<link rel="icon" href="data:,"/>
+<link rel="stylesheet" href="/neo.css"/>
+<script src="/neo.js"></script>
+</head>
+<body class="admin">
+ 
+<!-- LOGIN PAGE -->
+<div id="loginPage">
+  <div class="login-card">
+    <div class="anim-stage" id="animStage">
+      <div class="floor-line"></div>
+      <div class="figure" id="fig" style="right:210px">
+        <div class="fig-head"></div>
+        <div class="fig-body"><div class="bag-obj" id="bagObj"><div class="bag-handle"></div></div></div>
+        <div class="fig-legs"><div class="fig-leg"></div><div class="fig-leg"></div></div>
+      </div>
+      <div class="logo-pop" id="logoPop">
+        <span class="lp-plus">+</span><span class="lp-name">maswer</span><span class="lp-tag">attend</span>
+      </div>
+    </div>
+    <div class="login-body">
+      <div id="loginStep2" style="display:none;">
+        <div class="login-subtitle">Choose Project</div>
+        <p style="font-size:12px;color:var(--muted);line-height:1.7;margin:0 0 12px;">Enter a Project ID to view that project's attendance, or type <b>ALL</b> to view all your projects together.</p>
+        <div class="field"><label>Project ID</label><input id="lproj" type="text" placeholder="e.g. PRJ001 or ALL" autocapitalize="characters" onkeydown="if(event.key==='Enter')chooseProject()"/></div>
+        <div id="projChips" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;"></div>
+        <button class="login-btn" onclick="chooseProject()">Continue →</button>
+        <div class="login-err" id="projErr"></div>
+        <div class="emp-link"><a href="#" onclick="backToLogin();return false;">← Back to login</a></div>
+      </div>
+      <div id="loginStep1">
+      <div class="role-tabs">
+        <button type="button" class="rt on" id="rtAdmin" onclick="setLoginRole('admin')">HR</button>
+        <button type="button" class="rt" id="rtIt" onclick="setLoginRole('it')">IT</button>
+      </div>
+      <div class="login-subtitle" id="loginSub">HR Login</div>
+      <div class="field"><label id="lblId">HR ID</label><input id="lid" type="text" placeholder="HR ID" onkeydown="if(event.key==='Enter')document.getElementById('lpwd').focus()"/></div>
+      <div class="field"><label id="lblPwd">Password</label><input id="lpwd" type="password" placeholder="Enter your password" onkeydown="if(event.key==='Enter')doLogin()"/></div>
+      <button class="login-btn" onclick="doLogin()">Log In →</button>
+      <div class="login-err" id="loginErr"></div>
+            <div class="emp-link" id="mgrLink" style="margin-top:6px;">Are you a Site Manager? <a href="#" onclick="setLoginRole('manager');return false;">Login here</a></div>
+      </div>
+    </div>
+  </div>
+</div>
+ 
+<!-- ADMIN PAGE -->
+<div id="adminPage">
+  <div class="tnav-wrap">
+    <div class="tnav">
+      <div class="tn-logo"><span class="sp">+</span><span class="sn">maswer</span><span class="st">attend</span></div>
+      <div class="tn-groups" id="tnGroups"></div>
+      <div class="tn-right">
+        <div class="tn-btn edit-gate" onclick="promptPin()" title="Admin Tools">⚙ Tools</div>
+        <div class="tn-user"><div><div class="tn-un" id="tnName">—</div><div class="tn-ur" id="tnRole"></div></div><div class="tn-av" id="tnAv"></div></div>
+        <div class="tn-btn" onclick="logout()" title="Logout"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></div>
+      </div>
+    </div>
+    <div class="tsub" id="tnSub"></div>
+  </div>
+  <div class="sidebar">
+    <div class="sb-logo"><span class="sp">+</span><span class="sn">maswer</span><span class="st">attend</span></div>
+    <div class="sb-user"><div class="sun" id="sbName">—</div><div class="sur" id="sbRole">HR</div></div>
+    <nav class="sb-nav">
+      <div class="nav-i on" onclick="showPanel('day',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg>
+        Today's Attendance
+      </div>
+      <div class="nav-i" onclick="showPanel('monthly',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/></svg>
+        Monthly Report
+      </div>
+      <div class="nav-i" onclick="showPanel('all',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+        Full History
+      </div>
+      <div class="nav-i" onclick="showPanel('emp',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+        Employees
+      </div>
+            <div class="nav-i perm-nav" id="nav-salary" data-perm="salary" style="display:none" onclick="showPanel('salary',this)">💰 Salary &amp; Payslips</div>
+      <div class="nav-i perm-nav" id="nav-missed" data-perm="salary" style="display:none" onclick="showPanel('missed',this)">⚠️ Missed Punch-outs</div>
+      <div class="nav-i perm-nav" id="nav-sset" data-perm="salary" style="display:none" onclick="showPanel('sset',this)">⚙️ Company &amp; Salary Rules</div>
+      <div class="nav-i it-only" id="nav-audit" onclick="showPanel('audit',this)">📜 Audit Log</div>
+<div class="nav-i" onclick="showPanel('qr',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="5" y="5" width="3" height="3" fill="currentColor"/><rect x="16" y="5" width="3" height="3" fill="currentColor"/><rect x="5" y="16" width="3" height="3" fill="currentColor"/></svg>
+        QR Code
+      </div>
+      <div class="nav-i" onclick="showPanel('projects',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+        Projects
+      </div>
+      <div class="nav-i" onclick="showPanel('loc',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        Location
+      </div>
+      <div class="nav-i it-only" onclick="showPanel('bypass',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+        Location Bypass
+      </div>
+      <div class="nav-i it-only" id="nav-itools" onclick="showPanel('itools',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
+        IT Tools
+      </div>
+      <div class="nav-i it-only" id="nav-admins" onclick="showPanel('admins',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+        HR Logins
+      </div>
+      <div class="nav-i it-only" id="nav-itusers" onclick="showPanel('itusers',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+        IT Users
+      </div>
+    </nav>
+    <div class="sb-bottom">
+      <div class="secret-btn edit-gate" onclick="promptPin()" title="Admin Tools">⚙ Admin Tools</div>
+      <div class="logout-row" onclick="logout()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Logout
+      </div>
+    </div>
+  </div>
+ 
+  <div class="main-area" id="mainArea">
+    <div class="topbar">
+      <div class="topbar-title" id="panelTitle">Today's Attendance</div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <select id="projFilter" onchange="applyProjFilter()" style="display:none;padding:7px 11px;border-radius:10px;font-size:12px;font-weight:700;outline:none;"><option value="all">📁 All Projects</option></select>
+        <select id="deptFilter" onchange="applyLocFilter()" style="display:none;padding:7px 11px;border-radius:10px;font-size:12px;font-weight:700;outline:none;"><option value="all">🏢 All Departments</option></select>
+        <select id="locFilter" onchange="applyLocFilter()" style="display:none;padding:7px 11px;border-radius:10px;font-size:12px;font-weight:700;outline:none;"><option value="all">📍 All Locations</option></select>
+        <div class="edit-mode-badge" id="editBadge">✏️ Edit Mode ON <span onclick="turnOffEdit()" style="cursor:pointer;margin-left:4px;">✕</span></div>
+        <div style="font-size:12px;color:var(--muted);" id="todayLbl"></div>
+      </div>
+    </div>
+    <div class="content">
+ 
+      <!-- DAY PANEL -->
+      <div class="panel on" id="panel-day">
+        <div class="stats-row">
+          <div class="stat-box"><div class="sv g" id="sP">0</div><div class="sl">Present</div></div>
+          <div class="stat-box"><div class="sv r" id="sA">0</div><div class="sl">Absent</div></div>
+          <div class="stat-box"><div class="sv a" id="sL">0</div><div class="sl">Late</div></div>
+          <div class="stat-box"><div class="sv b" id="sT">0</div><div class="sl">Total</div></div>
+          <div class="stat-box perm-salary-f" style="display:none;cursor:pointer" onclick="showPanel('missed',document.getElementById('nav-missed'))"><div class="sv r" id="sI">0</div><div class="sl">Missed Punch-outs</div></div>
+        </div>
+        <div class="card">
+          <div class="card-top">
+            <h3>Today's Attendance List</h3>
+            <div class="btn-gap">
+              <button class="btn btn-green" onclick="location.href='/api/export/today'+locQS()">⬇ Excel</button>
+            </div>
+          </div>
+          <div class="fbar">
+            <input type="text" id="dayQ" placeholder="Name or EMP ID..." oninput="loadDay()"/>
+            <select id="dayF" onchange="loadDay()">
+              <option value="">All</option><option value="present">Present</option><option value="late">Late</option><option value="absent">Absent</option>
+            </select>
+          </div>
+          <div style="overflow-x:auto;">
+            <table class="tbl"><thead><tr><th>Employee</th><th>EMP ID</th><th>Location</th><th>Department</th><th>Shift</th><th>Check-in</th><th>Check-out</th><th>Work Hours</th><th>Status</th><th>Action</th></tr></thead>
+            <tbody id="dayBody"></tbody></table>
+          </div>
+        </div>
+      </div>
+ 
+      <!-- MONTHLY PANEL -->
+      <div class="panel" id="panel-monthly">
+        <div class="card">
+          <div class="card-top">
+            <h3>📅 Monthly Report</h3>
+            <div class="btn-gap">
+              <select id="monthSel" onchange="loadMonthly()" style="padding:7px 11px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;outline:none;">
+                <option value="01">January</option><option value="02">February</option><option value="03">March</option>
+                <option value="04">April</option><option value="05">May</option><option value="06">June</option>
+                <option value="07">July</option><option value="08">August</option><option value="09">September</option>
+                <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+              </select>
+              <select id="yearSel" onchange="loadMonthly()" style="padding:7px 11px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;outline:none;">
+                <option value="2025">2025</option><option value="2026">2026</option><option value="2027">2027</option>
+              </select>
+              <button class="btn btn-green" onclick="exportMonthly()">⬇ Excel</button>
+            </div>
+          </div>
+          <div class="charts-grid">
+            <div class="chart-card"><h4>This Month's Breakdown</h4>
+              <div class="pie-row"><svg id="piesvg" width="90" height="90"></svg><div class="pie-legend" id="pieLeg"></div></div>
+            </div>
+            <div class="chart-card"><h4>Daily trend</h4><div class="bars" id="monthBars"></div></div>
+          </div>
+          <div style="overflow-x:auto;">
+            <table class="tbl"><thead><tr><th>Employee</th><th>EMP ID</th><th>Location</th><th>Department</th><th>Date</th><th>Shift</th><th>Check-in</th><th>Check-out</th><th>Work Hours</th><th>Status</th></tr></thead>
+            <tbody id="monthBody"></tbody></table>
+          </div>
+        </div>
+      </div>
+ 
+      <!-- ALL PANEL -->
+      <div class="panel" id="panel-all">
+        <div class="card">
+          <div class="card-top">
+            <h3>Complete History</h3>
+            <button class="btn btn-green" onclick="location.href='/api/export/all'+locQS()">⬇ Full Excel</button>
+          </div>
+          <div class="fbar">
+            <input type="text" id="allQ" placeholder="Name or EMP ID..." oninput="loadAll()"/>
+            <input type="date" id="allD" onchange="loadAll()"/>
+          </div>
+          <div style="overflow-x:auto;">
+            <table class="tbl"><thead><tr><th>Employee</th><th>EMP ID</th><th>Location</th><th>Department</th><th>Date</th><th>Shift</th><th>Check-in</th><th>Check-out</th><th>Work Hours</th><th>Status</th><th>Action</th></tr></thead>
+            <tbody id="allBody"></tbody></table>
+          </div>
+        </div>
+      </div>
+ 
+      <!-- EMPLOYEES PANEL -->
+      <div class="panel" id="panel-emp">
+        <div class="card">
+          <div class="card-top">
+            <h3>Employees (<span id="empCnt">0</span>)</h3>
+            <button class="btn btn-orange" onclick="openAdd()">+ Add New</button>
+          </div>
+          <div class="emp-grid" id="empGrid"></div>
+        </div>
+      </div>
+ 
+
+
+
+      <!-- ATTENDANCE (full + project-wise) -->
+      <div class="panel" id="panel-attendance">
+        <div class="card">
+          <div class="card-top" style="flex-wrap:wrap;gap:12px;">
+            <div><h3 style="font-size:20px;">Workforce Attendance Management <span class="at-badge" id="atSites">0 Sites</span></h3>
+              <div style="font-size:12px;color:var(--muted);margin-top:4px;">Multi-project attendance ledger, geofence-verified punches and instant Excel export.</div></div>
+            <div class="btn-gap">
+              <button class="btn btn-orange" onclick="atExcel('all')">⬇ Download All Projects Excel</button>
+              <button class="btn staff-only" onclick="openAdd()">＋ Add Employee</button>
+              <button class="btn staff-only" onclick="openSiteAdd()">＋ Add Project Site</button>
+              <button class="btn" onclick="loadAtt()" title="Refresh">⟳</button>
+            </div>
+          </div>
+        </div>
+        <div class="stats-row" id="atStats"></div>
+        <div class="at-tabs"><div class="at-tab on" id="atT-full" onclick="atTab('full')">📋 Full Attendance (All Projects) <span class="at-cnt" id="atCntFull">0</span></div><div class="at-tab" id="atT-proj" onclick="atTab('proj')">📍 Project-Wise Attendance</div></div>
+        <div class="card">
+          <div class="fbar" style="flex-wrap:wrap;">
+            <input type="text" id="atQ" placeholder="Search employee, ID, location..." oninput="renderAtt()" style="flex:2;min-width:200px;"/>
+            <select id="atProj" onchange="renderAtt()"><option value="">All projects</option></select>
+            <select id="atDept" onchange="renderAtt()"><option value="">All departments</option></select>
+            <input type="date" id="atDate" onchange="loadAtt()"/>
+            <button class="btn" onclick="atAllDates()">All Dates</button>
+            <button class="btn" onclick="atCsv()">CSV</button>
+          </div>
+        </div>
+        <div id="atFull" class="card">
+          <div class="card-top"><h3>Full Master Attendance Records <small id="atCnt2" style="font-weight:400;color:var(--muted);"></small></h3>
+            <button class="btn btn-green" onclick="atExcel(document.getElementById('atProj').value||'all')">⬇ Export to Excel</button></div>
+          <div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>Employee</th><th>EMP ID</th><th>Project</th><th>Location</th><th>Date</th><th>In Time</th><th>Out Time</th><th>Working Hours</th><th>Status</th><th></th></tr></thead><tbody id="atBody"></tbody></table></div>
+        </div>
+        <div id="atProjView" style="display:none;"></div>
+      </div>
+
+
+      <!-- PROJECTS, GPS RADAR & SITE QR -->
+      <div class="panel" id="panel-psites">
+        <div class="card">
+          <div class="card-top" style="flex-wrap:wrap;gap:12px;">
+            <div><h3 style="font-size:20px;">Projects, GPS Radar &amp; Site QR Beacons <span class="at-badge" id="psActive">0 Active</span></h3>
+              <div style="font-size:12px;color:var(--muted);margin-top:4px;">Create projects, set the GPS radar perimeter, and print Site QR posters for gate attendance.</div></div>
+            <button class="btn btn-orange" style="padding:12px 20px;" onclick="openSiteModal('new')">＋ Add New Project Site</button>
+          </div>
+        </div>
+        <div id="psList"></div>
+      </div>
+
+
+      <!-- SITE MANAGERS -->
+      <div class="panel" id="panel-managers">
+        <div class="card" style="max-width:760px;">
+          <div class="card-top"><h3 id="mgFormTitle">🧭 Create Site Manager</h3></div>
+          <div style="padding:0 22px 22px;">
+            <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">A Site Manager can only <b>view</b> attendance (and export it) for every project in the states you give. New projects added in those states appear automatically.</div>
+            <div class="grid2"><div class="field"><label>Manager ID *</label><input id="mgId" type="text" placeholder="e.g. SM001"/></div><div class="field"><label>Name *</label><input id="mgName" type="text" placeholder="Manager name"/></div></div>
+            <div class="field"><label id="mgPwdL">Password * (min 6 characters)</label><input id="mgPwd" type="password" placeholder="Password"/></div>
+            <div class="field"><label>State codes (comma separated) *</label><input id="mgCodes" type="text" placeholder="e.g. 8101, 8103" oninput="mgSync()"/>
+              <div id="mgNames" style="font-size:12px;color:var(--ok);margin-top:4px;min-height:16px;"></div>
+              <div id="mgChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;"></div></div>
+            <div class="modal-err" id="mgErr"></div>
+            <div style="display:flex;gap:10px;"><button class="btn btn-orange" style="flex:2;padding:12px;" onclick="saveMgr()">➕ Save</button><button class="btn" style="flex:1;padding:12px;" onclick="resetMgr()">New</button></div>
+          </div>
+        </div>
+        <div class="card"><div class="card-top"><h3>Site Managers (<span id="mgCnt">0</span>)</h3></div>
+          <div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>ID</th><th>Name</th><th>States (codes)</th><th></th></tr></thead><tbody id="mgBody"></tbody></table></div></div>
+      </div>
+
+      <!-- SITE WATCH PANEL -->
+      <div class="panel" id="panel-sitewatch">
+        <div class="stats-row" id="swTotals" style="grid-template-columns:repeat(auto-fit,minmax(130px,1fr));"></div>
+        <div class="card">
+          <div class="card-top"><h3>📡 Live Site Watch <small id="swAt" style="font-weight:400;color:var(--muted);"></small></h3>
+            <div class="btn-gap"><button class="btn" onclick="loadWatch()">⟳ Refresh</button></div></div>
+          <div class="fbar"><input type="text" id="swQ" placeholder="Find an employee on any site..." oninput="renderWatch()"/>
+            <select id="swF" onchange="renderWatch()"><option value="">All sites</option><option value="inside">Sites with people working now</option><option value="empty">Sites with nobody</option></select></div>
+          <div id="swBody" style="padding:4px 22px 22px;"></div>
+        </div>
+      </div>
+
+      <!-- SALARY PANEL -->
+      <div class="panel" id="panel-salary">
+        <div class="card">
+          <div class="card-top"><h3>Day-wise Salary</h3>
+            <div class="btn-gap">
+              <button class="btn btn-blue" onclick="slipBulk('generate')">Generate all payslips</button>
+              <button class="btn btn-green" onclick="slipBulk('finalize')">🔒 Finalize month</button>
+            </div></div>
+          <div class="fbar">
+            <input type="month" id="salMonth" onchange="loadSalary()"/>
+            <input type="text" id="salQ" placeholder="Name or EMP ID..." oninput="renderSalary()"/>
+          </div>
+          <div id="salNote" style="padding:0 22px 8px;font-size:12px;color:var(--muted);"></div>
+          <div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>Employee</th><th>Monthly</th><th>P / H / A</th><th>Incomplete</th><th>Paid days</th><th>Advance</th><th>Net pay</th><th>Payslip</th><th></th></tr></thead>
+          <tbody id="salBody"></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- MISSED PUNCH-OUT PANEL -->
+      <div class="panel" id="panel-missed">
+        <div class="card">
+          <div class="card-top"><h3>Missed Punch-outs (<span id="msCnt">0</span>)</h3></div>
+          <div style="padding:0 22px 8px;font-size:12px;color:var(--muted);">Punch-ins with no punch-out after the night-shift window. These days count as “Incomplete” (unpaid) until fixed. A month cannot be finalized while any remain.</div>
+          <div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>Date</th><th>Employee</th><th>EMP ID</th><th>Department</th><th>Check-in</th><th></th></tr></thead><tbody id="msBody"></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- COMPANY & SALARY RULES (IT) -->
+      <div class="panel" id="panel-sset">
+        <div class="card" style="max-width:720px;">
+          <div class="card-top"><h3>Company &amp; Salary Rules</h3></div>
+          <div style="padding:0 22px 22px;">
+            <div class="field"><label>Company name (on payslip)</label><input id="ssName" type="text"/></div>
+            <div class="field"><label>Company address</label><input id="ssAddr" type="text"/></div>
+            <div class="field"><label>Logo (PNG/JPG, max 300 KB)</label><input id="ssLogo" type="file" accept="image/png,image/jpeg"/><div id="ssLogoNote" style="font-size:11px;color:var(--muted);margin-top:4px;"></div></div>
+            <div class="grid2">
+              <div class="field"><label>Per-day salary is monthly salary ÷</label><select id="ssMode"><option value="calendar">Actual days of the month (28–31)</option><option value="fixed30">Always 30 days</option></select></div>
+              <div class="field"><label>Half day if worked hours are below</label><input id="ssHalf" type="number" step="0.5" min="0" max="24"/></div>
+            </div>
+            <div class="field"><label>Weekly off days</label><div id="ssOff" style="display:flex;gap:12px;flex-wrap:wrap;font-size:13px;"></div>
+              <label style="display:flex;gap:8px;align-items:center;font-size:13px;margin-top:8px;"><input type="checkbox" id="ssOffPaid"/> Weekly offs are paid</label></div>
+            <div class="field"><label>Paid holidays (one per line: YYYY-MM-DD Name)</label><textarea id="ssHol" rows="4" style="width:100%;"></textarea></div>
+            <div class="field"><label style="display:flex;gap:8px;align-items:center;"><input type="checkbox" id="ssOt"/> Pay overtime</label>
+              <div class="grid2"><div><small>Overtime after (hours/day)</small><input id="ssOtAfter" type="number" step="0.5"/></div><div><small>Hourly rate = day salary ÷</small><input id="ssOtBasis" type="number" step="0.5"/></div></div>
+              <small>Rate multiplier</small><input id="ssOtRate" type="number" step="0.1"/></div>
+            <div class="field"><label style="display:flex;gap:8px;align-items:center;"><input type="checkbox" id="ssLate"/> Deduct for late marks</label>
+              <div class="grid2"><div><small>Free late marks per month</small><input id="ssLateFree" type="number"/></div><div><small>Each extra late cuts (fraction of a day)</small><input id="ssLateCut" type="number" step="0.05"/></div></div></div>
+            <div class="modal-err" id="ssErr"></div>
+            <button class="btn btn-orange" style="padding:12px 22px;" onclick="saveSset()">Save settings</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- AUDIT LOG (IT) -->
+      <div class="panel" id="panel-audit">
+        <div class="card"><div class="card-top"><h3>Audit Log (latest 200)</h3></div>
+          <div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>When</th><th>By</th><th>Action</th><th>Target</th><th>Reason</th><th>Details</th></tr></thead><tbody id="auBody"></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- QR PANEL -->
+      <div class="panel" id="panel-qr">
+        <div style="background:#E6F1FB;border-radius:12px;padding:12px 16px;margin-bottom:16px;font-size:12px;color:#185FA5;line-height:1.7;">
+          Each location has its own QR code. Employees at that location scan this QR code and their attendance is recorded automatically. Print the QR code and display it at the location.
+        </div>
+        <div id="qrGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:18px;"></div>
+      </div>
+
+      <!-- PROJECTS PANEL (IT) -->
+      <div class="panel" id="panel-projects">
+        <div class="card" style="max-width:560px;">
+          <div class="card-top"><h3 id="prjFormTitle">📁 Add New Project</h3></div>
+          <div style="padding:0 22px 22px;">
+            <div class="grid2">
+              <div class="field"><label>Project ID *</label><input id="prjId" type="text" placeholder="e.g. PRJ001"/></div>
+              <div class="field"><label>Project Name *</label><input id="prjName" type="text" placeholder="e.g. SPD Warehouse Project"/></div>
+            </div>
+            <div class="modal-err" id="prjErr"></div>
+            <div style="display:flex;gap:10px;">
+              <button class="btn btn-orange" style="flex:2;padding:12px;" onclick="saveProject()">💾 Save</button>
+              <button class="btn" style="flex:1;padding:12px;" onclick="resetPrjForm()">New</button>
+            </div>
+            <p style="font-size:12px;color:var(--muted);margin-top:12px;">After creating a project, add locations under it in the "Location" panel. The QR code for each location is generated there.</p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-top"><h3>Projects (<span id="prjCnt">0</span>)</h3></div>
+          <div style="overflow-x:auto;">
+            <table class="tbl"><thead><tr><th>Project ID</th><th>Name</th><th>Locations</th><th>Action</th></tr></thead>
+            <tbody id="prjBody"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- LOCATION PANEL (IT) -->
+      <div class="panel" id="panel-loc">
+        <div class="card" style="max-width:560px;">
+          <div class="card-top">
+            <h3 id="locFormTitle">📍 Add New Location (Geofence)</h3>
+            <button class="btn btn-orange" onclick="useMyLocation()">📱 Use My Location</button>
+          </div>
+          <div style="padding:0 22px 22px;">
+            <div style="background:#E6F1FB;border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:12px;color:#185FA5;line-height:1.7;">
+              Each location has its own geofence. Assign an employee to a location, and they will only be able to mark attendance from within that location.
+            </div>
+            <div class="field"><label>Project *</label><select id="locProject"></select></div>
+            <div class="field"><label>Location Name *</label><input id="locName" type="text" placeholder="e.g. SPD Warehouse"/></div>
+            <div class="grid2">
+              <div class="field"><label>Latitude *</label><input id="locLat" type="text" placeholder="23.0225"/></div>
+              <div class="field"><label>Longitude *</label><input id="locLng" type="text" placeholder="72.5714"/></div>
+            </div>
+            <div class="field"><label>Radius (meters)</label><input id="locRadius" type="number" value="100"/></div>
+            <div id="locStatus" style="min-height:16px;font-size:12px;margin-bottom:12px;font-weight:600;"></div>
+            <div style="display:flex;gap:10px;">
+              <button class="btn btn-orange" style="flex:2;padding:12px;" onclick="saveLocation()">💾 Save</button>
+              <button class="btn" style="flex:1;padding:12px;" onclick="resetLocForm()">New</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-top"><h3>All Locations (<span id="locCnt">0</span>)</h3></div>
+          <div style="overflow-x:auto;">
+            <table class="tbl"><thead><tr><th>Project</th><th>Location</th><th>Lat / Lng</th><th>Radius</th><th>Employees</th><th>Action</th></tr></thead>
+            <tbody id="locBody"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ADMINS PANEL (IT) -->
+      <div class="panel" id="panel-admins">
+        <div class="card" style="max-width:640px;">
+          <div class="card-top"><h3 id="adFormTitle">👑 Create New HR ID</h3></div>
+          <div style="padding:0 22px 22px;">
+            <div class="grid2">
+              <div class="field"><label>HR ID *</label><input id="adId" type="text" placeholder="e.g. AD001"/></div>
+              <div class="field"><label>Name *</label><input id="adName" type="text" placeholder="HR name"/></div>
+            </div>
+            <div class="field"><label>Password * (minimum 6 characters)</label><input id="adPwd" type="password" placeholder="Password"/></div>
+            <div class="field"><label>Departments (optional — leave empty for all departments; separate with commas)</label><input id="adDepts" type="text" placeholder="e.g. HR, Accounts"/></div>
+            <div class="field"><label>Which locations can this HR login view?</label>
+              <label style="display:flex;gap:8px;align-items:center;font-size:13px;margin:6px 0;"><input type="checkbox" id="adAll" onchange="document.getElementById('adLocs').style.opacity=this.checked?.4:1"/> All locations</label>
+              <div id="adLocs" style="display:flex;flex-wrap:wrap;gap:10px;"></div>
+            </div>
+            <div class="modal-err" id="adErr"></div>
+            <div style="display:flex;gap:10px;">
+              <button class="btn btn-orange" style="flex:2;padding:12px;" onclick="saveAdmin()">➕ Save</button>
+              <button class="btn" style="flex:1;padding:12px;" onclick="resetAdForm()">New</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-top"><h3>HR Logins (<span id="adCnt">0</span>)</h3></div>
+          <div style="overflow-x:auto;">
+            <table class="tbl"><thead><tr><th>ID</th><th>Name</th><th>Locations</th><th>Departments</th><th>Action</th></tr></thead>
+            <tbody id="adBody"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- BYPASS PANEL -->
+      <div class="panel" id="panel-bypass">
+        <div class="card" style="max-width:500px;">
+          <div class="card-top">
+            <h3>🛡 Location Bypass</h3>
+          </div>
+          <div style="padding:18px;">
+            <div style="background:#FAEEDA;border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:12px;color:#854F0B;line-height:1.7;">
+              <strong>When to use this:</strong><br>Add employees whose phone GPS does not work properly or who are not within the location range. They will not be asked for location permission when marking attendance.
+            </div>
+            <div style="display:flex;gap:8px;margin-bottom:16px;">
+              <input id="bypassEmpId" type="text" placeholder="Enter EMP ID (e.g. MW001)" style="flex:1;padding:10px 12px;border:1.5px solid var(--border);border-radius:9px;font-size:13px;outline:none;"/>
+              <button onclick="addBypass()" style="padding:10px 16px;background:var(--brand);color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;">+ Add</button>
+            </div>
+            <div id="bypassErr" style="font-size:12px;color:#e24b4a;margin-bottom:10px;min-height:14px;"></div>
+            <div id="bypassList" style="display:flex;flex-direction:column;gap:8px;"></div>
+          </div>
+        </div>
+      </div>
+ 
+
+      <!-- IT TOOLS PANEL -->
+      <div class="panel" id="panel-itools">
+        <div class="stats-row">
+          <div class="stat-box"><div class="sv b" id="itDb" style="font-size:17px;line-height:1.5;">—</div><div class="sl">Database</div></div>
+          <div class="stat-box"><div class="sv g" id="itEmp">0</div><div class="sl">Employees</div></div>
+          <div class="stat-box"><div class="sv a" id="itToday">0</div><div class="sl">Today's Entries</div></div>
+          <div class="stat-box"><div class="sv r" id="itOpen">0</div><div class="sl">Currently Inside (Punch Out Pending)</div></div>
+        </div>
+        <div class="card">
+          <div class="card-top">
+            <h3>📱 Phone Unlock</h3>
+            <button class="btn btn-blue" onclick="loadITools()">🔄 Refresh</button>
+          </div>
+          <div style="padding:0 22px 16px;">
+            <div style="background:#E6F1FB;border-radius:10px;padding:12px 14px;font-size:12px;color:#185FA5;line-height:1.7;">
+              <strong>When to use this:</strong> Use this when an employee's phone is lost, damaged or replaced and they are unable to Punch Out. After unlocking, they can Punch Out from a new phone.
+            </div>
+          </div>
+          <div style="overflow-x:auto;">
+            <table class="tbl"><thead><tr><th>Employee</th><th>EMP ID</th><th>Location</th><th>Shift</th><th>Punch In</th><th>Phone</th><th>Action</th></tr></thead>
+            <tbody id="itOpenBody"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- IT USERS PANEL (admin only) -->
+      <div class="panel" id="panel-itusers">
+        <div class="card" style="max-width:640px;">
+          <div class="card-top"><h3>🛠 Create New IT User</h3></div>
+          <div style="padding:0 22px 22px;">
+            <div class="grid2">
+              <div class="field"><label>IT ID *</label><input id="iuId" type="text" placeholder="e.g. IT001"/></div>
+              <div class="field"><label>Name *</label><input id="iuName" type="text" placeholder="IT staff name"/></div>
+            </div>
+            <div class="field"><label>Password * (minimum 6 characters)</label><input id="iuPwd" type="password" placeholder="New password"/></div>
+            <div class="modal-err" id="iuErr"></div>
+            <button class="btn btn-orange" style="width:100%;padding:12px;" onclick="addITUser()">➕ Create IT User</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-top"><h3>IT Users (<span id="iuCnt">0</span>)</h3></div>
+          <div style="overflow-x:auto;">
+            <table class="tbl"><thead><tr><th>IT ID</th><th>Name</th><th>Created On</th><th>Action</th></tr></thead>
+            <tbody id="iuBody"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+ 
+<!-- LOCATION QR MODAL -->
+<div class="overlay" id="qrOverlay">
+  <div class="modal" style="width:340px;text-align:center;">
+    <h3 id="qrmTitle">QR</h3>
+    <div class="qr-img" style="margin:12px auto;"><img id="qrmImg" src="" alt="QR" style="max-width:230px;"/></div>
+    <div class="qr-url" id="qrmUrl" style="word-break:break-all;font-size:11px;"></div>
+    <p style="font-size:12px;color:var(--muted);">Employees at this location scan this QR code to mark their attendance.</p>
+    <div class="modal-btns">
+      <button class="mb-cancel" onclick="closeOverlay('qrOverlay')">Close</button>
+      <a class="mb-add" id="qrmDl" style="text-decoration:none;text-align:center;">⬇ Download</a>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT EMPLOYEE MODAL -->
+<div class="overlay" id="empEditOverlay">
+  <div class="modal">
+    <h3 id="eeTitle">Edit Employee</h3>
+        <div class="grid2">
+      <div class="field"><label>Full name</label><input id="eeName" type="text"/></div>
+      <div class="field"><label>Mobile</label><input id="eeMob" type="text"/></div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>Designation</label><input id="eeDes" type="text"/></div>
+      <div class="field"><label>Joining date</label><input id="eeJoin" type="date"/></div>
+    </div>
+    <div class="field perm-salary-f" style="display:none"><label>Monthly salary</label><input id="eeSal" type="number" min="0"/></div>
+    <label style="display:flex;gap:8px;align-items:center;font-size:13px;margin-bottom:10px;"><input type="checkbox" id="eeActive"/> Active (untick to deactivate — they can no longer punch in)</label>
+    <div class="field"><label>Department</label><input id="eeDept" type="text" list="deptList" placeholder="e.g. HR, Accounts, Sales"/></div>
+    <div class="field"><label>Main location (geofence)</label><select id="eeLoc"></select></div>
+    <div class="field"><label>Also allowed to punch at (tick all that apply)</label><div id="eeExtra" style="display:flex;flex-direction:column;gap:6px;max-height:160px;overflow:auto;"></div></div>
+    <div class="field perm-docs-f"><label>Documents (PDF / JPG / PNG, max 5 MB)</label>
+      <div id="eeDocs" style="font-size:12px;margin-bottom:6px;"></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <select id="docType"><option value="photo">Photo</option><option value="aadhaar">Aadhaar</option><option value="pan">PAN</option><option value="offer">Offer letter</option><option value="appointment">Appointment letter</option><option value="experience">Experience letter</option><option value="relieving">Relieving letter</option><option value="bank">Bank details</option><option value="other">Other</option></select>
+        <input type="file" id="docFile" accept="application/pdf,image/jpeg,image/png"/>
+        <button class="btn btn-blue" type="button" onclick="uploadDoc()">⬆ Upload</button>
+      </div>
+      <div id="docMsg" style="font-size:11px;color:var(--muted);margin-top:4px;"></div>
+    </div>
+    <div class="modal-err" id="eeErr"></div>
+    <div class="modal-btns">
+      <button class="mb-cancel" onclick="closeOverlay('empEditOverlay')">Cancel</button>
+      <button class="mb-add" onclick="saveEmpEdit()">Save</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- EMPLOYEE PROFILE -->
+<div class="overlay" id="profOverlay">
+  <div class="modal" style="width:min(720px,96vw);max-height:92vh;overflow:auto;">
+    <div style="display:flex;gap:14px;align-items:center;margin-bottom:12px;">
+      <div id="pfPhoto" style="width:72px;height:72px;border-radius:50%;background:#dfe4ef;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;overflow:hidden;flex:none;"></div>
+      <div style="flex:1;min-width:0;"><h3 id="pfName" style="margin:0;">Profile</h3><div id="pfSub" style="font-size:12px;color:var(--muted);line-height:1.6;"></div></div>
+    </div>
+    <div id="pfInfo" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin-bottom:14px;font-size:12px;"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+      <button class="btn btn-blue" onclick="pfEdit()">✏️ Edit details</button>
+      <button class="btn perm-nav-b" id="pfSalBtn" onclick="pfSalary()">💰 Salary &amp; payslip</button>
+    </div>
+    <h4 style="margin:6px 0;">📁 Documents <small style="font-weight:400;color:var(--muted);">(PDF / JPG / PNG, max 5 MB)</small></h4>
+    <div id="pfDocs"></div>
+    <div id="pfSlipsWrap" style="display:none;"><h4 style="margin:14px 0 6px;">🧾 Payslips (generated)</h4><div id="pfSlips" style="font-size:12px;"></div></div>
+    <div id="pfMsg" style="font-size:12px;margin-top:6px;min-height:16px;"></div>
+    <input type="file" id="pfFile" accept="application/pdf,image/jpeg,image/png" style="display:none"/>
+    <div class="modal-btns"><button class="mb-cancel" onclick="closeOverlay('profOverlay')">Close</button></div>
+  </div>
+</div>
+
+<!-- ADD EMPLOYEE MODAL -->
+<div class="overlay" id="addOverlay">
+  <div class="modal">
+    <h3>➕ Add New Employee</h3>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">EMP ID is generated automatically (EMP001, EMP002 …).</div>
+    <div class="field"><label>Full Name *</label><input id="nName" type="text" placeholder="Employee name"/></div>
+    <div class="field"><label>Mobile Number</label><input id="nMob" type="text" placeholder="10-digit number"/></div>
+    <div class="field"><label>Department (optional)</label><input id="nDept" type="text" list="deptList" placeholder="e.g. HR, Accounts, Sales"/><datalist id="deptList"></datalist></div>
+        <div class="grid2">
+      <div class="field"><label>Designation</label><input id="nDes" type="text" placeholder="e.g. Security Guard"/></div>
+      <div class="field"><label>Joining date</label><input id="nJoin" type="date"/></div>
+    </div>
+    <div class="field perm-salary-f" style="display:none"><label>Monthly salary</label><input id="nSal" type="number" min="0" placeholder="e.g. 18000"/></div>
+    <div class="field"><label>Location (geofence)</label><select id="nLoc"></select></div>
+    <div class="modal-err" id="addErr"></div>
+    <div class="modal-btns">
+      <button class="mb-cancel" onclick="closeOverlay('addOverlay')">Cancel</button>
+      <button class="mb-add" onclick="addEmp()">Add</button>
+    </div>
+  </div>
+</div>
+ 
+
+
+<!-- SITE / RADAR MODAL -->
+<div class="overlay" id="siteOverlay">
+  <div class="modal" style="width:min(640px,96vw);max-height:94vh;overflow:auto;">
+    <h3 id="spTitle">Add New Project Site</h3>
+    <div class="field"><label>Project Name *</label><input id="spName" type="text" placeholder="e.g. Metro Expressway Phase 2"/></div>
+    <div class="grid2">
+      <div class="field" id="spCodeF"><label>Site Code (Project ID)</label><input id="spCode" type="text" placeholder="PRJ-102 (auto if empty)"/></div>
+      <div class="field" id="spClientF"><label>Client / Company</label><input id="spClient" type="text" placeholder="L&amp;T / NHAI / IOCL"/></div>
+    </div>
+    <div class="field" id="spStateF"><label>State <small style="color:var(--muted);font-weight:400;">(code is added automatically)</small></label><div style="display:flex;gap:8px;align-items:center;"><select id="spState" style="flex:1;" onchange="document.getElementById('spStateCode').textContent=this.value||'—'"><option value="">— Select state —</option></select><b id="spStateCode" style="font-family:monospace;color:var(--brand);min-width:48px;">—</b></div></div>
+    <div class="field" id="spSiteNameF" style="display:none;"><label>Site / Gate name *</label><input id="spSiteName" type="text" placeholder="e.g. Gate 2"/></div>
+    <div class="field"><label style="display:flex;justify-content:space-between;">Site Address <a href="#" onclick="spAddr();return false;" style="color:var(--brand);font-size:11px;">➤ Auto-fill Device Address</a></label><input id="spAddr" type="text" placeholder="Plot 14, Sector 62, Gate 2"/></div>
+    <div style="background:rgba(120,130,160,.1);border-radius:16px;padding:14px;margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px;"><b>🎯 Radar Perimeter &amp; GPS</b>
+        <span style="display:flex;gap:6px;"><button class="btn" type="button" onclick="spGps()">💻 Get Device GPS</button><button class="btn" type="button" onclick="spIp()">🌐 IP / Net</button></span></div>
+      <div class="grid2"><div class="field"><label>Latitude</label><input id="spLat" type="text" placeholder="28.6139"/></div><div class="field"><label>Longitude</label><input id="spLng" type="text" placeholder="77.2090"/></div></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;"><label style="font-size:12px;font-weight:800;">Allowed distance from site centre</label><b id="spRadV" style="color:var(--brand);font-family:monospace;font-size:16px;">250 m</b></div>
+      <input id="spRad" type="range" min="50" max="1000" step="10" value="250" oninput="document.getElementById('spRadV').textContent=this.value+' m'" style="width:100%;accent-color:#F26A21;"/>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);font-family:monospace;"><span>50m (Gate only)</span><span>250m (Standard yard)</span><span>500m (Large plant)</span><span>1000m (Civil project)</span></div>
+    </div>
+    <div class="modal-err" id="spErr"></div>
+    <div class="modal-btns">
+      <button class="mb-cancel" id="spDel" style="display:none;color:var(--bad);margin-right:auto;" onclick="spDelete()">🗑 Delete</button>
+      <button class="mb-cancel" onclick="closeOverlay('siteOverlay')">Cancel</button>
+      <button class="mb-add" id="spSave" onclick="spSave()">Create &amp; Generate QR Poster</button>
+    </div>
+  </div>
+</div>
+
+<!-- REASON MODAL -->
+<div class="overlay" id="reasonOverlay" style="z-index:1200;">
+  <div class="modal" style="width:340px;">
+    <h3 id="rsTitle">Reason</h3>
+    <div class="field"><label>Why is this change needed? (saved in the audit log)</label><textarea id="rsText" rows="3" style="width:100%;" placeholder="e.g. Forgot to punch out"></textarea></div>
+    <div class="modal-err" id="rsErr"></div>
+    <div class="modal-btns"><button class="mb-cancel" onclick="reasonDone(null)">Cancel</button><button class="mb-add" onclick="reasonDone(document.getElementById('rsText').value)">Continue</button></div>
+  </div>
+</div>
+
+<!-- SALARY DETAIL MODAL -->
+<div class="overlay" id="salOverlay">
+  <div class="modal" style="width:min(860px,96vw);max-height:92vh;overflow:auto;">
+    <h3 id="sdTitle">Salary</h3>
+    <div id="sdSum" style="display:flex;flex-wrap:wrap;gap:10px;margin:10px 0;"></div>
+    <div id="sdActions" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;"></div>
+    <div id="sdAdv" style="margin-bottom:10px;"></div>
+    <div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>Date</th><th>Day</th><th>Status</th><th>In</th><th>Out</th><th>Hours</th><th>Credit</th><th>Amount</th><th>Running total</th></tr></thead><tbody id="sdBody"></tbody></table></div>
+    <div class="modal-btns"><button class="mb-cancel" onclick="closeOverlay('salOverlay')">Close</button></div>
+  </div>
+</div>
+
+<!-- PIN MODAL -->
+<div class="overlay" id="pinOverlay">
+  <div class="modal" style="width:300px;">
+    <h3>🔒 Enter Secret PIN</h3>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:14px;">A PIN is required to access Admin Tools</p>
+    <div class="field"><input id="pinInput" type="password" placeholder="Enter PIN" onkeydown="if(event.key==='Enter')verifyPin()"/></div>
+    <div class="modal-err" id="pinErr"></div>
+    <div class="modal-btns">
+      <button class="mb-cancel" onclick="closeOverlay('pinOverlay')">Cancel</button>
+      <button class="mb-add" onclick="verifyPin()">Verify</button>
+    </div>
+  </div>
+</div>
+ 
+<!-- EDIT OPTIONS MODAL -->
+<div class="overlay" id="editOptionsOverlay">
+  <div class="modal" style="width:320px;text-align:center;">
+    <h3>🛠 Admin Tools</h3>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:18px;">What would you like to do?</p>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <button onclick="enableEditMode()" style="padding:16px;background:#E6F1FB;color:#185FA5;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;text-align:left;">
+        ✏️ Attendance Edit Mode<br><small style="font-weight:400;font-size:11px;color:#7b8299;">Change the time, shift or status of an existing record</small>
+      </button>
+      <button onclick="openManualAdd()" style="padding:16px;background:#EAF3DE;color:#3B6D11;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;text-align:left;">
+        ➕ Add Attendance Manually<br><small style="font-weight:400;font-size:11px;color:#7b8299;">Manually enter attendance for an employee</small>
+      </button>
+    </div>
+    <button onclick="closeOverlay('editOptionsOverlay')" style="margin-top:14px;padding:8px 20px;background:var(--gray);color:var(--text);border:none;border-radius:8px;font-size:13px;cursor:pointer;">Cancel</button>
+  </div>
+</div>
+ 
+<!-- EDIT ATTENDANCE MODAL -->
+<div class="overlay" id="editOverlay">
+  <div class="modal">
+    <h3>✏️ Edit Attendance</h3>
+    <div style="background:#FFF3E6;border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:#854F0B;font-weight:600;" id="editRecInfo"></div>
+    <div class="grid2">
+      <div class="field"><label>Check-in Time</label><input id="editCheckIn" type="text" placeholder="08:30 AM"/></div>
+      <div class="field"><label>Check-out Time</label><input id="editCheckOut" type="text" placeholder="05:30 PM"/></div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>Shift</label>
+        <select id="editShift">
+          <option value="">-- Keep unchanged --</option>
+          <option value="A">A Shift (6:30 AM)</option>
+          <option value="B">B Shift (3:15 PM)</option>
+          <option value="G">G Shift (8:45 AM)</option>
+          <option value="C">C Shift (11:45 PM)</option>
+        </select>
+      </div>
+      <div class="field"><label>Status</label>
+        <select id="editStatus">
+          <option value="">-- Auto --</option>
+          <option value="present">Present</option>
+          <option value="late">Late</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-err" id="editErr"></div>
+    <div class="modal-btns">
+      <button class="mb-cancel" onclick="closeOverlay('editOverlay')">Cancel</button>
+      <button class="mb-add" onclick="saveEdit()">Save</button>
+    </div>
+  </div>
+</div>
+ 
+<!-- MANUAL ADD ATTENDANCE MODAL -->
+<div class="overlay" id="manualAddOverlay">
+  <div class="modal">
+    <h3>➕ Add Attendance Manually</h3>
+    <div class="field">
+      <label>Employee EMP ID *</label>
+      <input id="maEmpId" type="text" placeholder="e.g. MW001" oninput="searchEmpForManual()"/>
+      <div id="maEmpName" style="font-size:12px;font-weight:700;margin-top:4px;min-height:14px;"></div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>Date *</label><input id="maDate" type="date"/></div>
+      <div class="field"><label>Shift *</label>
+        <select id="maShift">
+          <option value="A">A Shift (6:30 AM)</option>
+          <option value="B">B Shift (3:15 PM)</option>
+          <option value="G" selected>G Shift (8:45 AM)</option>
+          <option value="C">C Shift (11:45 PM)</option>
+        </select>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>Check-in Time *</label><input id="maCheckIn" type="text" placeholder="08:30 AM"/></div>
+      <div class="field"><label>Check-out Time</label><input id="maCheckOut" type="text" placeholder="05:30 PM (optional)"/></div>
+    </div>
+    <div class="field"><label>Status</label>
+      <select id="maStatus">
+        <option value="">-- Auto-calculate --</option>
+        <option value="present">Present</option>
+        <option value="late">Late</option>
+      </select>
+    </div>
+    <div class="modal-err" id="maErr"></div>
+    <div class="modal-btns">
+      <button class="mb-cancel" onclick="closeOverlay('manualAddOverlay')">Cancel</button>
+      <button class="mb-add" onclick="saveManualAdd()">Add</button>
+    </div>
+  </div>
+</div>
+ 
+<div class="toast" id="toast"></div>
+ 
+<script>
+const AV_COLORS=[['#E6F1FB','#0C447C'],['#E1F5EE','#085041'],['#FAECE7','#712B13'],['#EEEDFE','#3C3489'],['#EAF3DE','#3B6D11'],['#FAEEDA','#854F0B']];
+let editMode=false, editAttId=null, adminName='', animDone=false;
+ 
+// ── ANIMATION ──
+function runAnim(){
+  if(animDone)return; animDone=true;
+  const fig=document.getElementById('fig'), bag=document.getElementById('bagObj'), pop=document.getElementById('logoPop');
+  let pos=210;
+  const w=setInterval(()=>{
+    pos-=5; fig.style.right=pos+'px';
+    if(pos<=70){
+      clearInterval(w);
+      bag.style.right='-2px'; bag.style.bottom='-22px'; bag.style.top='auto'; bag.style.transform='translateX(8px)';
+      setTimeout(()=>{pop.style.opacity='1';pop.style.transform='scale(1) rotate(0deg)';},700);
+    }
+  },18);
+}
+setTimeout(runAnim,400);
+ 
+// ── LOGIN ──
+let loginRole='admin', userRole='admin';
+function setLoginRole(r){
+  loginRole=r;
+  document.getElementById('rtAdmin').classList.toggle('on',r==='admin');
+  document.getElementById('rtIt').classList.toggle('on',r==='it');
+  document.getElementById('mgrLink').innerHTML=r==='manager'?'<a href="#" onclick="setLoginRole(\'admin\');return false;">← Back to HR / IT login</a>':'Are you a Site Manager? <a href="#" onclick="setLoginRole(\'manager\');return false;">Login here</a>';
+  document.getElementById('loginSub').textContent=r==='it'?'IT Login':r==='manager'?'Site Manager Login':'HR Login';
+  document.getElementById('lblId').textContent=r==='it'?'IT ID':r==='manager'?'Manager ID':'HR ID';
+  document.getElementById('lblPwd').textContent='Password';
+  document.getElementById('lid').placeholder=r==='it'?'IT001':r==='manager'?'Manager ID':'HR ID';
+  document.getElementById('lpwd').placeholder='Enter your password';
+  document.getElementById('loginErr').textContent='';
+}
+async function doLogin(){
+  const id=document.getElementById('lid').value.trim(), pw=document.getElementById('lpwd').value.trim();
+  const err=document.getElementById('loginErr');
+  try{
+    const res=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({empId:id,password:pw,role:loginRole})});
+    const d=await res.json();
+    if(!res.ok){err.textContent='❌ '+d.error;return;}
+    adminName=d.admin.name; userRole=d.admin.role;
+    if(d.needProject){showProjectStep(d.projects||[]);return;}
+    await enterApp();
+  }catch{err.textContent='❌ Unable to connect to the server.';}
+}
+function showProjectStep(projects){
+  document.getElementById('loginStep1').style.display='none';
+  document.getElementById('loginStep2').style.display='block';
+  document.getElementById('projErr').textContent=''; document.getElementById('lproj').value='';
+  document.getElementById('projChips').innerHTML=['ALL'].concat(projects.map(p=>p.id)).map((id,i)=>{
+    const p=projects.find(x=>x.id===id); const label=id==='ALL'?'ALL — every project':esc(id)+(p?' · '+esc(p.name):'');
+    return `<button type="button" class="btn" style="padding:6px 12px;font-size:11px;" onclick="document.getElementById('lproj').value='${jsq(id)}';chooseProject()">${label}</button>`;
+  }).join('');
+  setTimeout(()=>document.getElementById('lproj').focus(),50);
+}
+function backToLogin(){
+  fetch('/api/logout',{method:'POST'});
+  document.getElementById('loginStep2').style.display='none';
+  document.getElementById('loginStep1').style.display='block';
+  document.getElementById('lpwd').value='';
+}
+async function chooseProject(){
+  const v=document.getElementById('lproj').value.trim(), err=document.getElementById('projErr');
+  if(!v){err.textContent='❌ Enter a Project ID, or ALL.';return;}
+  try{
+    const res=await fetch('/api/login/project',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({projectId:v})});
+    const d=await res.json();
+    if(!res.ok){err.textContent='❌ '+d.error;return;}
+    projectLabel=d.project==='ALL'?'All Projects':d.projectName+' ('+d.project+')';
+    await enterApp();
+  }catch{err.textContent='❌ Unable to connect to the server.';}
+}
+let projectLabel='';
+async function enterApp(){
+    document.getElementById('loginPage').style.display='none';
+    document.getElementById('adminPage').style.display='flex';
+    document.getElementById('sbName').textContent=adminName;
+    document.getElementById('sbRole').textContent=userRole==='it'?'IT — Full Access':userRole==='manager'?'Site Manager':'HR · '+projectLabel;
+    document.getElementById('adminPage').classList.toggle('is-it',userRole==='it');
+    document.getElementById('adminPage').classList.toggle('is-mgr',userRole==='manager');
+    document.getElementById('todayLbl').textContent=new Date().toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+    const now=new Date();
+    document.getElementById('monthSel').value=String(now.getMonth()+1).padStart(2,'0');
+    document.getElementById('yearSel').value=String(now.getFullYear());
+    await initSession();
+    if(userRole==='manager'&&ME&&ME.states)document.getElementById('sbRole').textContent='Site Manager · '+ME.states.join(', ');
+    applyPerms();
+    if(userRole!=='manager'){loadDay(); loadQR();}
+    if(userRole==='it') showPanel('itools',document.getElementById('nav-itools')); else showPanel('attendance',null);
+}
+ 
+// ── PANELS ──
+function showPanel(p,el){
+  document.querySelectorAll('.panel').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('.nav-i').forEach(x=>x.classList.remove('on'));
+  document.getElementById('panel-'+p).classList.add('on');
+  if(el)el.classList.add('on');
+  const titles={day:'Today\'s Attendance',monthly:'Monthly Report',all:'Full History',emp:'Employees',qr:'QR Code',projects:'Projects',loc:'Locations (Geofence)',admins:'HR Logins',bypass:'Location Bypass',itools:'IT Tools',psites:'Projects, GPS Radar & Site QR',managers:'Site Managers',attendance:'Attendance',sitewatch:'Live Site Watch',salary:'Salary & Payslips',missed:'Missed Punch-outs',sset:'Company & Salary Rules',audit:'Audit Log',itusers:'IT Users'};
+  document.getElementById('panelTitle').textContent=titles[p]||p;
+  if(['day','monthly','all'].includes(p)&&ME)refreshLocs();
+  if(p==='all')loadAll();
+  if(p==='monthly')loadMonthly();
+  if(p==='emp')loadEmp();
+  if(p==='qr')loadQR();
+  if(p==='loc')loadLocation();
+  if(p==='day')loadDay();
+  if(p==='bypass')loadBypass();
+  if(p==='itools')loadITools();
+  if(p==='itusers')loadITUsers();
+  if(p==='admins')loadAdmins();
+  if(p==='projects')loadProjects();
+  syncNav(p); clearInterval(watchTimer);
+  if(p==='attendance')initAtt();
+  if(p==='psites')loadPsites();
+  if(p==='managers')loadManagers();
+  if(p==='sitewatch'){loadWatch(); watchTimer=setInterval(()=>{if(document.hidden)return; loadWatch();},30000);}
+  if(p==='salary')initSalary();
+  if(p==='missed')loadMissed();
+  if(p==='sset')loadSset();
+  if(p==='audit')loadAudit();
+}
+ 
+function avHtml(name,i){
+  const[bg,tc]=AV_COLORS[i%AV_COLORS.length];
+  const init=name.split(' ').map(x=>x[0]).join('').substring(0,2).toUpperCase();
+  return`<span class="av" style="background:${bg};color:${tc};">${init}</span>`;
+}
+function badgeHtml(s){
+  if(s==='present')return'<span class="badge bp">Present</span>';
+  if(s==='late')return'<span class="badge bl">Late</span>';
+  return'<span class="badge ba">Absent</span>';
+}
+function shiftBadge(s){
+  const c={A:'#EAF3DE',B:'#E6F1FB',G:'#FAEEDA',C:'#EEEDFE'};
+  return s?`<span style="padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700;background:${c[s]||'#f0f2f5'};">${s}</span>`:'—';
+}
+ 
+// ── DAY ──
+async function loadDay(){
+  try{
+    const res=await fetch('/api/attendance/today'+locQS());
+    let data=await res.json();
+    document.getElementById('sP').textContent=data.filter(d=>d.status==='present').length;
+    document.getElementById('sL').textContent=data.filter(d=>d.status==='late').length;
+    document.getElementById('sA').textContent=data.filter(d=>d.status==='absent').length;
+    document.getElementById('sT').textContent=data.length;
+    const q=document.getElementById('dayQ').value.toLowerCase(), f=document.getElementById('dayF').value;
+    if(f)data=data.filter(d=>d.status===f);
+    if(q)data=data.filter(d=>d.name.toLowerCase().includes(q)||d.id.toLowerCase().includes(q));
+    const tbody=document.getElementById('dayBody');
+    if(!data.length){tbody.innerHTML='<tr><td colspan="10" class="no-data">No records found</td></tr>';return;}
+    tbody.innerHTML=data.map((d,i)=>`<tr>
+      <td>${avHtml(d.name,i)}${d.name}</td>
+      <td>${d.id}</td>
+      <td>${esc(d.locationName||'—')}</td>
+      <td>${esc(d.department||'—')}</td>
+      <td>${shiftBadge(d.shift)}</td>
+      <td>${d.time||'—'}</td>
+      <td>${d.checkOut||'—'}</td>
+      <td>${d.totalHours||'—'}</td>
+      <td>${badgeHtml(d.status)}</td>
+      <td style="white-space:nowrap;">
+        ${d.attended?`<button class="edit-btn edit-gate" onclick="openEdit('${d.id}','${d.date}','${d.name}','${d.time||''}','${d.checkOut||''}','${d.shift||'G'}')">✏️ Edit</button> <button class="edit-gate" onclick="delAttendance('${d.id}','${d.date}','${d.name}')" style="padding:4px 8px;background:#FCEBEB;color:#A32D2D;border:none;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer;">🗑</button>`:'—'}
+      </td>
+    </tr>`).join('');
+    applyEditMode();
+  }catch{document.getElementById('dayBody').innerHTML='<tr><td colspan="10" class="no-data">Server error</td></tr>';}
+}
+ 
+// ── MONTHLY ──
+async function loadMonthly(){
+  const month=document.getElementById('monthSel').value, year=document.getElementById('yearSel').value;
+  try{
+    const res=await fetch(`/api/attendance/monthly?month=${month}&year=${year}`+locQS('&'));
+    const data=await res.json();
+    const present=data.filter(d=>d.status==='present').length, late=data.filter(d=>d.status==='late').length;
+    const total=data.length||1;
+    const pie=document.getElementById('piesvg');
+    const segs=[{v:present,c:'#2f9e5a',l:'Present'},{v:late,c:'#d98a1a',l:'Late'},{v:data.length-present-late,c:'#d6453f',l:'Absent'}];
+    let angle=-Math.PI/2, paths='';
+    segs.forEach(s=>{
+      const sweep=(s.v/total)*2*Math.PI;
+      if(s.v>0&&s.v===total){paths+=`<circle cx="45" cy="45" r="38" fill="${s.c}"/>`;}
+      else if(s.v>0){const x1=45+38*Math.cos(angle),y1=45+38*Math.sin(angle),x2=45+38*Math.cos(angle+sweep),y2=45+38*Math.sin(angle+sweep);
+        paths+=`<path d="M45,45 L${x1},${y1} A38,38 0 ${sweep>Math.PI?1:0},1 ${x2},${y2} Z" fill="${s.c}"/>`;}
+      angle+=sweep;
+    });
+    pie.innerHTML=paths||'<circle cx="45" cy="45" r="38" fill="#b8c3d8"/>';
+    document.getElementById('pieLeg').innerHTML=segs.map(s=>`<div class="pl-item"><div class="pl-dot" style="background:${s.c}"></div>${s.l}: <b>${s.v}</b></div>`).join('');
+    // Bars
+    const byDate={};
+    data.forEach(r=>{byDate[r.date]=(byDate[r.date]||0)+1;});
+    const dates=Object.keys(byDate).sort().slice(-14);
+    const maxV=Math.max(...Object.values(byDate),1);
+    const days=['Su','Mo','Tu','We','Th','Fr','Sa'];
+    document.getElementById('monthBars').innerHTML=dates.map(dt=>{
+      const d2=new Date(dt), cnt=byDate[dt]||0, h=Math.round((cnt/maxV)*80);
+      return`<div class="bar-col"><div class="bar-val">${cnt}</div><div class="bar-fill" style="height:${h}px;background:var(--dark);"></div><div class="bar-lbl">${days[d2.getDay()]}${d2.getDate()}</div></div>`;
+    }).join('');
+    const tbody=document.getElementById('monthBody');
+    if(!data.length){tbody.innerHTML='<tr><td colspan="10" class="no-data">No records found for this month</td></tr>';return;}
+    tbody.innerHTML=data.map((r,i)=>`<tr>
+      <td>${avHtml(r.empName,i)}${r.empName}</td><td>${r.empId}</td><td>${esc(r.locationName||'—')}</td><td>${esc(r.department||'—')}</td><td>${r.date}</td>
+      <td>${shiftBadge(r.shift)}</td><td>${r.time||'—'}</td><td>${r.checkOut||'—'}</td>
+      <td>${r.totalHours||'—'}</td><td>${badgeHtml(r.status)}</td>
+    </tr>`).join('');
+  }catch(e){console.error(e);}
+}
+ 
+function exportMonthly(){
+  const m=document.getElementById('monthSel').value, y=document.getElementById('yearSel').value;
+  location.href=`/api/export/monthly?month=${m}&year=${y}`+locQS('&');
+}
+ 
+// ── ALL ──
+async function loadAll(){
+  try{
+    let url='/api/attendance?x=1'+locQS('&');
+    const q=document.getElementById('allQ')?.value.toLowerCase()||'', d=document.getElementById('allD')?.value||'';
+    if(d)url+='&date='+d;
+    const res=await fetch(url);
+    let data=await res.json();
+    if(q)data=data.filter(r=>r.empName.toLowerCase().includes(q)||r.empId.toLowerCase().includes(q));
+    const tbody=document.getElementById('allBody');
+    if(!data.length){tbody.innerHTML='<tr><td colspan="11" class="no-data">No records found</td></tr>';return;}
+    tbody.innerHTML=data.map((r,i)=>`<tr>
+      <td>${avHtml(r.empName,i)}${r.empName}</td><td>${r.empId}</td><td>${esc(r.locationName||'—')}</td><td>${esc(r.department||'—')}</td><td>${r.date}</td>
+      <td>${shiftBadge(r.shift)}</td><td>${r.time||'—'}</td><td>${r.checkOut||'—'}</td>
+      <td>${r.totalHours||'—'}</td><td>${badgeHtml(r.status)}</td>
+      <td style="white-space:nowrap;">
+        <button class="edit-btn edit-gate" onclick="openEdit('${r.empId}','${r.date}','${r.empName}','${r.time||''}','${r.checkOut||''}','${r.shift||'G'}')">✏️ Edit</button>
+        <button class="edit-gate" onclick="delAttendance('${r.empId}','${r.date}','${r.empName}')" style="padding:4px 8px;background:#FCEBEB;color:#A32D2D;border:none;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer;">🗑</button>
+      </td>
+    </tr>`).join('');
+    applyEditMode();
+  }catch{}
+}
+ 
+// ── EMPLOYEES ──
+async function loadEmp(){
+  try{
+    if(ME)await refreshLocs();
+    const res=await fetch('/api/employees');
+    const emps=await res.json(); EMPS=emps;
+    document.getElementById('empCnt').textContent=emps.length;
+    document.getElementById('empGrid').innerHTML=emps.map((e,i)=>{
+      const[bg,tc]=AV_COLORS[i%AV_COLORS.length];
+      const init=e.name.split(' ').map(x=>x[0]).join('').substring(0,2).toUpperCase();
+      return`<div class="ec">
+        <div class="ec-top"><div class="ec-av" style="background:${bg};color:${tc};${e.photoDocId?'padding:0;overflow:hidden;':''}">${e.photoDocId?`<img src="${docUrl(e.photoDocId)}" style="width:100%;height:100%;object-fit:cover;" alt=""/>`:init}</div>
+        <div style="cursor:pointer;" onclick="openProfile('${jsq(e.id)}')"><div class="ec-name">${e.name}</div><div class="ec-id">${e.id}</div><div class="ec-mob">📱 ${e.mobile}</div>${e.designation?`<div class="ec-mob">${esc(e.designation)}</div>`:''}${e.active===false?'<div class="ec-mob" style="color:var(--bad);font-weight:800;">INACTIVE</div>':''}</div></div>
+        ${e.role==='admin'?'':`<div style="font-size:11px;color:var(--muted);line-height:1.7;margin:6px 0;">🏢 ${esc(e.department||'No department')}<br>📍 ${esc(e.locationName||'No location')}${(e.extraLocationNames||[]).length?' + '+esc(e.extraLocationNames.join(', ')):''}</div>`}
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;">
+          ${e.role==='admin'?'':`<button class="btn btn-orange" style="padding:5px 10px;font-size:10px;" onclick="openProfile('${jsq(e.id)}')">👤 Profile &amp; Documents</button>`}
+          ${e.role==='admin'?'':`<button class="btn btn-blue" style="padding:5px 10px;font-size:10px;" onclick="openEmpEdit('${jsq(e.id)}')">✏️ Edit</button>`}
+          ${e.role!=='admin'?`<button onclick="delEmp('${e.id}','${e.name}')" style="padding:5px 10px;background:#FCEBEB;color:#A32D2D;border:none;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;">🗑 Delete</button>`:'<span style="font-size:10px;color:var(--muted);">Super Admin</span>'}
+        </div>
+      </div>`;
+    }).join('');
+  }catch{}
+}
+ 
+function openAdd(){fillLocSelect(document.getElementById('nLoc'),true);document.getElementById('addErr').textContent='';document.getElementById('addOverlay').classList.add('open');}
+async function addEmp(){
+  const name=document.getElementById('nName').value.trim(), mob=document.getElementById('nMob').value.trim();
+  const err=document.getElementById('addErr');
+  if(!name){err.textContent='❌ Name is required.';return;}
+  const body={name,mobile:mob,locationId:document.getElementById('nLoc').value,department:document.getElementById('nDept').value.trim(),designation:document.getElementById('nDes').value.trim(),joiningDate:document.getElementById('nJoin').value};
+  if(PERMS.salary&&document.getElementById('nSal').value!=='')body.monthlySalary=Number(document.getElementById('nSal').value);
+  const res=await fetch('/api/employees',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const d=await res.json();
+  if(!res.ok){err.textContent='❌ '+d.error;return;}
+  closeOverlay('addOverlay'); ['nName','nMob','nDept','nDes','nJoin','nSal'].forEach(x=>document.getElementById(x).value='');
+  loadEmp(); loadDay(); toast('✅ '+name+' added with ID '+((d.employee&&d.employee.id)||''));
+}
+
+async function delEmp(id,name){
+  if(!confirm(`"${name}" ?`))return;
+  await fetch('/api/employees/'+id,{method:'DELETE'});
+  loadEmp(); loadDay(); toast('🗑 '+name+' has been deleted.');
+}
+ 
+// ── PROJECTS (IT) ──
+let PROJECTS=[], editPrjId=null;
+async function fillProjectSelect(){
+  try{const r=await fetch('/api/projects'); PROJECTS=await r.json();}catch{PROJECTS=[];}
+  const el=document.getElementById('locProject'), cur=el.value;
+  el.innerHTML=PROJECTS.length?PROJECTS.map(p=>`<option value="${esc(p.id)}">${esc(p.name)} (${esc(p.id)})</option>`).join(''):'<option value="">— Create a project first —</option>';
+  if(PROJECTS.some(p=>p.id===cur))el.value=cur;
+}
+function resetPrjForm(){
+  editPrjId=null; ['prjId','prjName'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('prjId').disabled=false; document.getElementById('prjErr').textContent='';
+  document.getElementById('prjFormTitle').textContent='📁 Add New Project';
+}
+async function loadProjects(){
+  const r=await fetch('/api/projects'); const d=await r.json();
+  if(!r.ok){toast('❌ '+d.error);return;}
+  PROJECTS=d;
+  document.getElementById('prjCnt').textContent=d.length;
+  document.getElementById('prjBody').innerHTML=d.length?d.map(p=>`<tr>
+    <td><b>${esc(p.id)}</b></td><td>${esc(p.name)}</td><td>${p.locations}</td>
+    <td style="white-space:nowrap;"><button class="btn btn-blue" onclick="editProject('${jsq(p.id)}')">✏️ Edit</button>
+    <button class="btn" style="color:var(--bad);" onclick="delProject('${jsq(p.id)}','${jsq(p.name)}')">🗑</button></td>
+  </tr>`).join(''):'<tr><td colspan="4" class="no-data">No projects yet</td></tr>';
+}
+function editProject(id){
+  const p=PROJECTS.find(x=>x.id===id); if(!p)return;
+  editPrjId=id; document.getElementById('prjId').value=p.id; document.getElementById('prjId').disabled=true;
+  document.getElementById('prjName').value=p.name; document.getElementById('prjFormTitle').textContent='✏️ Edit Project: '+p.id;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+async function saveProject(){
+  const err=document.getElementById('prjErr'); err.textContent='';
+  const body={id:document.getElementById('prjId').value.trim(),name:document.getElementById('prjName').value.trim()};
+  const r=await fetch(editPrjId?`/api/projects/${encodeURIComponent(editPrjId)}/update`:'/api/projects',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const d=await r.json();
+  if(!r.ok){err.textContent='❌ '+d.error;return;}
+  toast('✅ Project saved successfully'); resetPrjForm(); loadProjects();
+}
+async function delProject(id,name){
+  if(!confirm(`Are you sure you want to delete the project "${name}"?`))return;
+  const r=await fetch('/api/projects/'+encodeURIComponent(id),{method:'DELETE'}); const d=await r.json();
+  if(r.ok){toast('🗑 Project deleted'); loadProjects();} else toast('❌ '+d.error);
+}
+
+// ── QR (one per location) ──
+let QRS=[];
+async function loadQR(){
+  try{
+    const res=await fetch('/api/location-qrs'); QRS=await res.json();
+    const g=document.getElementById('qrGrid');
+    g.innerHTML=QRS.length?QRS.map(q=>`<div class="qr-box" style="text-align:center;">
+      <div style="font-size:11px;color:var(--muted);font-weight:700;">${esc(q.projectName||'')} ${q.projectId?'· '+esc(q.projectId):''}</div>
+      <div style="font-size:15px;font-weight:800;margin:4px 0 10px;">📍 ${esc(q.name)}</div>
+      <div class="qr-img"><img src="${q.qr}" alt="QR"/></div>
+      <div class="qr-url" style="word-break:break-all;">${esc(q.url)}</div>
+      <div style="font-size:12px;color:var(--muted);margin:6px 0;">${q.employees} employee(s) at this location</div>
+      <button class="btn btn-blue" style="width:100%;" onclick="printQR('${jsq(q.id)}')">🖨 Print</button>
+    </div>`).join(''):'<div class="no-data" style="padding:30px;">No locations yet. Please create a project and a location first.</div>';
+  }catch{}
+}
+function printQR(id){const q=QRS.find(x=>x.id===id); if(q)openQRModal(q.name,q.projectName,q.qr,q.url,true);}
+function showQRModal(id){const q=QRS.find(x=>x.id===id); if(q)openQRModal(q.name,q.projectName,q.qr,q.url); else loadQR().then(()=>{const z=QRS.find(x=>x.id===id); if(z)openQRModal(z.name,z.projectName,z.qr,z.url);});}
+function openQRModal(name,project,qr,url,doPrint){
+  document.getElementById('qrmTitle').textContent='📍 '+name+(project?' — '+project:'');
+  document.getElementById('qrmImg').src=qr; document.getElementById('qrmUrl').textContent=url;
+  document.getElementById('qrmDl').href=qr; document.getElementById('qrmDl').download='QR-'+name.replace(/\W+/g,'_')+(qr.startsWith('data:image/png')?'.png':'.gif');
+  document.getElementById('qrOverlay').classList.add('open');
+  if(doPrint)setTimeout(()=>window.print(),300);
+  loadQR();
+}
+
+// ── DELETE ATTENDANCE ──
+async function delAttendance(empId,date,name){
+  if(!confirm(`Delete the attendance record of "${name}" for ${date}?`))return;
+  const reason=await askReason('Delete attendance'); if(!reason)return;
+  const r=await fetch(`/api/attendance/employee/${empId}?date=${date}&reason=${encodeURIComponent(reason)}`,{method:'DELETE'});
+  if(!r.ok){const d=await r.json().catch(()=>({}));toast('❌ '+(d.error||'Failed'));return;}
+  loadDay(); loadAll(); toast(`🗑 Attendance record of ${name} has been deleted.`);
+}
+ 
+// ── PIN & EDIT MODE ──
+function promptPin(){
+  if(userRole==='it'){document.getElementById('editOptionsOverlay').classList.add('open');return;}
+  document.getElementById('pinInput').value='';
+  document.getElementById('pinErr').textContent='';
+  document.getElementById('pinOverlay').classList.add('open');
+  setTimeout(()=>document.getElementById('pinInput').focus(),100);
+}
+ 
+async function verifyPin(){
+  const pin=document.getElementById('pinInput').value.trim();
+  try{
+    const res=await fetch('/api/verify-pin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pin})});
+    const d=await res.json();
+    if(d.success){
+      closeOverlay('pinOverlay');
+      document.getElementById('editOptionsOverlay').classList.add('open');
+    }else{
+      document.getElementById('pinErr').textContent='❌ Incorrect PIN!';
+    }
+  }catch{document.getElementById('pinErr').textContent='❌ Server error';}
+}
+ 
+function enableEditMode(){
+  closeOverlay('editOptionsOverlay');
+  editMode=true;
+  document.getElementById('editBadge').style.display='block';
+  document.getElementById('mainArea').classList.add('edit-mode-on');
+  applyEditMode();
+  toast('✅ Edit mode is ON. Click the Edit button on any row.');
+}
+ 
+function turnOffEdit(){
+  editMode=false;
+  document.getElementById('editBadge').style.display='none';
+  document.getElementById('mainArea').classList.remove('edit-mode-on');
+  toast('Edit mode is turned off.');
+}
+ 
+function applyEditMode(){
+  const cls=document.getElementById('mainArea');
+  if(editMode)cls.classList.add('edit-mode-on');
+  else cls.classList.remove('edit-mode-on');
+}
+ 
+// ── EDIT ATTENDANCE ──
+async function openEdit(empId,date,name,checkIn,checkOut,shift){
+  try{
+    const res=await fetch(`/api/attendance?empId=${empId}&date=${date}`);
+    const data=await res.json();
+    const rec=data.find(r=>r.date===date&&r.empId===empId);
+    if(!rec){toast('❌ Record not found');return;}
+    editAttId=rec.id;
+    document.getElementById('editRecInfo').textContent=`${name} — ${date}`;
+    document.getElementById('editCheckIn').value=checkIn||'';
+    document.getElementById('editCheckOut').value=checkOut||'';
+    document.getElementById('editShift').value=shift||'G';
+    document.getElementById('editStatus').value='';
+    document.getElementById('editErr').textContent='';
+    document.getElementById('editOverlay').classList.add('open');
+  }catch{toast('❌ Error loading the record');}
+}
+ 
+async function saveEdit(){
+  if(!editAttId)return;
+  const checkIn=document.getElementById('editCheckIn').value.trim();
+  const checkOut=document.getElementById('editCheckOut').value.trim();
+  const shift=document.getElementById('editShift').value;
+  const status=document.getElementById('editStatus').value;
+  const reason=await askReason('Edit attendance'); if(!reason)return;
+  try{
+    const res=await fetch('/api/attendance/edit',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({pin:'011216',attendanceId:editAttId,checkIn,checkOut,shift,status,reason})});
+    const d=await res.json();
+    if(!res.ok){document.getElementById('editErr').textContent='❌ '+d.error;return;}
+    closeOverlay('editOverlay'); editAttId=null;
+    loadDay(); loadAll(); loadMonthly();
+    toast('✅ Attendance updated successfully.');
+  }catch{document.getElementById('editErr').textContent='❌ Server error';}
+}
+ 
+// ── MANUAL ADD ──
+function openManualAdd(){
+  closeOverlay('editOptionsOverlay');
+  const today=new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kolkata'});
+  document.getElementById('maDate').value=today;
+  document.getElementById('maEmpId').value='';
+  document.getElementById('maEmpName').textContent='';
+  document.getElementById('maCheckIn').value='';
+  document.getElementById('maCheckOut').value='';
+  document.getElementById('maErr').textContent='';
+  document.getElementById('maShift').value='G';
+  document.getElementById('maStatus').value='';
+  document.getElementById('manualAddOverlay').classList.add('open');
+  setTimeout(()=>document.getElementById('maEmpId').focus(),100);
+}
+ 
+async function searchEmpForManual(){
+  const empId=document.getElementById('maEmpId').value.trim().toUpperCase();
+  const nameEl=document.getElementById('maEmpName');
+  if(empId.length<3){nameEl.textContent='';return;}
+  try{
+    const res=await fetch('/api/employees');
+    const emps=await res.json();
+    const emp=emps.find(e=>e.id===empId);
+    if(emp){nameEl.textContent='✅ '+emp.name;nameEl.style.color='#3B6D11';}
+    else{nameEl.textContent='❌ Employee not found';nameEl.style.color='#A32D2D';}
+  }catch{}
+}
+ 
+async function saveManualAdd(){
+  const empId=document.getElementById('maEmpId').value.trim().toUpperCase();
+  const date=document.getElementById('maDate').value;
+  const shift=document.getElementById('maShift').value;
+  const checkIn=document.getElementById('maCheckIn').value.trim();
+  const checkOut=document.getElementById('maCheckOut').value.trim();
+  const status=document.getElementById('maStatus').value;
+  const errEl=document.getElementById('maErr');
+  if(!empId){errEl.textContent='❌ EMP ID is required';return;}
+  if(!date){errEl.textContent='❌ Date is required';return;}
+  if(!checkIn){errEl.textContent='❌ Check-in time is required';return;}
+  const reason=await askReason('Add attendance manually'); if(!reason)return;
+  try{
+    const res=await fetch('/api/attendance/manual',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({empId,date,shift,checkIn,checkOut,status,pin:'011216',reason})});
+    const d=await res.json();
+    if(!res.ok){errEl.textContent='❌ '+(d.error||'Error');return;}
+    closeOverlay('manualAddOverlay');
+    loadDay(); loadAll(); loadMonthly();
+    toast('✅ '+empId+'\'s attendance has been added.');
+  }catch{errEl.textContent='❌ Server error';}
+}
+ 
+
+
+
+// ── ATTENDANCE (full + project-wise) ──
+let ATT=[], atMode='full', atDateAll=false;
+function atTab(m){atMode=m; document.getElementById('atT-full').classList.toggle('on',m==='full'); document.getElementById('atT-proj').classList.toggle('on',m==='proj'); renderAtt();}
+function atAllDates(){atDateAll=!atDateAll; if(atDateAll)document.getElementById('atDate').value=''; else document.getElementById('atDate').value=todayIST(); loadAtt();}
+const todayIST=()=>new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kolkata'});
+function hrsOf(t){const m=/(\d+)h\s*(\d+)m/.exec(t||''); return m?(+m[1])+(+m[2])/60:0;}
+async function initAtt(){
+  try{await refreshLocs();}catch{}
+  const d=document.getElementById('atDate'); if(!d.value&&!atDateAll)d.value=todayIST();
+  try{const r=await fetch('/api/projects'); if(r.ok){PROJECTS=await r.json(); const cur=document.getElementById('atProj').value; document.getElementById('atProj').innerHTML='<option value="">All projects</option>'+PROJECTS.map(p=>`<option value="${esc(p.id)}">${esc(p.name)} (${esc(p.id)})</option>`).join(''); document.getElementById('atProj').value=cur;}}catch{}
+  const dd=document.getElementById('atDept'), cd=dd.value; dd.innerHTML='<option value="">All departments</option>'+DEPTS.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join(''); dd.value=cd; dd.style.display=DEPTS.length?'':'none';
+  loadAtt();
+}
+async function loadAtt(){
+  const d=atDateAll?'':document.getElementById('atDate').value;
+  const [r,sw]=await Promise.all([fetch('/api/attendance/ledger?x=1'+(d?'&date='+d:'')+locQS('&')),fetch('/api/sitewatch'+locQS()).catch(()=>null)]);
+  const data=await r.json(); if(!r.ok){toast('❌ '+(data.error||'Failed'));return;}
+  ATT=data;
+  let inside=0, staff=0; try{if(sw&&sw.ok){const t=(await sw.json()).totals; inside=t.inside; staff=t.staff;}}catch{}
+  window._atStats={inside,staff};
+  renderAtt();
+}
+function atFiltered(){
+  const q=document.getElementById('atQ').value.toLowerCase().trim(), pj=document.getElementById('atProj').value, dp=document.getElementById('atDept').value;
+  return ATT.filter(r=>(!pj||r.projectId===pj)&&(!dp||r.department===dp)&&(!q||[r.empName,r.empId,r.locationName,r.projectName].some(x=>String(x||'').toLowerCase().includes(q))));
+}
+function renderAtt(){
+  const rows=atFiltered(), st=window._atStats||{inside:0,staff:0};
+  const ot=rows.reduce((a,r)=>a+Math.max(0,hrsOf(r.totalHours)-8),0);
+  document.getElementById('atSites').textContent=(LOCS.length||0)+' Sites';
+  const tile=(i,l,v,c)=>`<div class="stat-box"><div class="sl" style="margin-bottom:6px;">${i} ${l}</div><div class="sv ${c}">${v}</div></div>`;
+  document.getElementById('atStats').innerHTML=tile('🏢','Total Projects',PROJECTS.length,'b')+tile('👥','Total Workforce',st.staff,'b')+tile('✅','Present On-Site',st.inside,'g')+tile('⏱','Total Overtime (over 8h)',(Math.round(ot*10)/10)+'h','a');
+  document.getElementById('atCntFull').textContent=rows.length; document.getElementById('atCnt2').textContent='('+rows.length+' entries)';
+  document.getElementById('atFull').style.display=atMode==='full'?'':'none';
+  document.getElementById('atProjView').style.display=atMode==='proj'?'':'none';
+  const none='<div class="no-data" style="padding:40px;text-align:center;">🪖<br><b>No Attendance Records Found</b><br><small>Have employees scan the project QR code, or pick another date.</small></div>';
+  const line=(r,i,withProj)=>`<tr><td>${avHtml(r.empName,i)}${esc(r.empName)}</td><td>${esc(r.empId)}</td>${withProj?`<td>${esc(r.projectName||'—')}</td>`:''}<td>${esc(r.locationName||'—')}</td><td>${esc(r.date)}</td><td>${esc(r.time||'—')}</td><td>${r.checkOut?esc(r.checkOut):(r.time?'<span style="color:var(--ok);font-weight:700;">● Working</span>':'—')}</td><td>${r.totalHours&&r.totalHours!=='N/A'?esc(r.totalHours):'—'}</td><td>${badgeHtml(r.status)}</td></tr>`;
+  if(atMode==='full'){
+    document.getElementById('atBody').innerHTML=rows.length?rows.map((r,i)=>line(r,i,true).replace(/<\/tr>$/,`<td style="white-space:nowrap;"><button class="edit-btn edit-gate" onclick="openEdit('${jsq(r.empId)}','${jsq(r.date)}','${jsq(r.empName)}','${jsq(r.time||'')}','${jsq(r.checkOut||'')}','${jsq(r.shift||'G')}')">✏️ Edit</button></td></tr>`)).join(''):`<tr><td colspan="10">${none}</td></tr>`;
+    applyEditMode();
+  }else{
+    const g={}; rows.forEach(r=>{const k=r.projectId||'-';(g[k]=g[k]||{id:r.projectId,name:r.projectName||'No project',rows:[]}).rows.push(r);});
+    const list=Object.values(g);
+    document.getElementById('atProjView').innerHTML=list.length?list.map(x=>{
+      const working=x.rows.filter(r=>r.time&&!r.checkOut).length, hrs=x.rows.reduce((a,r)=>a+hrsOf(r.totalHours),0);
+      return `<div class="card"><div class="card-top"><h3>🏢 ${esc(x.name)} <small style="font-weight:400;color:var(--muted);">${esc(x.id||'')} · ${x.rows.length} records · ${working} working now · ${Math.round(hrs*10)/10}h total</small></h3>
+        <button class="btn btn-green" onclick="atExcel('${jsq(x.id||'all')}')">⬇ Excel</button></div>
+        <div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>Employee</th><th>EMP ID</th><th>Location</th><th>Date</th><th>In Time</th><th>Out Time</th><th>Working Hours</th><th>Status</th></tr></thead><tbody>${x.rows.map((r,i)=>line(r,i,false)).join('')}</tbody></table></div></div>`;
+    }).join(''):`<div class="card">${none}</div>`;
+  }
+}
+const atHead=['Employee Name','EMP ID','Project','Location','Department','Date','In Time','Out Time','Total Working Hours','Status'];
+const atLine=r=>[r.empName,r.empId,r.projectName||'—',r.locationName||'—',r.department||'—',r.date,r.time||'—',r.checkOut||'—',r.totalHours||'—',r.status];
+function atCsv(){parent!==window&&parent.__mwExportRows?parent.__mwExportRows('Attendance.csv',[atHead,...atFiltered().map(atLine)]):atDownload('Attendance.csv',[atHead,...atFiltered().map(atLine)]);}
+function atDownload(name,rows){const csv='\ufeff'+rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);}
+function atExcel(project){
+  const d=atDateAll?'all':(document.getElementById('atDate').value||'all');
+  if(window.parent!==window&&parent.__mwExportRows){ // demo: CSV (project-wise)
+    const rows=ATT.filter(r=>project==='all'||r.projectId===project).sort((a,b)=>String(a.projectName).localeCompare(String(b.projectName)));
+    parent.__mwExportRows('Attendance_'+(project==='all'?'All_Projects':project)+'_'+d+'.csv',[atHead,...rows.map(atLine)]); return;
+  }
+  location.href='/api/export/attendance?project='+encodeURIComponent(project)+'&date='+d+locQS('&');
+}
+
+
+// ── PROJECTS, GPS RADAR & SITE QR ──
+let SP={mode:'new',projId:'',locId:''}, PSPROJ=[];
+const rawFetch=(u,o)=>(window.parent!==window&&parent.fetch?parent.fetch(u,o):fetch(u,o));
+async function loadPsites(){
+  await loadStates(); await refreshLocs();
+  try{const r=await fetch('/api/projects'); PSPROJ=r.ok?await r.json():[];}catch{PSPROJ=[];}
+  renderPsites();
+}
+function renderPsites(){
+  document.getElementById('psActive').textContent=PSPROJ.length+' Active';
+  const el=document.getElementById('psList');
+  if(!PSPROJ.length){el.innerHTML='<div class="card"><div class="no-data" style="padding:40px;text-align:center;">🏗<br><b>No projects yet</b><br><small>Click “Add New Project Site” to create your first project and its QR poster.</small></div></div>';return;}
+  el.innerHTML=PSPROJ.map(pr=>{
+    const sites=LOCS.filter(l=>l.projectId===pr.id);
+    return `<div class="card"><div class="card-top" style="flex-wrap:wrap;gap:10px;">
+      <div><h3>🏢 ${esc(pr.name)} <span class="at-badge">${esc(pr.id)}</span></h3><div style="font-size:12px;color:var(--muted);margin-top:3px;">${pr.stateName?'<span class="sw-chip g">'+esc(pr.stateName)+' · '+esc(pr.stateCode)+'</span> ':''}${pr.client?'Client: '+esc(pr.client)+' · ':''}${sites.length} site(s)</div></div>
+      <div class="btn-gap"><button class="btn" onclick="openSiteModal('addsite','${jsq(pr.id)}')">＋ Add site / gate</button>${sites.length?'':`<button class="btn" style="color:var(--bad);" onclick="delProject('${jsq(pr.id)}')">🗑 Delete project</button>`}</div></div>
+      <div style="padding:0 22px 16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;">`+(sites.map(l=>`<div class="sw-card">
+        <div class="sw-top"><div class="sw-name">📍 ${esc(l.name)}</div><span class="sw-chip g">${l.radius} m radar</span></div>
+        <div style="font-size:12px;color:var(--muted);margin:8px 0;line-height:1.6;">${esc(l.address||'No address')}<br><span style="font-family:monospace;">${Number(l.lat).toFixed(5)}, ${Number(l.lng).toFixed(5)}</span></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;"><button class="btn btn-blue" onclick="openSiteModal('edit','${jsq(pr.id)}','${jsq(l.id)}')">🎯 Radar settings</button><button class="btn" onclick="showQRModal('${jsq(l.id)}')">▦ QR</button><button class="btn" onclick="printQR('${jsq(l.id)}')">🖨 Print</button></div></div>`).join('')||'<div style="color:var(--muted);font-size:12px;">No site yet — add a site to get a QR code.</div>')+`</div></div>`;
+  }).join('');
+}
+function openSiteAdd(){showPanel('psites',null); setTimeout(()=>openSiteModal('new'),150);}
+function openSiteModal(mode,projId,locId){
+  SP={mode,projId:projId||'',locId:locId||''};
+  const $=i=>document.getElementById(i), pr=PSPROJ.find(x=>x.id===projId), loc=LOCS.find(x=>x.id===locId);
+  $('spErr').textContent=''; $('spDel').style.display=mode==='edit'?'':'none';
+  $('spCodeF').style.display=mode==='addsite'?'none':''; $('spClientF').style.display=mode==='addsite'?'none':'';
+  $('spCode').disabled=mode==='edit'; $('spStateF').style.display=mode==='addsite'?'none':'';
+  $('spState').innerHTML='<option value="">— Select state —</option>'+STATES_L.map(x=>`<option value="${x.code}">${esc(x.name)} — ${x.code}</option>`).join(''); $('spState').value=''; $('spStateCode').textContent='—';
+  $('spName').parentElement.style.display=mode==='addsite'?'none':'';
+  const multi=mode==='addsite'||(mode==='edit'&&LOCS.filter(l=>l.projectId===projId).length>1);
+  $('spSiteNameF').style.display=multi?'':'none';
+  if(mode==='new'){ $('spTitle').textContent='Add New Project Site'; $('spSave').textContent='Create & Generate QR Poster';
+    ['spName','spCode','spClient','spAddr','spSiteName','spLat','spLng'].forEach(i=>$(i).value=''); $('spRad').value=250;
+  }else if(mode==='addsite'){ $('spTitle').textContent='Add site / gate to '+(pr?pr.name:projId); $('spSave').textContent='Add Site & Generate QR';
+    ['spSiteName','spAddr','spLat','spLng'].forEach(i=>$(i).value=''); $('spRad').value=250;
+  }else{ $('spTitle').textContent='GPS Radar & Site Perimeter Settings'; $('spSave').textContent='Update Radar';
+    $('spName').value=pr?pr.name:''; $('spCode').value=projId; $('spClient').value=pr&&pr.client||''; $('spState').value=pr&&pr.stateCode||''; $('spStateCode').textContent=pr&&pr.stateCode||'—'; $('spSiteName').value=loc?loc.name:''; $('spAddr').value=loc&&loc.address||''; $('spLat').value=loc?loc.lat:''; $('spLng').value=loc?loc.lng:''; $('spRad').value=loc?loc.radius:250; }
+  $('spRadV').textContent=$('spRad').value+' m';
+  $('siteOverlay').classList.add('open');
+}
+function spGps(){
+  const err=document.getElementById('spErr'); err.textContent='Getting GPS…';
+  if(!navigator.geolocation){err.textContent='❌ GPS is not available on this device.';return;}
+  navigator.geolocation.getCurrentPosition(pos=>{document.getElementById('spLat').value=pos.coords.latitude.toFixed(6); document.getElementById('spLng').value=pos.coords.longitude.toFixed(6); err.textContent=''; toast('📍 GPS captured (±'+Math.round(pos.coords.accuracy)+' m)');},
+    e=>{err.textContent='❌ Could not get GPS: '+(e.message||'permission denied')+'. Enter the coordinates manually.';},{enableHighAccuracy:true,timeout:20000,maximumAge:0});
+}
+async function spIp(){
+  const err=document.getElementById('spErr'); err.textContent='Looking up network location…';
+  try{const r=await rawFetch('https://ipapi.co/json/'); const d=await r.json(); if(!d.latitude)throw 0; document.getElementById('spLat').value=Number(d.latitude).toFixed(6); document.getElementById('spLng').value=Number(d.longitude).toFixed(6); err.textContent='Approximate (city-level) location — use Device GPS for the exact gate.';}
+  catch{err.textContent='❌ Network location is unavailable. Use Device GPS or enter coordinates.';}
+}
+async function spAddr(){
+  const lat=document.getElementById('spLat').value, lng=document.getElementById('spLng').value, err=document.getElementById('spErr');
+  if(!lat||!lng){err.textContent='Capture GPS first (Get Device GPS), then auto-fill the address.';return;}
+  try{const r=await rawFetch('https://nominatim.openstreetmap.org/reverse?format=json&lat='+encodeURIComponent(lat)+'&lon='+encodeURIComponent(lng)); const d=await r.json(); document.getElementById('spAddr').value=(d.display_name||lat+', '+lng).slice(0,200); err.textContent='';}
+  catch{document.getElementById('spAddr').value=lat+', '+lng; err.textContent='Address lookup unavailable — coordinates filled instead.';}
+}
+async function spSave(){
+  const $=i=>document.getElementById(i), err=$('spErr'); err.textContent='';
+  const lat=parseFloat($('spLat').value), lng=parseFloat($('spLng').value), radius=parseInt($('spRad').value), address=$('spAddr').value.trim();
+  if(!isFinite(lat)||!isFinite(lng)){err.textContent='❌ Enter the latitude and longitude, or tap Get Device GPS.';return;}
+  const btn=$('spSave'); btn.disabled=true;
+  try{
+    if(SP.mode==='new'){
+      const name=$('spName').value.trim(); if(!name){err.textContent='❌ Project name is required.';return;}
+      const id=($('spCode').value.trim()||('PRJ-'+String(Math.floor(100000+Math.random()*900000)))).toUpperCase();
+      const pr=await jpost('/api/projects',{id,name,client:$('spClient').value.trim(),stateCode:$('spState').value}); if(!pr.ok){err.textContent='❌ '+pr.d.error;return;}
+      const lr=await jpost('/api/locations',{projectId:id,name,lat,lng,radius,address});
+      if(!lr.ok){await fetch('/api/projects/'+encodeURIComponent(id),{method:'DELETE'}); err.textContent='❌ '+lr.d.error;return;}
+      closeOverlay('siteOverlay'); toast('✅ Project '+id+' created'); await loadPsites(); loadQR();
+      if(lr.d.qr)openQRModal(name,name,lr.d.qr,lr.d.url); return;
+    }
+    if(SP.mode==='addsite'){
+      const name=$('spSiteName').value.trim(); if(!name){err.textContent='❌ Site / gate name is required.';return;}
+      const lr=await jpost('/api/locations',{projectId:SP.projId,name,lat,lng,radius,address}); if(!lr.ok){err.textContent='❌ '+lr.d.error;return;}
+      closeOverlay('siteOverlay'); toast('✅ Site added'); await loadPsites(); loadQR(); if(lr.d.qr)openQRModal(name,'',lr.d.qr,lr.d.url); return;
+    }
+    const pr=PSPROJ.find(x=>x.id===SP.projId), loc=LOCS.find(x=>x.id===SP.locId);
+    const pname=$('spName').value.trim(); if(!pname){err.textContent='❌ Project name is required.';return;}
+    const solo=LOCS.filter(l=>l.projectId===SP.projId).length<=1;
+    const siteName=solo?pname:($('spSiteName').value.trim()||loc.name);
+    const a=await jpost('/api/projects/'+encodeURIComponent(SP.projId)+'/update',{name:pname,client:$('spClient').value.trim(),stateCode:$('spState').value}); if(!a.ok){err.textContent='❌ '+a.d.error;return;}
+    const b=await jpost('/api/locations/'+encodeURIComponent(SP.locId)+'/update',{projectId:SP.projId,name:siteName,lat,lng,radius,address}); if(!b.ok){err.textContent='❌ '+b.d.error;return;}
+    closeOverlay('siteOverlay'); toast('✅ Radar updated — new perimeter is live'); await loadPsites(); loadQR();
+  }finally{btn.disabled=false;}
+}
+async function spDelete(){
+  const loc=LOCS.find(x=>x.id===SP.locId); if(!loc)return;
+  if(!confirm('Delete site "'+loc.name+'"? Its QR code will stop working.'))return;
+  const r=await fetch('/api/locations/'+encodeURIComponent(SP.locId),{method:'DELETE'}); const d=await r.json().catch(()=>({}));
+  if(!r.ok){document.getElementById('spErr').textContent='❌ '+(d.error||'Failed');return;}
+  closeOverlay('siteOverlay'); toast('🗑 Site deleted'); loadPsites(); loadQR();
+}
+async function delProject(id){
+  if(!confirm('Delete project '+id+'?'))return;
+  const r=await fetch('/api/projects/'+encodeURIComponent(id),{method:'DELETE'}); const d=await r.json().catch(()=>({}));
+  toast(r.ok?'🗑 Project deleted':'❌ '+(d.error||'Failed')); loadPsites();
+}
+
+
+// ── STATES & SITE MANAGERS ──
+let STATES_L=[], MGRS=[], editMgr=null;
+async function loadStates(){ if(STATES_L.length)return; try{const r=await fetch('/api/states'); if(r.ok)STATES_L=await r.json();}catch{} }
+async function loadManagers(){
+  await loadStates();
+  const r=await fetch('/api/managers'); const d=await r.json(); if(!r.ok){toast('❌ '+d.error);return;}
+  MGRS=d; document.getElementById('mgCnt').textContent=d.length;
+  document.getElementById('mgBody').innerHTML=d.length?d.map(m=>`<tr><td><b>${esc(m.id)}</b></td><td>${esc(m.name)}</td><td>${m.stateCodes.map((c,i)=>`<span class="sw-chip g" style="margin:2px;">${esc(m.states[i])} · ${esc(c)}</span>`).join('')}</td>
+    <td style="white-space:nowrap;"><button class="btn btn-blue" onclick="editMgrRow('${jsq(m.id)}')">✏️ Edit</button> <button class="btn" style="color:var(--bad);" onclick="delMgr('${jsq(m.id)}','${jsq(m.name)}')">🗑</button></td></tr>`).join(''):'<tr><td colspan="4" class="no-data">No Site Managers yet</td></tr>';
+  renderMgChips();
+}
+function mgCodes(){return document.getElementById('mgCodes').value.split(/[,\s]+/).map(x=>x.trim()).filter(Boolean);}
+function renderMgChips(){
+  const on=new Set(mgCodes());
+  document.getElementById('mgChips').innerHTML=STATES_L.map(s=>`<span class="sw-chip ${on.has(s.code)?'g':''}" style="cursor:pointer;${on.has(s.code)?'':'background:rgba(120,130,160,.15);'}" onclick="mgToggle('${s.code}')">${esc(s.name)} · ${s.code}${s.projects?' ('+s.projects+')':''}</span>`).join('');
+  document.getElementById('mgNames').textContent=mgCodes().map(c=>{const s=STATES_L.find(x=>x.code===c); return s?s.name:'⚠ '+c+' (unknown)';}).join(', ');
+}
+function mgSync(){renderMgChips();}
+function mgToggle(c){const a=mgCodes(); const i=a.indexOf(c); if(i>=0)a.splice(i,1); else a.push(c); document.getElementById('mgCodes').value=a.join(', '); renderMgChips();}
+function resetMgr(){editMgr=null; ['mgId','mgName','mgPwd','mgCodes'].forEach(i=>document.getElementById(i).value=''); document.getElementById('mgId').disabled=false; document.getElementById('mgErr').textContent=''; document.getElementById('mgFormTitle').textContent='🧭 Create Site Manager'; document.getElementById('mgPwdL').textContent='Password * (min 6 characters)'; renderMgChips();}
+function editMgrRow(id){const m=MGRS.find(x=>x.id===id); if(!m)return; editMgr=id; document.getElementById('mgId').value=m.id; document.getElementById('mgId').disabled=true; document.getElementById('mgName').value=m.name; document.getElementById('mgPwd').value=''; document.getElementById('mgCodes').value=m.stateCodes.join(', '); document.getElementById('mgFormTitle').textContent='✏️ Edit Site Manager: '+m.id; document.getElementById('mgPwdL').textContent='New password (leave blank to keep the current one)'; renderMgChips(); window.scrollTo({top:0,behavior:'smooth'});}
+async function saveMgr(){
+  const err=document.getElementById('mgErr'); err.textContent='';
+  const body={id:document.getElementById('mgId').value.trim(),name:document.getElementById('mgName').value.trim(),password:document.getElementById('mgPwd').value,stateCodes:mgCodes()};
+  const r=await jpost(editMgr?'/api/managers/'+encodeURIComponent(editMgr)+'/update':'/api/managers',body);
+  if(!r.ok){err.textContent='❌ '+r.d.error;return;}
+  toast(editMgr?'✅ Site Manager updated':'✅ Site Manager created'); resetMgr(); loadManagers();
+}
+async function delMgr(id,name){ if(!confirm('Delete Site Manager '+id+' ('+name+')?'))return; await fetch('/api/managers/'+encodeURIComponent(id),{method:'DELETE'}); toast('🗑 Deleted'); loadManagers(); }
+
+// ── TOP NAVIGATION ──
+const NAV=[
+  {id:'att',label:'📋 Attendance',panels:[['attendance','Attendance'],['monthly','Monthly Report'],['missed','Missed Punch-outs','salary']]},
+  {id:'watch',label:'📡 Site Watch',panels:[['sitewatch','Live Site Watch']]},
+  {id:'emp',label:'👥 Employees',panels:[['emp','Employees']]},
+  {id:'pay',label:'💰 Payroll',perm:'salary',panels:[['salary','Salary & Payslips'],['sset','Company & Salary Rules']]},
+  {id:'site',label:'🏗 Projects & Sites',panels:[['psites','Projects & Sites'],['qr','QR Codes'],['managers','Site Managers']]},
+  {id:'it',label:'🛠 IT Admin',it:true,panels:[['itools','IT Tools'],['admins','HR Logins'],['itusers','IT Users'],['bypass','Location Bypass'],['audit','Audit Log']]}
+];
+let CURP='day';
+function navGroups(){
+  if(userRole==='manager')return [{id:'att',label:'📋 Attendance',panels:[['attendance','Attendance'],['monthly','Monthly Report']]},{id:'watch',label:'📡 Site Watch',panels:[['sitewatch','Live Site Watch']]}];
+  return NAV.filter(g=>(!g.it||userRole==='it')&&(!g.perm||PERMS[g.perm])).map(g=>({...g,panels:g.panels.filter(x=>!x[2]||PERMS[x[2]])})).filter(g=>g.panels.length);}
+function renderTopNav(){
+  const nm=document.getElementById('sbName').textContent, rl=document.getElementById('sbRole').textContent;
+  document.getElementById('tnName').textContent=nm; document.getElementById('tnRole').textContent=rl;
+  document.getElementById('tnAv').textContent=(nm||'?').trim().split(/\s+/).map(x=>x[0]).join('').substring(0,2).toUpperCase();
+  document.getElementById('tnGroups').innerHTML=navGroups().map(g=>`<div class="tn-g" id="tg-${g.id}" onclick="showPanel('${g.panels[0][0]}',null)">${g.label}</div>`).join('');
+  syncNav(CURP);
+}
+function syncNav(p){
+  CURP=p;
+  const gs=navGroups(), g=gs.find(x=>x.panels.some(y=>y[0]===p));
+  document.querySelectorAll('.tn-g').forEach(x=>x.classList.toggle('on',!!g&&x.id==='tg-'+g.id));
+  const sub=document.getElementById('tnSub');
+  sub.innerHTML=g&&g.panels.length>1?g.panels.map(([id,l])=>`<div class="ts-i${id===p?' on':''}" onclick="showPanel('${id}',null)">${l}</div>`).join(''):'';
+  sub.style.display=sub.innerHTML?'flex':'none';
+}
+// ── SITE WATCH ──
+let WATCH=null, watchTimer=null;
+async function loadWatch(){
+  try{
+    const r=await fetch('/api/sitewatch'+locQS()); const d=await r.json();
+    if(!r.ok){toast('❌ '+(d.error||'Failed'));return;}
+    WATCH=d; document.getElementById('swAt').textContent='· updated '+new Date(d.at).toLocaleTimeString('en-IN',{timeZone:'Asia/Kolkata',hour:'2-digit',minute:'2-digit',second:'2-digit'})+' · auto-refresh 30s';
+    renderWatch();
+  }catch{}
+}
+function fmtSince(m){if(m==null)return '';return Math.floor(m/60)+'h '+String(m%60).padStart(2,'0')+'m';}
+function renderWatch(){
+  if(!WATCH)return;
+  const t=WATCH.totals;
+  document.getElementById('swTotals').innerHTML=[['b',t.sites,'Sites'],['b',t.staff,'Total staff'],['g',t.inside,'Working now'],['a',t.left,'Punched out'],['r',t.absent,'Not arrived'],['a',t.late,'Late']].map(([c,v,l])=>`<div class="stat-box"><div class="sv ${c}">${v}</div><div class="sl">${l}</div></div>`).join('');
+  const q=document.getElementById('swQ').value.toLowerCase().trim(), f=document.getElementById('swF').value;
+  let sites=WATCH.sites.filter(s=>f==='inside'?s.inside>0:f==='empty'?s.inside===0:true);
+  if(q)sites=sites.filter(s=>s.people.some(p=>p.name.toLowerCase().includes(q)||p.id.toLowerCase().includes(q)));
+  const groups={}; sites.forEach(s=>{(groups[s.projectName||'Other']=groups[s.projectName||'Other']||[]).push(s);});
+  const chip=(st)=>({inside:'<span class="sw-chip g">Working</span>',left:'<span class="sw-chip a">Out</span>',absent:'<span class="sw-chip r">Not in</span>'}[st]);
+  document.getElementById('swBody').innerHTML=sites.length?Object.entries(groups).map(([pn,list])=>{
+    const pin=list.reduce((a,s)=>a+s.inside,0), pas=list.reduce((a,s)=>a+s.assigned,0);
+    return `<div class="sw-proj"><div class="sw-ph"><b>${esc(pn)}</b><span>${list.length} site(s) · <b style="color:var(--ok)">${pin}</b> working now · ${pas} assigned</span></div><div class="sw-grid">`+list.map(s=>{
+      const pct=s.assigned?Math.min(100,Math.round(s.inside*100/s.assigned)):0;
+      const ppl=s.people.filter(p=>!q||p.name.toLowerCase().includes(q)||p.id.toLowerCase().includes(q));
+      const open=!!q;
+      return `<div class="sw-card"><div class="sw-top"><div class="sw-name">📍 ${esc(s.name)}</div><div class="sw-live ${s.inside?'on':''}"><span></span>${s.inside?'LIVE':'EMPTY'}</div></div>
+        <div class="sw-big"><b>${s.inside}</b><small> working now</small></div>
+        <div class="sw-bar"><i style="width:${pct}%"></i></div>
+        <div class="sw-stats"><div><b>${s.assigned}</b>Assigned</div><div><b>${s.left}</b>Out</div><div><b style="color:var(--bad)">${s.absent}</b>Not in</div><div><b style="color:#B26A00">${s.late}</b>Late</div></div>
+        <details ${open?'open':''}><summary>View staff (${s.people.length})</summary><div class="sw-list">`+(ppl.length?ppl.sort((a,b)=>({inside:0,left:1,absent:2}[a.status]-{inside:0,left:1,absent:2}[b.status])||a.name.localeCompare(b.name)).map(p=>`<div class="sw-row"><div><b>${esc(p.name)}</b> <small>${esc(p.id)}${p.designation?' · '+esc(p.designation):''}${p.department?' · '+esc(p.department):''}</small></div><div style="text-align:right;">${chip(p.status)}${p.late?' <span class="sw-chip a">Late</span>':''}<br><small>${p.in?esc(p.in):''}${p.out?' → '+esc(p.out):''}${p.status==='inside'?' · '+fmtSince(p.since):''}</small></div></div>`).join(''):'<div style="color:var(--muted);padding:6px;">No staff</div>')+`</div></details></div>`;
+    }).join('')+'</div></div>';
+  }).join(''):'<div class="no-data" style="padding:30px;">No sites match.</div>';
+}
+
+// ── PERMISSIONS ──
+function applyPerms(){
+  PERMS=(ME&&ME.perms)||{};
+  const pg=document.getElementById('adminPage');
+  pg.classList.toggle('can-edit',!!PERMS.editPunch);
+  document.querySelectorAll('.perm-nav').forEach(n=>n.style.display=PERMS[n.dataset.perm]?'':'none');
+  document.querySelectorAll('.perm-salary-f').forEach(n=>n.style.display=PERMS.salary?'':'none');
+  document.querySelectorAll('.perm-docs-f').forEach(n=>n.style.display=PERMS.docs?'':'none');
+  loadMissedCount(); renderTopNav();
+}
+// ── REASON PROMPT ──
+let _rsRes=null;
+function askReason(title){
+  document.getElementById('rsTitle').textContent=title||'Reason'; document.getElementById('rsText').value=''; document.getElementById('rsErr').textContent='';
+  document.getElementById('reasonOverlay').classList.add('open');
+  setTimeout(()=>document.getElementById('rsText').focus(),50);
+  return new Promise(r=>{_rsRes=r;});
+}
+function reasonDone(v){
+  if(v!==null&&v.trim().length<3){document.getElementById('rsErr').textContent='❌ Please enter at least 3 characters.';return;}
+  closeOverlay('reasonOverlay'); const r=_rsRes; _rsRes=null; if(r)r(v===null?null:v.trim());
+}
+const jpost=(u,b)=>fetch(u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b||{})}).then(async r=>({ok:r.ok,status:r.status,d:await r.json().catch(()=>({}))}));
+const money=n=>'₹'+Number(n||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+// ── DOCUMENTS ──
+function docUrl(id,dl){if(window.parent!==window&&parent.__mwDocUrl)return parent.__mwDocUrl(id,dl);return '/api/documents/'+encodeURIComponent(id)+'/file'+(dl?'?download=1':'');}
+async function loadDocs(){
+  const el=document.getElementById('eeDocs'); el.innerHTML='Loading…';
+  try{
+    const r=await fetch('/api/employees/'+encodeURIComponent(editEmpId)+'/documents'); const d=await r.json();
+    if(!r.ok){el.textContent=d.error||'';return;}
+    el.innerHTML=d.length?d.map(x=>`<div style="display:flex;gap:8px;align-items:center;padding:4px 0;border-bottom:1px solid var(--border);">
+      <b style="min-width:70px;text-transform:capitalize;">${esc(x.type)}</b><span style="flex:1;overflow:hidden;text-overflow:ellipsis;">${esc(x.fileName)} · ${(x.size/1024).toFixed(0)} KB</span>
+      <a href="${docUrl(x.id)}" target="_blank">View</a><a href="${docUrl(x.id,1)}">Download</a>
+      <a href="#" onclick="replaceDoc('${jsq(x.id)}','${jsq(x.type)}');return false;">Replace</a>
+      <a href="#" style="color:var(--bad);" onclick="delDoc('${jsq(x.id)}');return false;">Delete</a></div>`).join(''):'<span style="color:var(--muted);">No documents yet.</span>';
+  }catch{el.textContent='Could not load documents';}
+}
+async function uploadCore(empId,file,type,replaceOf){
+  if(!file)return {ok:false,error:'Choose a file first.'};
+  if(file.size>5*1024*1024)return {ok:false,error:'File must be 5 MB or smaller.'};
+  const i=await jpost('/api/employees/'+encodeURIComponent(empId)+'/documents/init',{type,fileName:file.name,mime:file.type,size:file.size,replaceOf});
+  if(!i.ok)return {ok:false,error:i.d.error||'Failed'};
+  let up;
+  if(window.parent!==window&&parent.__mwUpload){up=await parent.__mwUpload(i.d.docId,file);}
+  else{
+    let body=file, hdr={'Content-Type':file.type};
+    if(i.d.mode==='supabase'){body=new FormData();body.append('cacheControl','3600');body.append('',file);hdr={};}
+    up=await fetch(i.d.uploadUrl,{method:'PUT',headers:hdr,body}).then(async r=>({ok:r.ok,d:await r.json().catch(()=>({}))}));
+  }
+  if(!up.ok)return {ok:false,error:(up.d&&up.d.error)||'Upload failed'};
+  const c=await jpost('/api/documents/'+encodeURIComponent(i.d.docId)+'/complete');
+  if(!c.ok)return {ok:false,error:c.d.error||'Failed'};
+  return {ok:true};
+}
+async function doUpload(file,type,replaceOf){
+  const msg=document.getElementById('docMsg'); msg.textContent='Uploading…';
+  const r=await uploadCore(editEmpId,file,type,replaceOf);
+  if(!r.ok){msg.textContent='❌ '+r.error;return;}
+  msg.textContent='✅ Uploaded.'; document.getElementById('docFile').value=''; loadDocs(); if(type==='photo')loadEmp();
+}
+function uploadDoc(){doUpload(document.getElementById('docFile').files[0],document.getElementById('docType').value);}
+function replaceDoc(id,type){
+  const inp=document.createElement('input'); inp.type='file'; inp.accept='application/pdf,image/jpeg,image/png';
+  inp.onchange=()=>doUpload(inp.files[0],type,id); inp.click();
+}
+async function delDoc(id){
+  if(!confirm('Delete this document?'))return;
+  const r=await fetch('/api/documents/'+encodeURIComponent(id),{method:'DELETE'}); const d=await r.json().catch(()=>({}));
+  toast(r.ok?'🗑 Document deleted':'❌ '+(d.error||'Failed')); loadDocs(); loadEmp();
+}
+
+
+// ── EMPLOYEE PROFILE ──
+let pfId=null;
+const DOC_LABELS=[['photo','📷 Photo'],['aadhaar','🪪 Aadhaar'],['pan','💳 PAN'],['bank','🏦 Bank details'],['offer','📄 Offer letter'],['appointment','📃 Appointment letter'],['experience','🎓 Experience letter'],['relieving','📤 Relieving letter'],['other','📎 Other']];
+async function openProfile(id){
+  const e=EMPS.find(x=>x.id===id); if(!e)return;
+  pfId=id;
+  const init=e.name.split(' ').map(x=>x[0]).join('').substring(0,2).toUpperCase();
+  document.getElementById('pfPhoto').innerHTML=e.photoDocId?`<img src="${docUrl(e.photoDocId)}" style="width:100%;height:100%;object-fit:cover;" alt=""/>`:init;
+  document.getElementById('pfName').textContent=e.name+' ('+e.id+')';
+  document.getElementById('pfSub').innerHTML=esc(e.designation||'No designation')+(e.active===false?' · <b style="color:var(--bad)">INACTIVE</b>':' · Active');
+  const row=(k,v)=>`<div style="background:rgba(120,130,160,.12);border-radius:10px;padding:8px 10px;"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;">${k}</div><div style="font-weight:700;word-break:break-word;">${v||'—'}</div></div>`;
+  document.getElementById('pfInfo').innerHTML=row('Mobile',esc(e.mobile))+row('Department',esc(e.department))+row('Location',esc(e.locationName))+row('Joining date',esc(e.joiningDate))+(PERMS.salary?row('Monthly salary',e.monthlySalary?money(e.monthlySalary):'—'):'');
+  document.getElementById('pfSalBtn').style.display=PERMS.salary?'':'none';
+  document.getElementById('pfMsg').textContent='';
+  document.getElementById('profOverlay').classList.add('open');
+  renderPfDocs(); renderPfSlips();
+}
+async function renderPfSlips(){
+  const w=document.getElementById('pfSlipsWrap'); w.style.display=PERMS.salary?'':'none'; if(!PERMS.salary)return;
+  try{const r=await fetch('/api/payslips?empId='+encodeURIComponent(pfId)); const d=await r.json(); if(!r.ok)return;
+    d.sort((a,b)=>b.month.localeCompare(a.month));
+    document.getElementById('pfSlips').innerHTML=d.length?d.map(x=>`<div style="display:flex;gap:10px;align-items:center;padding:4px 0;border-bottom:1px solid var(--border);"><b style="min-width:80px;">${esc(x.month)}</b><span style="flex:1;">${esc(x.id)} · ${money(x.net)} · ${x.finalized?'🔒 Final':'Draft v'+x.version}</span><a href="#" onclick="slipPdf('${jsq(x.id)}');return false;">PDF</a></div>`).join(''):'<span style="color:var(--muted);">No payslips yet. Create them from Salary &amp; Payslips.</span>';
+  }catch{}
+}
+async function renderPfDocs(){
+  const el=document.getElementById('pfDocs'); el.innerHTML='Loading…';
+  let list=[]; try{const r=await fetch('/api/employees/'+encodeURIComponent(pfId)+'/documents'); const d=await r.json(); if(!r.ok){el.textContent=d.error||'';return;} list=d;}catch{el.textContent='Could not load documents';return;}
+  el.innerHTML=DOC_LABELS.filter(([t])=>PERMS.docs||t==='photo').map(([t,l])=>{
+    const mine=list.filter(x=>x.type===t);
+    return `<div style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);flex-wrap:wrap;">
+      <div style="min-width:130px;font-weight:700;">${l} ${mine.length?'<span style="color:var(--ok)">✅</span>':'<span style="color:var(--muted);font-weight:400;font-size:11px;">missing</span>'}</div>
+      <div style="flex:1;min-width:160px;font-size:12px;">${mine.map(x=>`<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><span style="overflow:hidden;text-overflow:ellipsis;max-width:220px;">${esc(x.fileName)} · ${(x.size/1024).toFixed(0)} KB</span>
+        <a href="${docUrl(x.id)}" target="_blank">View</a><a href="${docUrl(x.id,1)}" download="${esc(x.fileName)}">Download</a>
+        <a href="#" onclick="pfPick('${t}','${jsq(x.id)}');return false;">Replace</a><a href="#" style="color:var(--bad);" onclick="pfDel('${jsq(x.id)}');return false;">Delete</a></div>`).join('')||'<span style="color:var(--muted);">Nothing uploaded</span>'}</div>
+      <button class="btn btn-orange" style="padding:6px 12px;font-size:11px;" onclick="pfPick('${t}')">⬆ ${mine.length&&t!=='other'?'Upload new':'Upload'}</button></div>`;
+  }).join('');
+}
+function pfPick(type,replaceOf){
+  const inp=document.getElementById('pfFile'); inp.value='';
+  inp.onchange=async()=>{
+    const msg=document.getElementById('pfMsg'); msg.style.color=''; msg.textContent='Uploading…';
+    const r=await uploadCore(pfId,inp.files[0],type,replaceOf);
+    msg.style.color=r.ok?'var(--ok)':'var(--bad)'; msg.textContent=r.ok?'✅ Uploaded.':'❌ '+r.error;
+    if(r.ok){renderPfDocs(); if(type==='photo'){await loadEmp(); openProfileKeep();}}
+  };
+  inp.click();
+}
+async function openProfileKeep(){const e=EMPS.find(x=>x.id===pfId); if(e){document.getElementById('pfPhoto').innerHTML=e.photoDocId?`<img src="${docUrl(e.photoDocId)}" style="width:100%;height:100%;object-fit:cover;" alt=""/>`:'';}}
+async function pfDel(id){
+  if(!confirm('Delete this document?'))return;
+  const r=await fetch('/api/documents/'+encodeURIComponent(id),{method:'DELETE'}); const d=await r.json().catch(()=>({}));
+  toast(r.ok?'🗑 Document deleted':'❌ '+(d.error||'Failed')); renderPfDocs(); loadEmp();
+}
+function pfEdit(){closeOverlay('profOverlay'); openEmpEdit(pfId);}
+async function pfSalary(){
+  closeOverlay('profOverlay');
+  showPanel('salary',document.getElementById('nav-salary'));
+  await new Promise(r=>setTimeout(r,500)); openSal(pfId);
+}
+
+// ── MISSED PUNCH-OUTS ──
+async function loadMissedCount(){
+  try{const r=await fetch('/api/reports/missed'+locQS()); if(r.ok){const d=await r.json(); document.getElementById('sI').textContent=d.length;}}catch{}
+}
+async function loadMissed(){
+  const r=await fetch('/api/reports/missed'+locQS()); const d=await r.json();
+  if(!r.ok){toast('❌ '+d.error);return;}
+  document.getElementById('msCnt').textContent=d.length; document.getElementById('sI').textContent=d.length;
+  document.getElementById('msBody').innerHTML=d.length?d.map(x=>`<tr><td>${esc(x.date)}</td><td>${esc(x.name)}</td><td>${esc(x.empId)}</td><td>${esc(x.department||'—')}</td><td>${esc(x.checkIn||'—')}</td>
+    <td>${PERMS.editPunch?`<button class="btn btn-blue" onclick="openEdit('${jsq(x.empId)}','${jsq(x.date)}','${jsq(x.name)}','${jsq(x.checkIn||'')}','','${jsq(x.shift||'G')}')">✏️ Add punch-out</button>`:''}</td></tr>`).join(''):'<tr><td colspan="6" class="no-data">No missed punch-outs 🎉</td></tr>';
+}
+
+// ── SALARY ──
+let SAL=null;
+function initSalary(){
+  const m=document.getElementById('salMonth'); if(!m.value)m.value=new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kolkata'}).slice(0,7);
+  loadSalary();
+}
+async function loadSalary(){
+  const m=document.getElementById('salMonth').value; if(!m)return;
+  const r=await fetch('/api/salary/month?month='+m+locQS('&')); const d=await r.json();
+  if(!r.ok){toast('❌ '+d.error);return;}
+  SAL=d; renderSalary();
+}
+function renderSalary(){
+  if(!SAL)return;
+  const q=document.getElementById('salQ').value.toLowerCase();
+  const rows=SAL.rows.filter(x=>!q||x.name.toLowerCase().includes(q)||x.empId.toLowerCase().includes(q));
+  document.getElementById('salNote').textContent=`Per-day salary = monthly ÷ ${SAL.settings.daysMode==='fixed30'?'30':'days in month'} · Half day if under ${SAL.settings.halfDayBelowHours} h · Employees without a salary are not listed.`;
+  document.getElementById('salBody').innerHTML=rows.length?rows.map(x=>`<tr>
+    <td><b>${esc(x.name)}</b><br><small>${esc(x.empId)}${x.designation?' · '+esc(x.designation):''}</small></td>
+    <td>${money(x.monthly)}</td><td>${x.counts.present} / ${x.counts.half} / ${x.counts.absent}</td>
+    <td>${x.hasIncomplete?`<span style="color:var(--bad);font-weight:800;">${x.counts.incomplete} ⚠️</span>`:'0'}</td>
+    <td>${x.earnedDays}</td><td>${x.advance?money(x.advance):'—'}</td><td><b>${money(x.net)}</b></td>
+    <td>${x.slip?(x.slip.finalized?'🔒 Final':'Draft v'+x.slip.version)+'<br><small>'+esc(x.slip.id)+'</small>':'—'}</td>
+    <td><button class="btn btn-blue" onclick="openSal('${jsq(x.empId)}')">View</button></td></tr>`).join(''):'<tr><td colspan="9" class="no-data">No employees with a salary set. Add a monthly salary in the Employees tab.</td></tr>';
+}
+async function slipBulk(kind){
+  const m=document.getElementById('salMonth').value;
+  if(kind==='finalize'&&!confirm('Finalize '+m+' for every listed employee? Attendance and advances for this month will be locked.'))return;
+  const r=await jpost('/api/payslips/'+kind,{month:m});
+  if(!r.ok){toast('❌ '+(r.d.error||'Failed'));return;}
+  if(kind==='finalize')toast(`🔒 Finalized ${r.d.finalized}`+(r.d.blocked.length?` · ${r.d.blocked.length} blocked (incomplete days or month not over)`:''));
+  else toast(`✅ Generated ${r.d.made}`+(r.d.skipped?` · ${r.d.skipped} locked, skipped`:''));
+  loadSalary();
+}
+let SD=null;
+async function openSal(id){
+  const m=document.getElementById('salMonth').value;
+  const r=await fetch('/api/salary/employee/'+encodeURIComponent(id)+'?month='+m); const d=await r.json();
+  if(!r.ok){toast('❌ '+d.error);return;}
+  SD=d; renderSal(); document.getElementById('salOverlay').classList.add('open');
+}
+function renderSal(){
+  const {employee:e,calc:c,advances,slip}=SD, fin=slip&&slip.finalized;
+  document.getElementById('sdTitle').textContent=`${e.name} (${e.id}) — ${c.month}`;
+  const tile=(k,v)=>`<div style="background:var(--bg,#eef0f4);padding:8px 12px;border-radius:10px;min-width:110px;"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;">${k}</div><div style="font-weight:800;">${v}</div></div>`;
+  document.getElementById('sdSum').innerHTML=tile('Per day',money(c.perDay))+tile('Present / Half / Absent',`${c.counts.present} / ${c.counts.half} / ${c.counts.absent}`)+tile('Incomplete',c.counts.incomplete)+tile('Paid days',`${c.earnedDays} of ${c.basis}`)+tile('Gross',money(c.gross))+(c.overtime.pay?tile('Overtime',money(c.overtime.pay)):'')+(c.late.deduction?tile('Late deduction','-'+money(c.late.deduction)):'')+tile('Advance','-'+money(c.advance))+tile('Net pay',money(c.net));
+  const sid=slip&&slip.id;
+  document.getElementById('sdActions').innerHTML=
+    (fin?'':`<button class="btn btn-blue" onclick="slipOne('generate')">Generate payslip</button><button class="btn btn-green" onclick="slipOne('finalize')">🔒 Finalize</button>`)
+    +(sid?`<button class="btn" onclick="slipPdf('${jsq(sid)}')">⬇ PDF (${fin?'Final':'Draft'} v${slip.version})</button><button class="btn" onclick="slipShare('${jsq(sid)}')">📤 Share</button>`:'')
+    +(fin?`<button class="btn" style="color:var(--bad);" onclick="slipUnlock()">🔓 Unlock</button>`:'')
+    +(fin?'<span style="font-size:12px;color:var(--muted);align-self:center;">Locked — attendance and advances cannot be changed.</span>':'');
+  document.getElementById('sdAdv').innerHTML=`<b style="font-size:12px;">Advances / deductions</b> `+advances.map(a=>`<span style="display:inline-flex;gap:6px;align-items:center;background:#FFF3E6;border-radius:8px;padding:3px 8px;margin:2px;font-size:12px;">${money(a.amount)} ${esc(a.note||'')}${fin?'':` <a href="#" style="color:var(--bad);" onclick="delAdv('${jsq(a.id)}');return false;">✕</a>`}</span>`).join('')
+    +(fin?'':` <span style="display:inline-flex;gap:4px;"><input id="advAmt" type="number" min="1" placeholder="Amount" style="width:90px;"/><input id="advNote" type="text" placeholder="Note" style="width:120px;"/><button class="btn" onclick="addAdv()">Add</button></span>`);
+  const DN=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'], col={present:'var(--ok)',half:'#B26A00',absent:'var(--bad)',incomplete:'var(--bad)',off:'var(--muted)',holiday:'var(--info)'};
+  document.getElementById('sdBody').innerHTML=c.days.map(x=>{const dim=x.status==='future'||x.status==='prejoin';return `<tr style="${dim?'opacity:.45':''}"><td>${x.date}</td><td>${DN[x.dow]}</td><td style="color:${col[x.status]||'inherit'};font-weight:700;">${esc(x.label)}</td><td>${esc(x.in||'')}</td><td>${esc(x.out||'')}</td><td>${x.hours==null?'':Math.floor(x.hours)+'h '+String(Math.round((x.hours%1)*60)).padStart(2,'0')+'m'}</td><td>${x.credit==null?'':x.credit}</td><td>${x.credit==null?'':money(x.amount)}</td><td>${dim?'':money(x.running)}</td></tr>`}).join('');
+}
+async function reloadSal(){const id=SD.employee.id; await openSal(id); loadSalary();}
+async function addAdv(){
+  const amount=Number(document.getElementById('advAmt').value), note=document.getElementById('advNote').value;
+  if(!(amount>0)){toast('❌ Enter an amount');return;}
+  const r=await jpost('/api/salary/advance',{empId:SD.employee.id,month:SD.calc.month,amount,note});
+  if(!r.ok){toast('❌ '+r.d.error);return;} reloadSal();
+}
+async function delAdv(id){const r=await fetch('/api/salary/advance/'+encodeURIComponent(id),{method:'DELETE'}); const d=await r.json(); if(!r.ok)toast('❌ '+d.error); reloadSal();}
+async function slipOne(kind){
+  const r=await jpost('/api/payslips/'+kind,{month:SD.calc.month,empId:SD.employee.id});
+  if(!r.ok){toast('❌ '+(r.d.error||'Failed'));return;} toast(kind==='finalize'?'🔒 Finalized':'✅ Payslip generated'); reloadSal();
+}
+async function slipUnlock(){
+  const reason=await askReason('Unlock finalized month'); if(!reason)return;
+  const r=await jpost('/api/payslips/unlock',{month:SD.calc.month,empId:SD.employee.id,reason});
+  if(!r.ok){toast('❌ '+r.d.error);return;} toast('🔓 Unlocked'); reloadSal();
+}
+function slipPdf(id){
+  if(window.parent!==window&&parent.__mwPayslip){parent.__mwPayslip(id);return;}
+  window.open('/api/payslips/'+encodeURIComponent(id)+'/pdf','_blank');
+}
+async function slipShare(id){
+  const r=await jpost('/api/payslips/'+encodeURIComponent(id)+'/share');
+  if(!r.ok){toast('❌ '+(r.d.error||'Failed'));return;}
+  const w=window.open(r.d.whatsapp,'_blank');
+  try{navigator.clipboard.writeText(r.d.url);}catch{}
+  toast('📤 Link copied (valid 7 days) and WhatsApp opened.');
+}
+
+// ── COMPANY & SALARY RULES (IT) ──
+let SSLOGO=undefined;
+async function loadSset(){
+  const r=await fetch('/api/salary/settings'); const s=await r.json(); if(!r.ok){toast('❌ '+s.error);return;}
+  const $=i=>document.getElementById(i);
+  $('ssName').value=s.companyName; $('ssAddr').value=s.companyAddress||''; $('ssMode').value=s.daysMode; $('ssHalf').value=s.halfDayBelowHours;
+  $('ssOff').innerHTML=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map((n,i)=>`<label><input type="checkbox" class="ssOffD" value="${i}"${s.weeklyOffDays.includes(i)?' checked':''}/> ${n}</label>`).join('');
+  $('ssOffPaid').checked=s.weeklyOffPaid; $('ssHol').value=s.holidays.map(h=>h.date+' '+h.name).join('\n');
+  $('ssOt').checked=s.overtimeEnabled; $('ssOtAfter').value=s.overtimeAfterHours; $('ssOtBasis').value=s.overtimeHourlyBasis; $('ssOtRate').value=s.overtimeRate;
+  $('ssLate').checked=s.lateDeductionEnabled; $('ssLateFree').value=s.lateFreePerMonth; $('ssLateCut').value=s.lateDeductionDays;
+  SSLOGO=undefined; $('ssLogoNote').textContent=s.logo?'A logo is set. Choose a file to replace it.':'No logo.';
+  $('ssLogo').onchange=()=>{const f=$('ssLogo').files[0]; if(!f)return; const fr=new FileReader(); fr.onload=()=>{SSLOGO=fr.result;$('ssLogoNote').textContent='New logo ready — click Save.';}; fr.readAsDataURL(f);};
+}
+async function saveSset(){
+  const $=i=>document.getElementById(i);
+  const holidays=$('ssHol').value.split('\n').map(l=>l.trim()).filter(Boolean).map(l=>({date:l.slice(0,10),name:l.slice(11).trim()||'Holiday'}));
+  const b={companyName:$('ssName').value,companyAddress:$('ssAddr').value,daysMode:$('ssMode').value,halfDayBelowHours:$('ssHalf').value,weeklyOffDays:[...document.querySelectorAll('.ssOffD:checked')].map(x=>Number(x.value)),weeklyOffPaid:$('ssOffPaid').checked,holidays,
+    overtimeEnabled:$('ssOt').checked,overtimeAfterHours:$('ssOtAfter').value,overtimeHourlyBasis:$('ssOtBasis').value,overtimeRate:$('ssOtRate').value,lateDeductionEnabled:$('ssLate').checked,lateFreePerMonth:$('ssLateFree').value,lateDeductionDays:$('ssLateCut').value};
+  if(SSLOGO!==undefined)b.logo=SSLOGO;
+  const r=await jpost('/api/salary/settings',b);
+  $('ssErr').textContent=r.ok?'':'❌ '+r.d.error; if(r.ok)toast('✅ Settings saved');
+}
+// ── AUDIT LOG (IT) ──
+async function loadAudit(){
+  const r=await fetch('/api/audit?limit=200'); const d=await r.json(); if(!r.ok){toast('❌ '+d.error);return;}
+  document.getElementById('auBody').innerHTML=d.length?d.map(a=>`<tr><td style="white-space:nowrap;">${new Date(a.at).toLocaleString('en-IN',{timeZone:'Asia/Kolkata'})}</td><td>${esc(a.byId||'')}</td><td><b>${esc(a.action)}</b></td><td>${esc(a.target||'')}</td><td>${esc(a.reason||'')}</td><td style="font-size:11px;max-width:320px;word-break:break-all;">${esc(a.details?JSON.stringify(a.details):'')}</td></tr>`).join(''):'<tr><td colspan="6" class="no-data">No entries yet</td></tr>';
+}
+
+// ── SESSION / LOCATION FILTER ──
+let ME=null, LOCS=[], PERMS={};
+const locQS=(pre='?')=>{
+  const l=document.getElementById('locFilter').value, p=document.getElementById('projFilter').value, d=document.getElementById('deptFilter').value;
+  const parts=[];
+  if(l&&l!=='all')parts.push('location='+encodeURIComponent(l));
+  else if(p&&p!=='all'){const ids=LOCS.filter(x=>x.projectId===p).map(x=>x.id); parts.push('location='+encodeURIComponent(ids.join(',')||'none'));}
+  if(d&&d!=='all')parts.push('department='+encodeURIComponent(d));
+  return parts.length?pre+parts.join('&'):'';
+};
+async function initSession(){
+  const r=await fetch('/api/me'); ME=await r.json();
+  await refreshLocs();
+}
+async function refreshLocs(){
+  try{const mr=await fetch('/api/me'); if(mr.ok)ME=await mr.json();}catch{}
+  const r=await fetch('/api/locations'); const all=await r.json();
+  LOCS=ME&&ME.scope!=='*'?all.filter(l=>ME.scope.includes(l.id)):all;
+  const pf=document.getElementById('projFilter'), curP=pf.value;
+  let projs=[]; try{const pr=await fetch('/api/projects'); if(pr.ok)projs=await pr.json();}catch{}
+  pf.innerHTML='<option value="all">📁 All Projects</option>'+projs.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('');
+  pf.value=projs.some(p=>p.id===curP)?curP:'all';
+  pf.style.display=(projs.length&&!(ME&&ME.project&&ME.project!=='ALL'))?'':'none';
+  fillLocFilter();
+  fillDeptFilter();
+}
+async function fillDeptFilter(){
+  let ds=[]; try{const r=await fetch('/api/departments'); if(r.ok)ds=await r.json();}catch{}
+  DEPTS=ds;
+  const f=document.getElementById('deptFilter'), cur=f.value;
+  f.innerHTML='<option value="all">🏢 All Departments</option>'+ds.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('');
+  f.value=ds.includes(cur)?cur:'all';
+  f.style.display=ds.length?'':'none';
+  const dl=document.getElementById('deptList'); if(dl)dl.innerHTML=ds.map(x=>`<option value="${esc(x)}">`).join('');
+}
+let DEPTS=[];
+function fillLocFilter(){
+  const f=document.getElementById('locFilter'), cur=f.value, p=document.getElementById('projFilter').value;
+  const list=p&&p!=='all'?LOCS.filter(l=>l.projectId===p):LOCS;
+  f.innerHTML='<option value="all">📍 All Locations</option>'+list.map(l=>`<option value="${esc(l.id)}">${esc(l.name)}</option>`).join('');
+  f.value=list.some(l=>l.id===cur)?cur:'all';
+  f.style.display=list.length>1?'':'none';
+}
+function applyProjFilter(){document.getElementById('locFilter').value='all';fillLocFilter();applyLocFilter();}
+function applyLocFilter(){
+  const on=document.querySelector('.panel.on');
+  if(on&&on.id){const p=on.id.replace('panel-','');if(['day','monthly','all','sitewatch','attendance'].includes(p))showPanel(p,null);}
+}
+function locOptions(sel,blank){return (blank?`<option value="">— No location —</option>`:'')+LOCS.map(l=>`<option value="${esc(l.id)}"${l.id===sel?' selected':''}>${esc(l.name)}</option>`).join('');}
+function fillLocSelect(el,blank){el.innerHTML=locOptions(LOCS.length===1?LOCS[0].id:'',blank);}
+let EMPS=[], editEmpId=null;
+function openEmpEdit(id){
+  const e=EMPS.find(x=>x.id===id); if(!e)return;
+  editEmpId=id;
+  document.getElementById('eeTitle').textContent='Edit '+e.name+' ('+e.id+')';
+  document.getElementById('eeDept').value=e.department||'';
+  document.getElementById('eeName').value=e.name||''; document.getElementById('eeMob').value=e.mobile||''; document.getElementById('eeDes').value=e.designation||''; document.getElementById('eeJoin').value=e.joiningDate||''; document.getElementById('eeSal').value=e.monthlySalary||''; document.getElementById('eeActive').checked=e.active!==false;
+  document.getElementById('docMsg').textContent=''; loadDocs();
+  document.getElementById('eeLoc').innerHTML=locOptions(e.locationId,true);
+  document.getElementById('eeExtra').innerHTML=LOCS.map(l=>`<label style="display:flex;gap:8px;align-items:center;font-size:13px;"><input type="checkbox" class="eeX" value="${esc(l.id)}"${(e.locationIds||[]).includes(l.id)?' checked':''}/> ${esc(l.name)}${l.projectName?' <span style="color:var(--muted);font-size:11px;">· '+esc(l.projectName)+'</span>':''}</label>`).join('')||'<span style="font-size:12px;color:var(--muted);">No locations yet</span>';
+  document.getElementById('eeErr').textContent='';
+  document.getElementById('empEditOverlay').classList.add('open');
+}
+async function saveEmpEdit(){
+  const body={name:document.getElementById('eeName').value.trim(),mobile:document.getElementById('eeMob').value.trim(),designation:document.getElementById('eeDes').value.trim(),joiningDate:document.getElementById('eeJoin').value,active:document.getElementById('eeActive').checked,department:document.getElementById('eeDept').value.trim(),locationId:document.getElementById('eeLoc').value,locationIds:[...document.querySelectorAll('.eeX:checked')].map(x=>x.value)};
+  if(PERMS.salary&&document.getElementById('eeSal').value!=='')body.monthlySalary=Number(document.getElementById('eeSal').value);
+  const r=await fetch('/api/employees/'+encodeURIComponent(editEmpId)+'/update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const d=await r.json();
+  if(!r.ok){document.getElementById('eeErr').textContent='❌ '+d.error;return;}
+  closeOverlay('empEditOverlay'); toast('✅ Employee updated'); loadEmp(); fillDeptFilter();
+}
+async function setEmpLoc(id,locationId){
+  const r=await fetch('/api/employees/'+encodeURIComponent(id)+'/location',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({locationId})});
+  const d=await r.json(); toast(r.ok?'✅ Location updated':'❌ '+d.error); loadEmp();
+}
+
+// ── LOCATIONS (IT) ──
+let editLocId=null;
+async function loadLocation(){
+  await refreshLocs(); await fillProjectSelect();
+  const emps=await (await fetch('/api/employees')).json();
+  document.getElementById('locCnt').textContent=LOCS.length;
+  document.getElementById('locBody').innerHTML=LOCS.length?LOCS.map(l=>`<tr>
+    <td>${esc(l.projectName||'—')}<div style="font-size:10px;color:var(--muted)">${esc(l.projectId||'')}</div></td><td><b>${esc(l.name)}</b></td><td>${l.lat}, ${l.lng}</td><td>${l.radius} m</td>
+    <td>${emps.filter(e=>e.locationId===l.id).length}</td>
+    <td style="white-space:nowrap;"><button class="btn btn-blue" onclick="editLoc('${jsq(l.id)}')">✏️ Edit</button>
+    <button class="btn" onclick="showQRModal('${jsq(l.id)}')">▦ QR</button>
+    <button class="btn" style="color:var(--bad);" onclick="removeLocation('${jsq(l.id)}','${jsq(l.name)}')">🗑</button></td>
+  </tr>`).join(''):'<tr><td colspan="6" class="no-data">No locations yet</td></tr>';
+}
+function resetLocForm(){
+  editLocId=null; if(PROJECTS.length&&document.getElementById('locProject').value==='')document.getElementById('locProject').value=PROJECTS[0].id;
+  ['locLat','locLng','locName'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('locRadius').value='100';
+  document.getElementById('locStatus').textContent='';
+  document.getElementById('locFormTitle').textContent='📍 Add New Location (Geofence)';
+}
+function editLoc(id){
+  const l=LOCS.find(x=>x.id===id); if(!l)return;
+  editLocId=id;
+  document.getElementById('locProject').value=l.projectId||''; document.getElementById('locName').value=l.name; document.getElementById('locLat').value=l.lat;
+  document.getElementById('locLng').value=l.lng; document.getElementById('locRadius').value=l.radius;
+  document.getElementById('locFormTitle').textContent='✏️ Edit Location: '+l.name;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function useMyLocation(){
+  const status=document.getElementById('locStatus');
+  status.textContent='📍 Detecting location...'; status.style.color='#185FA5';
+  if(!navigator.geolocation){status.textContent='❌ GPS is not supported';return;}
+  navigator.geolocation.getCurrentPosition(pos=>{
+    document.getElementById('locLat').value=pos.coords.latitude.toFixed(6);
+    document.getElementById('locLng').value=pos.coords.longitude.toFixed(6);
+    status.textContent='✅ Location detected. Now click Save.'; status.style.color='#3B6D11';
+  },()=>{status.textContent='❌ GPS access was denied.'; status.style.color='#A32D2D';},{enableHighAccuracy:true});
+}
+async function saveLocation(){
+  const status=document.getElementById('locStatus');
+  const body={projectId:document.getElementById('locProject').value,name:document.getElementById('locName').value.trim(),lat:document.getElementById('locLat').value.trim(),lng:document.getElementById('locLng').value.trim(),radius:document.getElementById('locRadius').value||100};
+  try{
+    const res=await fetch(editLocId?`/api/locations/${encodeURIComponent(editLocId)}/update`:'/api/locations',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const d=await res.json();
+    if(d.success){const wasNew=!editLocId; resetLocForm(); await loadLocation(); toast('✅ Location saved successfully.'); if(wasNew&&d.qr)openQRModal(d.location.name,d.location.projectName,d.qr,d.url);}
+    else{status.textContent='❌ '+d.error; status.style.color='#A32D2D';}
+  }catch{status.textContent='❌ Server error.'; status.style.color='#A32D2D';}
+}
+async function removeLocation(id,name){
+  if(!confirm(`Are you sure you want to delete the location "${name}"?`))return;
+  const r=await fetch('/api/locations/'+encodeURIComponent(id),{method:'DELETE'}); const d=await r.json();
+  if(r.ok){toast('🗑 Location deleted.'); loadLocation();} else toast('❌ '+d.error);
+}
+
+// ── ADMIN IDs (IT) ──
+let editAdId=null;
+function renderAdLocs(sel=[]){
+  document.getElementById('adLocs').innerHTML=LOCS.map(l=>`<label style="display:flex;gap:6px;align-items:center;font-size:13px;"><input type="checkbox" class="adLoc" value="${esc(l.id)}"${sel.includes(l.id)?' checked':''}/> ${esc(l.name)}</label>`).join('')||'<span style="font-size:12px;color:var(--muted);">Add a location in the Locations panel first</span>';
+}
+function resetAdForm(){
+  editAdId=null;
+  ['adId','adName','adPwd','adDepts'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('adId').disabled=false; document.getElementById('adAll').checked=false;
+  document.getElementById('adLocs').style.opacity=1; document.getElementById('adErr').textContent='';
+  document.getElementById('adFormTitle').textContent='👑 Create New HR ID';
+  renderAdLocs();
+}
+let ADMINS=[];
+async function loadAdmins(){
+  await refreshLocs();
+  const r=await fetch('/api/admins'); const d=await r.json();
+  if(!r.ok){toast('❌ '+d.error);return;}
+  ADMINS=d; if(!editAdId)renderAdLocs();
+  document.getElementById('adCnt').textContent=d.length;
+  document.getElementById('adBody').innerHTML=d.length?d.map(a=>`<tr>
+    <td><b>${esc(a.id)}</b></td><td>${esc(a.name)}</td>
+    <td>${a.allLocations?'All locations':esc((a.locations||[]).map(i=>(LOCS.find(l=>l.id===i)||{}).name||i).join(', ')||'—')}</td>
+    <td>${esc((a.departments||[]).join(', ')||'All')}</td>
+    <td style="white-space:nowrap;"><button class="btn btn-blue" onclick="editAdmin('${jsq(a.id)}')">✏️ Edit</button>
+    <button class="btn" style="color:var(--bad);" onclick="delAdmin('${jsq(a.id)}','${jsq(a.name)}')">🗑</button></td>
+  </tr>`).join(''):'<tr><td colspan="5" class="no-data">No HR IDs yet</td></tr>';
+}
+function editAdmin(id){
+  const a=ADMINS.find(x=>x.id===id); if(!a)return;
+  editAdId=id;
+  document.getElementById('adId').value=a.id; document.getElementById('adId').disabled=true;
+  document.getElementById('adName').value=a.name; document.getElementById('adPwd').value=''; document.getElementById('adDepts').value=(a.departments||[]).join(', ');
+  document.getElementById('adAll').checked=!!a.allLocations;
+  document.getElementById('adLocs').style.opacity=a.allLocations?.4:1;
+  renderAdLocs(a.locations||[]);
+  document.getElementById('adFormTitle').textContent='✏️ Admin edit: '+a.id+' (leave password blank to keep current)';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+async function saveAdmin(){
+  const err=document.getElementById('adErr'); err.textContent='';
+  const body={id:document.getElementById('adId').value.trim(),name:document.getElementById('adName').value.trim(),password:document.getElementById('adPwd').value,
+    departments:document.getElementById('adDepts').value,allLocations:document.getElementById('adAll').checked,locations:[...document.querySelectorAll('.adLoc:checked')].map(x=>x.value)};
+  const r=await fetch(editAdId?`/api/admins/${encodeURIComponent(editAdId)}/update`:'/api/admins',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const d=await r.json();
+  if(!r.ok){err.textContent='❌ '+d.error;return;}
+  toast(editAdId?'✅ HR login updated':'✅ HR ID created successfully'); resetAdForm(); loadAdmins();
+}
+async function delAdmin(id,name){
+  if(!confirm('Are you sure you want to delete the HR ID '+id+' ('+name+')?'))return;
+  await fetch('/api/admins/'+encodeURIComponent(id),{method:'DELETE'});
+  toast('🗑 HR ID deleted'); loadAdmins();
+}
+
+// ── LOCATION BYPASS ──
+async function loadBypass() {
+  try {
+    const res = await fetch('/api/location-bypass');
+    const list = await res.json();
+    const el = document.getElementById('bypassList');
+    if (!list.length) {
+      el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px;">No employees have a location bypass</div>';
+      return;
+    }
+    el.innerHTML = list.map(e => `
+      <div style="display:flex;align-items:center;justify-content:space-between;background:#f8f9fb;border-radius:10px;padding:12px 14px;border:1px solid var(--border);">
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--text);">✅ ${e.name}</div>
+          <div style="font-size:11px;color:var(--muted);">${e.id} — Location check bypassed</div>
+        </div>
+        <button onclick="removeBypass('${e.id}')" style="padding:5px 10px;background:#FCEBEB;color:#A32D2D;border:none;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;">🗑 Remove</button>
+      </div>
+    `).join('');
+  } catch(e) { console.error(e); }
+}
+ 
+async function addBypass() {
+  const empId = document.getElementById('bypassEmpId').value.trim().toUpperCase();
+  const errEl = document.getElementById('bypassErr');
+  if (!empId) { errEl.textContent = '❌ EMP ID is required'; return; }
+  try {
+    const res = await fetch('/api/location-bypass', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ empId, pin: '011216' })
+    });
+    const d = await res.json();
+    if (!res.ok) { errEl.textContent = '❌ ' + d.error; return; }
+    errEl.textContent = '';
+    document.getElementById('bypassEmpId').value = '';
+    loadBypass();
+    toast('✅ ' + empId + ' has been granted a location bypass.');
+  } catch { errEl.textContent = '❌ Server error'; }
+}
+ 
+async function removeBypass(empId) {
+  if (!confirm('Remove the location bypass for ' + empId + '?')) return;
+  try {
+    const res = await fetch('/api/location-bypass/' + empId, {
+      method: 'DELETE', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ pin: '011216' })
+    });
+    const d = await res.json();
+    if (d.success) { loadBypass(); toast('🗑 Location bypass removed.'); }
+  } catch {}
+}
+ 
+// ── UTILS ──
+function closeOverlay(id){document.getElementById(id).classList.remove('open');}
+
+// ── IT TOOLS ──
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const jsq=s=>esc(String(s??'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"));
+async function loadITools(){
+  try{
+    const r=await fetch('/api/it/overview'); const d=await r.json();
+    if(!r.ok){toast('❌ '+d.error);return;}
+    document.getElementById('itDb').textContent=d.db;
+    document.getElementById('itEmp').textContent=d.employees;
+    document.getElementById('itToday').textContent=d.todayPunches;
+    document.getElementById('itOpen').textContent=d.open.length;
+    const body=document.getElementById('itOpenBody');
+    body.innerHTML=d.open.length?d.open.map(o=>`<tr>
+      <td>${esc(o.empName)}</td><td>${esc(o.empId)}</td><td>${esc(o.locationName||'—')}</td><td>${esc(o.shift||'—')}</td><td>${esc(o.time||'—')}</td>
+      <td><span class="badge ${o.phoneLocked?'bl':'bp'}">${o.phoneLocked?'🔒 Locked':'🔓 Open'}</span></td>
+      <td>${o.phoneLocked?`<button class="btn btn-blue" onclick="unlockPhone('${jsq(o.empId)}','${jsq(o.empName)}')">🔓 Unlock phone</button>`:'—'}</td>
+    </tr>`).join(''):'<tr><td colspan="7" class="no-data">No employees are currently inside (everyone has punched out)</td></tr>';
+  }catch(e){toast('❌ Server error');}
+}
+async function unlockPhone(empId,name){
+  if(!confirm('Unlock the phone for '+name+' ('+empId+')?\nAfter unlocking, they will be able to Punch Out from any phone.'))return;
+  const r=await fetch('/api/it/unlock-device',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({empId})});
+  const d=await r.json();
+  if(r.ok){toast('✅ '+name+'\'s phone has been unlocked');loadITools();}else toast('❌ '+d.error);
+}
+// ── IT USERS (admin) ──
+async function loadITUsers(){
+  const r=await fetch('/api/it-users'); const d=await r.json();
+  if(!r.ok){toast('❌ '+d.error);return;}
+  document.getElementById('iuCnt').textContent=d.length;
+  document.getElementById('iuBody').innerHTML=d.length?d.map(u=>`<tr>
+    <td><b>${esc(u.id)}</b></td><td>${esc(u.name)}</td><td>${u.createdAt?new Date(u.createdAt).toLocaleDateString('en-IN'):'—'}</td>
+    <td style="white-space:nowrap;"><button class="btn btn-blue" onclick="resetITPass('${jsq(u.id)}')">🔑 Password</button>
+    <button class="btn" style="color:var(--bad);" onclick="delITUser('${jsq(u.id)}','${jsq(u.name)}')">🗑</button></td>
+  </tr>`).join(''):'<tr><td colspan="4" class="no-data">No IT users yet</td></tr>';
+}
+async function addITUser(){
+  const err=document.getElementById('iuErr'); err.textContent='';
+  const body={id:document.getElementById('iuId').value.trim(),name:document.getElementById('iuName').value.trim(),password:document.getElementById('iuPwd').value};
+  const r=await fetch('/api/it-users',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const d=await r.json();
+  if(!r.ok){err.textContent='❌ '+d.error;return;}
+  ['iuId','iuName','iuPwd'].forEach(i=>document.getElementById(i).value='');
+  toast('✅ IT user created successfully'); loadITUsers();
+}
+async function resetITPass(id){
+  const pw=prompt('Enter a new password for '+id+' (minimum 6 characters):');
+  if(!pw)return;
+  const r=await fetch('/api/it-users/'+encodeURIComponent(id)+'/password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pw})});
+  const d=await r.json();
+  toast(r.ok?'✅ Password changed successfully':'❌ '+d.error);
+}
+async function delITUser(id,name){
+  if(!confirm('Are you sure you want to delete the IT user '+id+' ('+name+')?'))return;
+  await fetch('/api/it-users/'+encodeURIComponent(id),{method:'DELETE'});
+  toast('🗑 IT user deleted'); loadITUsers();
+}
+
+function logout(){fetch('/api/logout',{method:'POST'});document.getElementById('loginStep2').style.display='none';document.getElementById('loginStep1').style.display='block';document.getElementById('lpwd').value='';document.getElementById('adminPage').style.display='none';document.getElementById('loginPage').style.display='flex';editMode=false;animDone=false;runAnim();}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
+</script>
+</body>
+</html>

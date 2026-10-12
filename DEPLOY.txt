@@ -1,0 +1,30 @@
+MASWER ATTEND - DEPLOY GUIDE (Supabase + GitHub + Netlify)
+
+1) SUPABASE
+   - SQL Editor me supabase-schema.sql paste karke Run (ho chuka hai).
+   - Database password reset karo (sirf letters+numbers).
+   - DATABASE_URL = postgresql://postgres.PROJECTREF:PASSWORD@aws-0-ap-south-1.pooler.supabase.com:5432/postgres
+     (Session/Shared pooler wali; [ ] mat rakho)
+   - SUPABASE_URL = https://PROJECTREF.supabase.co
+   - SUPABASE_SERVICE_KEY = Project Settings > API Keys > service_role
+   - (Storage bucket "hr-documents" server khud private bana leta hai)
+
+2) GITHUB
+   - Private repo banao, is folder ki files upload karo (node_modules aur data NAHI).
+
+3) NETLIFY
+   - Add new site > Import from GitHub > repo chuno (build command khali, publish "public").
+   - Site configuration > Environment variables me daalo:
+       DATABASE_URL, SUPABASE_URL, SUPABASE_SERVICE_KEY, SUPABASE_BUCKET=hr-documents
+       SESSION_SECRET  (lamba random text)
+       IT_ID=IT001
+       IT_PASSWORD     (apna strong password)
+       EDIT_PIN        (6 digit, badlo)
+       APP_URL         (pehle khali; site URL milne ke baad https://xxxx.netlify.app daalo)
+   - Deploys > Trigger deploy > Deploy site.
+   - Site URL milne par APP_URL set karo aur dobara deploy karo (QR me yahi URL jata hai).
+
+4) PEHLI BAAR
+   - IT login (IT_ID / IT_PASSWORD) > Projects & Locations me project + site + QR banao.
+   - HR login banao, employees add karo, ek document upload aur ek payslip PDF test karo.
+   - Kuch fail ho to Netlify > Logs > Functions ka error bhejo (password/key ke bina).

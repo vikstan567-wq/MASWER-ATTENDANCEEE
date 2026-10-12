@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Maswer Attend – My Attendance</title>
+<link rel="icon" href="data:,"/>
+<link rel="stylesheet" href="/neo.css"/>
+<script src="/neo.js"></script>
+</head>
+<body class="att">
+
+<div class="topbar">
+  <span class="plus">+</span>
+  <span class="name">maswer</span>
+  <span class="tag">attend</span>
+  <a class="back-link" href="/scan">← Record attendance</a>
+</div>
+
+<div class="page-body" id="pageBody">
+  <div class="loading"><div class="spinner"></div><br>Loading...</div>
+</div>
+
+<script>
+const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const MONTHS_HI = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+function getParams() {
+  const p = new URLSearchParams(window.location.search);
+  return { id: p.get('id') || '' };
+}
+
+function badgeHtml(s) {
+  if (s === 'present') return '<span class="badge bp">Present</span>';
+  if (s === 'late') return '<span class="badge bl">Late</span>';
+  return '<span class="badge ba">Absent</span>';
+}
+function iconHtml(s) {
+  const cls = s === 'present' ? 'hi-p' : s === 'late' ? 'hi-l' : 'hi-a';
+  const em = s === 'present' ? '✅' : s === 'late' ? '⏰' : '❌';
+  return `<div class="hi-icon ${cls}">${em}</div>`;
+}
+function fmtDate(ds) {
+  const d = new Date(ds + 'T00:00:00');
+  return `${DAYS[d.getDay()]}, ${d.getDate()} ${MONTHS_HI[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+async function loadPage() {
+  const { id } = getParams();
+  const body = document.getElementById('pageBody');
+
+  if (!id) {
+    body.innerHTML = `<div class="not-found">
+      <div class="nf-emoji">🔍</div>
+      <p>EMP ID not found.<br>Please scan the QR code to record your attendance first.</p>
+      <br><a href="/scan">← Go to the scan page</a>
+    </div>`;
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/attendance/employee/' + id);
+    if (!res.ok) {
+      body.innerHTML = `<div class="not-found">
+        <div class="nf-emoji">😕</div>
+        <p>Employee "${id}" not found.<br>Please confirm your EMP ID with your admin.</p>
+        <br><a href="/scan">← Go back</a>
+      </div>`;
+      return;
+    }
+
+    const { employee: emp, attendance: att, stats } = await res.json();
+    const pct = stats.total > 0 ? Math.round((stats.present / stats.total) * 100) : 0;
+    const attClass = pct >= 80 ? 'att-good' : pct >= 60 ? 'att-warn' : 'att-bad';
+    const attLabel = pct >= 80 ? '😊 Great job!' : pct >= 60 ? '😐 Okay' : '⚠️ Needs attention';
+
+    // Group by month
+    const byMonth = {};
+    att.forEach(a => {
+      const m = a.date.substring(0, 7); // YYYY-MM
+      if (!byMonth[m]) byMonth[m] = [];
+      byMonth[m].push(a);
+    });
+    const months = Object.keys(byMonth).sort((a, b) => b.localeCompare(a));
+    const curMonth = months[0] || new Date().toISOString().substring(0, 7);
+
+    // Month strip html
+    const monthStripHtml = months.map(m => {
+      const [y, mo] = m.split('-');
+      return `<div class="month-chip ${m === curMonth ? 'on' : ''}" onclick="filterMonth('${m}',this)">${MONTHS_HI[parseInt(mo) - 1]} ${y}</div>`;
+    }).join('');
+
+    body.innerHTML = `
+      <div class="hero">
+        <div class="h-welcome">Hello 👋</div>
+        <div class="h-name">${emp.name}</div>
+        <div class="h-id">${emp.id} · 📱 ${emp.mobile}</div>
+        <div class="stats-row">
+          <div class="h-stat"><div class="hsv">${stats.present}</div><div class="hsl">Present</div></div>
+          <div class="h-stat"><div class="hsv">${stats.total - stats.present}</div><div class="hsl">Late/Miss</div></div>
+          <div class="h-stat"><div class="hsv">${pct}%</div><div class="hsl">Attendance</div></div>
+        </div>
+        <div class="att-badge ${attClass}">${attLabel}</div>
+      </div>
+
+      <a class="scan-btn" href="/scan">📱 Record today's attendance →</a>
+
+      ${months.length > 1 ? `<div class="month-strip">${monthStripHtml}</div>` : ''}
+
+      <div class="sec-label" id="monthLabel"></div>
+      <div class="hist-list" id="histList"></div>
+    `;
+
+    filterMonth(curMonth, null, byMonth);
+
+  } catch (e) {
+    body.innerHTML = `<div class="not-found">
+      <div class="nf-emoji">🔌</div>
+      <p>Unable to connect to the server.<br>Please contact your admin.</p>
+    </div>`;
+  }
+}
+
+let cachedByMonth = {};
+
+function filterMonth(m, el, data) {
+  if (data) cachedByMonth = data;
+  // Update active chip
+  document.querySelectorAll('.month-chip').forEach(c => c.classList.remove('on'));
+  if (el) el.classList.add('on');
+
+  const [y, mo] = m.split('-');
+  document.getElementById('monthLabel').textContent =
+    `${MONTHS_HI[parseInt(mo) - 1]} ${y} — Attendance`;
+
+  const records = (cachedByMonth[m] || []).sort((a, b) => b.date.localeCompare(a.date));
+  const histEl = document.getElementById('histList');
+
+  if (!records.length) {
+    histEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px;">No attendance records this month</div>';
+    return;
+  }
+
+  histEl.innerHTML = records.map(a => `
+    <div class="hist-item">
+      ${iconHtml(a.status)}
+      <div class="hi-info">
+        <div class="hi-day">${fmtDate(a.date)}</div>
+        <div class="hi-time">
+          ${a.time ? '🟢 In: ' + a.time : '—'}
+          ${a.checkOut ? ' &nbsp; 🔴 Out: ' + a.checkOut : ''}
+          ${a.totalHours ? ' &nbsp; ⏱ ' + a.totalHours : ''}
+        </div>
+      </div>
+      ${badgeHtml(a.status)}
+    </div>
+  `).join('');
+}
+
+loadPage();
+</script>
+</body>
+</html>
