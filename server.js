@@ -1140,7 +1140,7 @@ app.get('/api/salary/month', requireStaff, async (req, res) => {
   const rows = emps.map(e => {
     const c = payroll.calcMonth({ emp: e, records: att.filter(a => a.empId === e.id), settings: S, advances: adv.filter(a => a.empId === e.id), month, today: today(), nowMs: Date.now() });
     const s = slips.find(x => x.empId === e.id);
-    return { empId: e.id, name: e.name, department: e.department || '', designation: e.designation || '', active: e.active !== false, monthly: c.monthly, perDay: c.perDay, counts: c.counts, earnedDays: c.earnedDays, overtime: c.overtime.pay, lateDeduction: c.late.deduction, advance: c.advance, net: c.net, hasIncomplete: c.hasIncomplete, monthOpen: c.monthOpen, slip: s ? { id: s.id, version: s.version, finalized: !!s.finalized } : null };
+    return { empId: e.id, name: e.name, department: e.department || '', designation: e.designation || '', active: e.active !== false, monthly: c.monthly, perDay: c.perDay, counts: c.counts, earnedDays: c.earnedDays, overtime: c.overtime.pay, otHours: c.overtime.hours, gross: c.gross, lateDeduction: c.late.deduction, advance: c.advance, net: c.net, hasIncomplete: c.hasIncomplete, monthOpen: c.monthOpen, slip: s ? { id: s.id, version: s.version, finalized: !!s.finalized, deliveredAt: s.deliveredAt || null } : null };
   });
   res.json({ month, settings: { daysMode: S.daysMode, halfDayBelowHours: S.halfDayBelowHours }, rows });
 });
@@ -1250,7 +1250,7 @@ app.get('/api/payslips', requireStaff, async (req, res) => {
   const q = MONTH_RE.test(month) ? { month } : (req.query.empId ? { empId: String(req.query.empId) } : {});
   const list = await db.collection('payslips').find(q).toArray();
   const out = [];
-  for (const p of list) { const e = await db.collection('employees').findOne({ id: p.empId }); if (e && scopeFilter({ ...req, query: {} })(e)) out.push({ id: p.id, empId: p.empId, name: e.name, month: p.month, version: p.version, net: p.net, finalized: !!p.finalized, generatedAt: p.generatedAt }); }
+  for (const p of list) { const e = await db.collection('employees').findOne({ id: p.empId }); if (e && scopeFilter({ ...req, query: {} })(e)) out.push({ id: p.id, empId: p.empId, name: e.name, month: p.month, version: p.version, net: p.net, deliveredAt: p.deliveredAt || null, finalized: !!p.finalized, generatedAt: p.generatedAt }); }
   res.json(out);
 });
 async function slipForReq(req, res) {
@@ -1323,17 +1323,39 @@ app.get('/api/payslips/:id/pdf', requireStaff, async (req, res) => {
   res.send(buf);
 });
 // share link: signed, valid 7 days, no login needed
-app.post('/api/payslips/:id/share', requireStaff, async (req, res) => {
-  const p = await slipForReq(req, res); if (!p) return;
+async function shareInfo(req, p) {
   const exp = Date.now() + 7 * 24 * 3600 * 1000, pl = `${p.id}|${exp}`;
   const token = Buffer.from(pl).toString('base64url') + '.' + sign('share|' + pl);
   const e = await db.collection('employees').findOne({ id: p.empId });
-  const base = `${req.protocol}://${req.get('host')}`;
+  const base = (process.env.APP_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '');
   const url = `${base}/api/p/${token}`;
   const phone = String((e && e.mobile) || '').replace(/\D/g, '');
-  const text = `Your payslip for ${p.month}: ${url}`;
+  const text = `Hello ${(e && e.name) || ''}, your payslip for ${p.month} is ready: ${url}`;
+  return { url, expires: new Date(exp).toISOString(), name: e ? e.name : '', mobile: phone, whatsapp: `https://wa.me/${phone.length === 10 ? '91' + phone : phone}?text=${encodeURIComponent(text)}`, mailto: `mailto:?subject=${encodeURIComponent('Payslip ' + p.month)}&body=${encodeURIComponent(text)}` };
+}
+const markDelivered = (p, req) => db.collection('payslips').updateOne({ id: p.id }, { $set: { deliveredAt: new Date().toISOString(), deliveredBy: req.user.id } });
+app.post('/api/payslips/:id/share', requireStaff, async (req, res) => {
+  const p = await slipForReq(req, res); if (!p) return;
+  const info = await shareInfo(req, p); await markDelivered(p, req);
   await audit(req, 'payslip.share', p.empId, { month: p.month });
-  res.json({ url, expires: new Date(exp).toISOString(), whatsapp: `https://wa.me/${phone.length === 10 ? '91' + phone : phone}?text=${encodeURIComponent(text)}`, mailto: `mailto:?subject=${encodeURIComponent('Payslip ' + p.month)}&body=${encodeURIComponent(text)}` });
+  res.json(info);
+});
+// dispatch every generated payslip of a month: marks Delivered + returns a secure link per employee
+app.post('/api/payslips/dispatch', requireStaff, async (req, res) => {
+  if (!hasPerm(req, 'salary')) return noPerm(res);
+  const month = String((req.body || {}).month || '');
+  if (!MONTH_RE.test(month)) return res.status(400).json({ error: 'Invalid month' });
+  const list = await db.collection('payslips').find({ month }).toArray();
+  const out = [];
+  for (const p of list) {
+    const e = await db.collection('employees').findOne({ id: p.empId });
+    if (!e || !scopeFilter({ ...req, query: {} })(e) || e.active === false) continue;
+    const info = await shareInfo(req, p); await markDelivered(p, req);
+    out.push({ empId: p.empId, slipId: p.id, name: info.name, mobile: info.mobile, net: p.net, url: info.url, whatsapp: info.whatsapp });
+  }
+  if (!out.length) return res.status(404).json({ error: 'No payslips generated for this month yet. Click "Generate from Attendance" first.' });
+  await audit(req, 'payslip.dispatch', 'ALL', { month, count: out.length });
+  res.json({ success: true, count: out.length, items: out });
 });
 app.get('/api/p/:token', async (req, res) => {
   try {
@@ -1368,7 +1390,8 @@ app.get('/api/audit', requireIT, async (req, res) => {
 // ── HRMS END ───────────────────────────────────────────────
 
 // ── DOCUMENTS (private storage) ────────────────────────────
-const DOC_TYPES = ['aadhaar', 'pan', 'photo', 'bank', 'offer', 'appointment', 'experience', 'relieving', 'other'];
+const DOC_TYPES = ['aadhaar', 'pan', 'photo', 'bank', 'offer', 'appointment', 'experience', 'relieving', 'kyc', 'salary_slip', 'other'];
+const DOC_MULTI = ['other', 'kyc', 'salary_slip']; // several files allowed
 const DOC_MIME = { 'application/pdf': 'pdf', 'image/jpeg': 'jpg', 'image/png': 'png' };
 const DOC_MAX = 5 * 1024 * 1024;
 const SB_URL = (process.env.SUPABASE_URL || '').replace(/\/$/, ''), SB_KEY = process.env.SUPABASE_SERVICE_KEY || '', SB_BUCKET = process.env.SUPABASE_BUCKET || 'hr-documents';
@@ -1392,7 +1415,7 @@ async function docEmp(req, res, empId) {
   if (!e || e.role === 'admin' || !scopeFilter({ ...req, query: {} })(e)) { res.status(404).json({ error: 'Employee not found' }); return null; }
   return e;
 }
-const docView = d => ({ id: d.id, empId: d.empId, type: d.type, label: d.label, fileName: d.fileName, mime: d.mime, size: d.size, uploadedAt: d.uploadedAt, uploadedBy: d.uploadedBy });
+const docView = d => ({ id: d.id, empId: d.empId, type: d.type, label: d.label, notes: d.notes, fileName: d.fileName, mime: d.mime, size: d.size, uploadedAt: d.uploadedAt, uploadedBy: d.uploadedBy });
 const canDoc = (req, type) => hasPerm(req, 'docs') || type === 'photo';
 async function removeFile(d) {
   try {
@@ -1424,8 +1447,8 @@ app.post('/api/employees/:id/documents/init', requireStaff, async (req, res) => 
   if (!isFinite(size) || size <= 0 || size > DOC_MAX) return res.status(400).json({ error: 'File must be 5 MB or smaller' });
   let replaceOf = null;
   if (b.replaceOf) { replaceOf = await db.collection('documents').findOne({ id: String(b.replaceOf), empId: e.id }); if (!replaceOf) return res.status(404).json({ error: 'Document to replace not found' }); }
-  const id = newId('D'), p = `${e.id}/${id}.${DOC_MIME[mime]}`, label = String(b.label || '').replace(/[<>]/g, '').trim().slice(0, 40) || undefined;
-  const doc = { id, empId: e.id, type, label, fileName: String(b.fileName || 'file').replace(/[^\w.\- ]/g, '_').slice(0, 80), mime, size, path: p, status: 'pending', replaceOf: replaceOf ? replaceOf.id : undefined, uploadedBy: req.user.id, uploadedAt: new Date().toISOString() };
+  const id = newId('D'), p = `${e.id}/${id}.${DOC_MIME[mime]}`, label = String(b.label || '').replace(/[<>]/g, '').trim().slice(0, 60) || undefined, notes = String(b.notes || '').replace(/[<>]/g, '').trim().slice(0, 200) || undefined;
+  const doc = { id, empId: e.id, type, label, notes, fileName: String(b.fileName || 'file').replace(/[^\w.\- ]/g, '_').slice(0, 80), mime, size, path: p, status: 'pending', replaceOf: replaceOf ? replaceOf.id : undefined, uploadedBy: req.user.id, uploadedAt: new Date().toISOString() };
   await db.collection('documents').insertOne(doc);
   if (useSB) {
     await ensureBucket();
@@ -1450,6 +1473,16 @@ app.put('/api/documents/:id/upload', requireStaff, express.raw({ type: () => tru
   res.json({ success: true });
 });
 // step 3: confirm → live (replaces the old one if any)
+async function activateDoc(req, d) {
+  if (d.replaceOf) { const old = await db.collection('documents').findOne({ id: d.replaceOf }); if (old) { await removeFile(old); await db.collection('documents').deleteOne({ id: old.id }); } }
+  else if (!DOC_MULTI.includes(d.type)) { // one per type
+    const olds = await db.collection('documents').find({ empId: d.empId, type: d.type, status: 'ok' }).toArray();
+    for (const o of olds) { await removeFile(o); await db.collection('documents').deleteOne({ id: o.id }); }
+  }
+  await db.collection('documents').updateOne({ id: d.id }, { $set: { status: 'ok', replacedAt: d.replaceOf ? new Date().toISOString() : undefined } });
+  if (d.type === 'photo') await db.collection('employees').updateOne({ id: d.empId }, { $set: { photoDocId: d.id } });
+  await audit(req, d.replaceOf ? 'document.replace' : 'document.upload', d.empId, { type: d.type, file: d.fileName });
+}
 app.post('/api/documents/:id/complete', requireStaff, async (req, res) => {
   const d = await db.collection('documents').findOne({ id: req.params.id });
   if (!d || d.status !== 'pending' || d.uploadedBy !== req.user.id) return res.status(404).json({ error: 'Upload not found' });
@@ -1459,15 +1492,74 @@ app.post('/api/documents/:id/complete', requireStaff, async (req, res) => {
     const r = await fetch(`${SB_URL}/storage/v1/object/info/${SB_BUCKET}/${d.path}`, { headers: sbH() });
     if (!r.ok) return res.status(400).json({ error: 'File was not uploaded' });
   } else if (!fs.existsSync(path.join(UP_DIR, d.path))) return res.status(400).json({ error: 'File was not uploaded' });
-  if (d.replaceOf) { const old = await db.collection('documents').findOne({ id: d.replaceOf }); if (old) { await removeFile(old); await db.collection('documents').deleteOne({ id: old.id }); } }
-  else if (d.type !== 'other') { // one per type
-    const olds = await db.collection('documents').find({ empId: d.empId, type: d.type, status: 'ok' }).toArray();
-    for (const o of olds) { await removeFile(o); await db.collection('documents').deleteOne({ id: o.id }); }
-  }
-  await db.collection('documents').updateOne({ id: d.id }, { $set: { status: 'ok', replacedAt: d.replaceOf ? new Date().toISOString() : undefined } });
-  if (d.type === 'photo') await db.collection('employees').updateOne({ id: d.empId }, { $set: { photoDocId: d.id } });
-  await audit(req, d.replaceOf ? 'document.replace' : 'document.upload', d.empId, { type: d.type, file: d.fileName });
+  await activateDoc(req, d);
   res.json({ success: true, document: docView({ ...d, status: 'ok' }) });
+});
+// ── 1-click letter generation (offer / appointment / experience) ──
+const LETTERS = {
+  offer: { type: 'offer', title: 'Offer Letter' }, appointment: { type: 'appointment', title: 'Appointment Letter' }, experience: { type: 'experience', title: 'Experience Certificate' }
+};
+const fmtDate = d => { try { return new Date(d + 'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' }); } catch (e) { return d; } };
+function letterPdf(kind, e, S, opt) {
+  return new Promise((resolve, reject) => {
+    const doc = new PDFDocument({ size: 'A4', margin: 60 }), bufs = [];
+    doc.on('data', b => bufs.push(b)); doc.on('end', () => resolve(Buffer.concat(bufs))); doc.on('error', reject);
+    const co = S.companyName || 'Company', today0 = fmtDate(today());
+    let y = 60;
+    if (S.logo) { try { doc.image(Buffer.from(S.logo.split(',')[1], 'base64'), 60, y, { fit: [60, 50] }); } catch (er) {} }
+    doc.font('Helvetica-Bold').fontSize(16).text(co, 130, y, { width: 405 });
+    doc.font('Helvetica').fontSize(9).fillColor('#555').text(S.companyAddress || '', 130, doc.y, { width: 405 });
+    doc.moveTo(60, 125).lineTo(535, 125).strokeColor('#999').stroke();
+    doc.fillColor('#000').font('Helvetica').fontSize(11).text('Date: ' + today0, 60, 140, { align: 'right', width: 475 });
+    const name = e.name, desig = e.designation || 'Employee', join = e.joiningDate ? fmtDate(e.joiningDate) : '____________';
+    const sal = Number(e.monthlySalary) > 0 ? 'Rs. ' + Number(e.monthlySalary).toLocaleString('en-IN') + ' per month' : null;
+    doc.moveDown(2).font('Helvetica-Bold').fontSize(14).text(LETTERS[kind].title.toUpperCase(), { align: 'center', underline: true });
+    doc.moveDown(1.5).font('Helvetica').fontSize(11);
+    if (kind === 'offer') {
+      doc.text(`Dear ${name},`).moveDown();
+      doc.text(`We are pleased to offer you the position of ${desig}${e.department ? ' in the ' + e.department + ' department' : ''} at ${co}.`).moveDown();
+      doc.text(`Your expected date of joining is ${join}.` + (sal ? ` Your remuneration will be ${sal}, subject to applicable deductions as per company policy.` : '')).moveDown();
+      doc.text('This offer is subject to verification of your documents and to the terms and conditions of employment of the company. Please sign and return a copy of this letter as your acceptance.').moveDown();
+      doc.text('We look forward to welcoming you to our team.');
+    } else if (kind === 'appointment') {
+      doc.text(`Dear ${name},`).moveDown();
+      doc.text(`With reference to your application and subsequent discussions, you are hereby appointed as ${desig}${e.department ? ' in the ' + e.department + ' department' : ''} at ${co}, with effect from ${join}.`).moveDown();
+      if (sal) doc.text(`Your remuneration will be ${sal}, subject to applicable deductions as per company policy.`).moveDown();
+      doc.text('Your employment will be governed by the rules, policies and code of conduct of the company as amended from time to time. Please sign the duplicate copy of this letter in token of acceptance.');
+    } else {
+      const to = opt.toDate ? fmtDate(opt.toDate) : today0;
+      doc.text('TO WHOMSOEVER IT MAY CONCERN', { align: 'center' }).moveDown();
+      doc.text(`This is to certify that ${name} was employed with ${co} as ${desig}${e.department ? ' (' + e.department + ' department)' : ''} from ${join} to ${to}.`).moveDown();
+      doc.text('During this period we found the conduct and work of the employee to be satisfactory. We wish them all the best in their future endeavours.');
+    }
+    doc.moveDown(3).text('For ' + co).moveDown(2).font('Helvetica-Bold').text('Authorized Signatory');
+    if (kind !== 'experience') doc.moveDown(2).font('Helvetica').fontSize(10).fillColor('#444').text('Accepted by: ______________________     Date: ______________');
+    doc.end();
+  });
+}
+async function storeBuffer(p, buf, mime) {
+  if (useSB) {
+    await ensureBucket();
+    const r = await fetch(`${SB_URL}/storage/v1/object/${SB_BUCKET}/${p}`, { method: 'POST', headers: sbH({ 'Content-Type': mime, 'x-upsert': 'true' }), body: buf });
+    if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error('Storage error: ' + (j.message || j.error || r.status)); }
+  } else { fs.mkdirSync(path.dirname(path.join(UP_DIR, p)), { recursive: true }); fs.writeFileSync(path.join(UP_DIR, p), buf); }
+}
+app.post('/api/employees/:id/letters/generate', requireStaff, async (req, res) => {
+  if (!hasPerm(req, 'docs')) return noPerm(res);
+  if (!PDFDocument) return res.status(501).json({ error: 'PDF library not installed' });
+  const b = req.body || {}, kind = String(b.kind || '');
+  if (!LETTERS[kind]) return res.status(400).json({ error: 'Choose Offer, Appointment or Experience letter' });
+  const e = await docEmp(req, res, req.params.id); if (!e) return;
+  if (b.toDate && !/^\d{4}-\d{2}-\d{2}$/.test(String(b.toDate))) return res.status(400).json({ error: 'Last working date must be YYYY-MM-DD' });
+  try {
+    const S = await getSalarySettings(), buf = await letterPdf(kind, e, S, { toDate: b.toDate });
+    const id = newId('D'), p = `${e.id}/${id}.pdf`;
+    await storeBuffer(p, buf, 'application/pdf');
+    const doc = { id, empId: e.id, type: LETTERS[kind].type, label: String(b.label || '').replace(/[<>]/g, '').trim().slice(0, 60) || (LETTERS[kind].title + ' (auto-generated)'), fileName: `${LETTERS[kind].title.replace(/\s+/g, '_')}_${e.id}.pdf`, mime: 'application/pdf', size: buf.length, path: p, status: 'pending', uploadedBy: req.user.id, uploadedAt: new Date().toISOString() };
+    await db.collection('documents').insertOne(doc);
+    await activateDoc(req, doc);
+    res.json({ success: true, document: docView({ ...doc, status: 'ok' }) });
+  } catch (err) { res.status(502).json({ error: String(err.message || err) }); }
 });
 app.get('/api/documents/:id/file', requireStaff, async (req, res) => {
   const d = await db.collection('documents').findOne({ id: req.params.id });

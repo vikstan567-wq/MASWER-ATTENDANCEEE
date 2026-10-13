@@ -419,3 +419,26 @@ body.admin .topbar{margin-bottom:14px;}
 
 #adminPage.is-mgr .staff-only{display:none!important;}
 .rt{white-space:nowrap;}
+
+/* payroll hub + document upload */
+.hub-card{padding:18px 22px;margin-bottom:16px;}
+.hub-top{display:flex;gap:14px;align-items:center;}
+.hub-ico{width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;background:rgba(242,101,34,.12);flex:0 0 auto;}
+.hub-title{font-size:20px;font-weight:800;line-height:1.2;} .hub-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+.hub-tabs{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;}
+.hub-tab{border:0;cursor:pointer;padding:9px 16px;border-radius:12px;font-weight:700;font-size:13px;background:transparent;color:var(--muted);font-family:inherit;}
+.hub-tab.on{color:var(--orange,#f26522);background:var(--card,#eef0f6);box-shadow:3px 3px 8px rgba(0,0,0,.08),-3px -3px 8px rgba(255,255,255,.7);}
+.hub-cnt{display:inline-block;min-width:20px;text-align:center;font-size:11px;background:rgba(120,130,160,.18);border-radius:10px;padding:1px 6px;margin-left:4px;}
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-top:16px;}
+.kpi-k{font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);}
+.kpi-v{font-size:26px;font-weight:800;margin-top:4px;} .kpi-v small{font-size:12px;font-weight:700;color:var(--muted);}
+.pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:800;}
+.pill-ok{background:rgba(40,167,100,.15);color:#1b8a52;} .pill-dr{background:rgba(242,150,34,.16);color:#c86a00;}
+.pill-fin{background:rgba(60,110,220,.14);color:#2f58c9;} .pill-no{background:rgba(120,130,160,.16);color:var(--muted);}
+.dm-h{font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin:16px 0 8px;}
+.cat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;}
+.cat{cursor:pointer;border:2px solid transparent;border-radius:12px;padding:10px 12px;background:rgba(120,130,160,.1);}
+.cat b{display:block;font-size:13px;} .cat small{font-size:11px;color:var(--muted);}
+.cat.on{border-color:var(--orange,#f26522);background:rgba(242,101,34,.08);}
+.dz{display:flex;flex-direction:column;align-items:center;gap:4px;padding:26px 10px;border:2px dashed rgba(120,130,160,.5);border-radius:14px;cursor:pointer;text-align:center;}
+.dz small{color:var(--muted);font-size:11px;}

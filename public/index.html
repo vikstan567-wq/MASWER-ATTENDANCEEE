@@ -233,14 +233,18 @@
 
       <!-- EMPLOYEE DOCUMENTS (all employees) -->
       <div class="panel" id="panel-docs">
+        <div class="card hub-card"><div class="hub-hdr" data-hub></div></div>
         <div class="card">
-          <div class="card-top">
+          <div class="card-top" style="flex-wrap:wrap;gap:10px;">
             <h3>📁 Employee Documents (<span id="dpCnt">0</span>)</h3>
-            <input id="dpQ" placeholder="Search name / ID…" oninput="renderDocsPanel()" style="max-width:240px;"/>
+            <div class="btn-gap">
+              <input id="dpQ" placeholder="Search name / ID…" oninput="renderDocsPanel()" style="max-width:220px;"/>
+              <button class="btn btn-orange" onclick="openDocModal()">⬆ Upload Document</button>
+            </div>
           </div>
-          <p style="font-size:12px;color:var(--muted);margin:0 0 10px;">Offer letter, appointment letter, experience letter, relieving letter, Aadhaar, PAN, bank details, photo or anything else (PDF / JPG / PNG, max 5 MB each).</p>
-          <div id="dpMsg" style="font-size:12px;min-height:16px;margin-bottom:6px;"></div>
-          <div id="dpList"></div>
+          <p style="font-size:12px;color:var(--muted);margin:0 22px 10px;">Offer letter, appointment letter, experience certificate, KYC, salary slips and anything else (PDF / JPG / PNG, max 5 MB each). Only HR can see these.</p>
+          <div id="dpMsg" style="font-size:12px;min-height:16px;margin:0 22px 6px;"></div>
+          <div id="dpList" style="padding:0 22px 16px;"></div>
         </div>
       </div>
 
@@ -325,18 +329,26 @@
 
       <!-- SALARY PANEL -->
       <div class="panel" id="panel-salary">
+        <div class="card hub-card">
+          <div class="hub-hdr" data-hub></div>
+          <div class="kpi-row" id="salKpi"></div>
+        </div>
         <div class="card">
-          <div class="card-top"><h3>Day-wise Salary</h3>
+          <div class="card-top" style="flex-wrap:wrap;gap:10px;">
+            <div class="fbar" style="padding:0;flex:1;">
+              <label style="font-size:12px;font-weight:700;align-self:center;">📅 Month:</label>
+              <input type="month" id="salMonth" onchange="loadSalary()" style="flex:0 0 auto;"/>
+              <input type="text" id="salQ" placeholder="Search Name / EMP ID…" oninput="renderSalary()"/>
+              <select id="salSt" onchange="renderSalary()"><option value="">All Status</option><option value="none">Not generated</option><option value="draft">Draft</option><option value="final">Final (locked)</option><option value="delivered">Delivered</option></select>
+            </div>
             <div class="btn-gap">
-              <button class="btn btn-blue" onclick="slipBulk('generate')">Generate all payslips</button>
-              <button class="btn btn-green" onclick="slipBulk('finalize')">🔒 Finalize month</button>
-            </div></div>
-          <div class="fbar">
-            <input type="month" id="salMonth" onchange="loadSalary()"/>
-            <input type="text" id="salQ" placeholder="Name or EMP ID..." oninput="renderSalary()"/>
+              <button class="btn btn-orange" onclick="slipBulk('generate')">✨ Generate from Attendance</button>
+              <button class="btn btn-green" onclick="dispatchAll()">🚀 Dispatch All to Employees</button>
+              <button class="btn" onclick="slipBulk('finalize')">🔒 Finalize month</button>
+            </div>
           </div>
           <div id="salNote" style="padding:0 22px 8px;font-size:12px;color:var(--muted);"></div>
-          <div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>Employee</th><th>Monthly</th><th>P / H / A</th><th>Incomplete</th><th>Paid days</th><th>Advance</th><th>Net pay</th><th>Payslip</th><th></th></tr></thead>
+          <div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>Employee</th><th>Designation</th><th>Days present</th><th>P / H / A</th><th>Incomplete</th><th>Overtime</th><th>Gross</th><th>Advance</th><th>Net pay</th><th>Status</th><th>Actions</th></tr></thead>
           <tbody id="salBody"></tbody></table></div>
         </div>
       </div>
@@ -603,6 +615,44 @@
   </div>
 </div>
 
+
+<!-- UPLOAD EMPLOYEE DOCUMENT -->
+<div class="overlay" id="docOverlay">
+  <div class="modal" style="width:min(760px,96vw);max-height:94vh;overflow:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+      <div><h3 style="margin:0;">⬆ Upload Employee Document</h3><div style="font-size:12px;color:var(--muted);">Offer Letter, Appointment Letter, Experience Certificate, KYC or any other file</div></div>
+      <button class="btn" onclick="closeOverlay('docOverlay')">✕</button>
+    </div>
+    <div class="dm-h">1. Employee</div>
+    <select id="dmEmp" style="width:100%;"></select>
+    <div class="dm-h">2. Document category</div>
+    <div class="cat-grid" id="dmCats"></div>
+    <div class="dm-h" style="display:flex;justify-content:space-between;align-items:center;">3. File upload or template <a href="#" id="dmGen" onclick="dmGenerate();return false;" style="display:none;color:var(--orange,#f26522);font-weight:800;">✨ 1-Click Auto-Generate Letter</a></div>
+    <label class="dz" id="dmDz" for="dmFile"><div style="font-size:26px;">⬆</div><b id="dmFileName">Click to select or drag &amp; drop a document</b><small>PDF, JPG, PNG (Max 5 MB)</small></label>
+    <input type="file" id="dmFile" accept="application/pdf,image/jpeg,image/png" style="display:none"/>
+    <div class="grid2" style="margin-top:12px;">
+      <div class="field"><label>Document title</label><input id="dmTitle" type="text" maxlength="60" placeholder="e.g. Offer Letter - Site Supervisor"/></div>
+      <div class="field"><label>Notes / verification remarks</label><input id="dmNotes" type="text" maxlength="200" placeholder="e.g. Verified and signed by HR"/></div>
+    </div>
+    <div class="field" id="dmToWrap" style="display:none;"><label>Last working date (for experience certificate; empty = today)</label><input id="dmTo" type="date"/></div>
+    <div id="dmMsg" style="font-size:12px;min-height:16px;margin:6px 0;"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button class="btn" onclick="closeOverlay('docOverlay')">Cancel</button>
+      <button class="btn btn-orange" id="dmSave" onclick="dmUpload()">⬆ Save &amp; Upload Document</button>
+    </div>
+  </div>
+</div>
+
+<!-- DISPATCH PAYSLIPS -->
+<div class="overlay" id="dispOverlay">
+  <div class="modal" style="width:min(680px,96vw);max-height:92vh;overflow:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <h3 style="margin:0;">🚀 Payslips dispatched</h3><button class="btn" onclick="closeOverlay('dispOverlay')">✕</button>
+    </div>
+    <p style="font-size:12px;color:var(--muted);">Every payslip is marked <b>Delivered</b> and has a secure link (valid 7 days, no login needed). Tap <b>WhatsApp</b> to send each employee their message — WhatsApp opens with the text ready.</p>
+    <div id="dispList"></div>
+  </div>
+</div>
 
 <!-- EMPLOYEE PROFILE -->
 <div class="overlay" id="profOverlay">
@@ -905,13 +955,14 @@ function showPanel(p,el){
   document.querySelectorAll('.nav-i').forEach(x=>x.classList.remove('on'));
   document.getElementById('panel-'+p).classList.add('on');
   if(el)el.classList.add('on');
-  const titles={day:'Today\'s Attendance',monthly:'Monthly Report',all:'Full History',emp:'Employees',qr:'QR Code',projects:'Projects',loc:'Locations (Geofence)',admins:'HR Logins',bypass:'Location Bypass',itools:'IT Tools',psites:'Projects, GPS Radar & Site QR',managers:'Site Managers',attendance:'Attendance',sitewatch:'Live Site Watch',salary:'Salary & Payslips',missed:'Missed Punch-outs',sset:'Company & Salary Rules',audit:'Audit Log',itusers:'IT Users',docs:'Employee Documents'};
+  const titles={day:'Today\'s Attendance',monthly:'Monthly Report',all:'Full History',emp:'Employees',qr:'QR Code',projects:'Projects',loc:'Locations (Geofence)',admins:'HR Logins',bypass:'Location Bypass',itools:'IT Tools',psites:'Projects, GPS Radar & Site QR',managers:'Site Managers',attendance:'Attendance',sitewatch:'Live Site Watch',salary:'Attendance Payroll',missed:'Missed Punch-outs',sset:'Company & Salary Rules',audit:'Audit Log',itusers:'IT Users',docs:'Employee Documents'};
   document.getElementById('panelTitle').textContent=titles[p]||p;
   if(['day','monthly','all'].includes(p)&&ME)refreshLocs();
   if(p==='all')loadAll();
   if(p==='monthly')loadMonthly();
   if(p==='emp')loadEmp();
   if(p==='docs')loadDocsPanel();
+  if(p==='salary')refreshDocCount();
   if(p==='qr')loadQR();
   if(p==='loc')loadLocation();
   if(p==='day')loadDay();
@@ -1509,8 +1560,8 @@ async function delMgr(id,name){ if(!confirm('Delete Site Manager '+id+' ('+name+
 const NAV=[
   {id:'att',label:'📋 Attendance',panels:[['attendance','Attendance'],['monthly','Monthly Report'],['missed','Missed Punch-outs','salary']]},
   {id:'watch',label:'📡 Site Watch',panels:[['sitewatch','Live Site Watch']]},
-  {id:'emp',label:'👥 Employees',panels:[['emp','Employees'],['docs','Employee Documents','docs']]},
-  {id:'pay',label:'💰 Payroll',perm:'salary',panels:[['salary','Salary & Payslips'],['sset','Company & Salary Rules']]},
+  {id:'emp',label:'👥 Employees',panels:[['emp','Employees']]},
+  {id:'pay',label:'💰 Payroll',perm:'salary',panels:[['salary','Attendance Payroll'],['docs','Employee Documents','docs'],['sset','Company & Salary Rules']]},
   {id:'site',label:'🏗 Projects & Sites',panels:[['psites','Projects & Sites'],['qr','QR Codes'],['managers','Site Managers']]},
   {id:'it',label:'🛠 IT Admin',it:true,panels:[['itools','IT Tools'],['admins','HR Logins'],['itusers','IT Users'],['bypass','Location Bypass'],['audit','Audit Log']]}
 ];
@@ -1607,10 +1658,10 @@ async function loadDocs(){
       <a href="#" style="color:var(--bad);" onclick="delDoc('${jsq(x.id)}');return false;">Delete</a></div>`).join(''):'<span style="color:var(--muted);">No documents yet.</span>';
   }catch{el.textContent='Could not load documents';}
 }
-async function uploadCore(empId,file,type,replaceOf,label){
+async function uploadCore(empId,file,type,replaceOf,label,notes){
   if(!file)return {ok:false,error:'Choose a file first.'};
   if(file.size>5*1024*1024)return {ok:false,error:'File must be 5 MB or smaller.'};
-  const i=await jpost('/api/employees/'+encodeURIComponent(empId)+'/documents/init',{type,fileName:file.name,mime:file.type,size:file.size,replaceOf,label});
+  const i=await jpost('/api/employees/'+encodeURIComponent(empId)+'/documents/init',{type,fileName:file.name,mime:file.type,size:file.size,replaceOf,label,notes});
   if(!i.ok)return {ok:false,error:i.d.error||'Failed'};
   let up;
   if(window.parent!==window&&parent.__mwUpload){up=await parent.__mwUpload(i.d.docId,file);}
@@ -1644,7 +1695,7 @@ async function delDoc(id){
 
 // ── EMPLOYEE PROFILE ──
 let pfId=null;
-const DOC_LABELS=[['photo','📷 Photo'],['aadhaar','🪪 Aadhaar'],['pan','💳 PAN'],['bank','🏦 Bank details'],['offer','📄 Offer letter'],['appointment','📃 Appointment letter'],['experience','🎓 Experience letter'],['relieving','📤 Relieving letter'],['other','📎 Other']];
+const DOC_LABELS=[['photo','📷 Photo'],['aadhaar','🪪 Aadhaar'],['pan','💳 PAN'],['bank','🏦 Bank details'],['offer','📄 Offer letter'],['appointment','📃 Appointment letter'],['experience','🎓 Experience letter'],['relieving','📤 Relieving letter'],['kyc','🛡 Government ID / KYC'],['salary_slip','🧾 Salary slip / Payroll'],['other','📎 Other']];
 async function openProfile(id){
   const e=EMPS.find(x=>x.id===id); if(!e)return;
   pfId=id;
@@ -1683,7 +1734,7 @@ function pfPick(type,replaceOf){
   const inp=document.getElementById('pfFile'); inp.value='';
   inp.onchange=async()=>{
     const msg=document.getElementById('pfMsg'); msg.style.color=''; msg.textContent='Uploading…';
-    const r=await uploadCore(pfId,inp.files[0],type,replaceOf,type==='other'&&!replaceOf?(prompt('Document name (optional):')||undefined):undefined);
+    const r=await uploadCore(pfId,inp.files[0],type,replaceOf,['other','kyc','salary_slip'].includes(type)&&!replaceOf?(prompt('Document name (optional):')||undefined):undefined);
     msg.style.color=r.ok?'var(--ok)':'var(--bad)'; msg.textContent=r.ok?'✅ Uploaded.':'❌ '+r.error;
     if(r.ok){renderPfDocs(); if(type==='photo'){await loadEmp(); openProfileKeep();}}
   };
@@ -1703,6 +1754,19 @@ async function pfSalary(){
 }
 
 
+// ── PAYROLL HUB HEADER (shared by Attendance Payroll + Employee Documents) ──
+function renderHub(){
+  const on=CURP==='docs'?'docs':'salary';
+  const html=`<div class="hub-top"><div class="hub-ico">🧾</div><div><div class="hub-title">Employee Documents &amp; Attendance-Driven Payroll</div><div class="hub-sub">Automatic payslip generation from QR / radar attendance and official employee document storage</div></div></div>
+    <div class="hub-tabs"><button class="hub-tab ${on==='salary'?'on':''}" onclick="showPanel('salary',null)">💰 Attendance Payroll</button><button class="hub-tab ${on==='docs'?'on':''}" onclick="showPanel('docs',null)">📁 Employee Documents <span class="hub-cnt">${DPDOCS.length}</span></button></div>`;
+  document.querySelectorAll('[data-hub]').forEach(el=>el.innerHTML=html);
+}
+async function refreshDocCount(){
+  renderHub();
+  try{const r=await fetch('/api/documents'); if(r.ok){DPDOCS=await r.json();}}catch{}
+  renderHub();
+}
+
 // ── EMPLOYEE DOCUMENTS PANEL ──
 let DPDOCS=[];
 async function loadDocsPanel(){
@@ -1711,46 +1775,71 @@ async function loadDocsPanel(){
     if(!EMPS.length)await loadEmp();
     const r=await fetch('/api/documents'); const d=await r.json();
     if(!r.ok){el.innerHTML='<div class="no-data">'+esc(d.error||'Could not load')+'</div>';return;}
-    DPDOCS=d; renderDocsPanel();
+    DPDOCS=d; renderHub(); renderDocsPanel();
   }catch{el.innerHTML='<div class="no-data">Could not load documents</div>';}
 }
 function renderDocsPanel(){
   const q=(document.getElementById('dpQ').value||'').toLowerCase();
   const list=EMPS.filter(e=>e.role!=='admin'&&(!q||(e.name||'').toLowerCase().includes(q)||(e.id||'').toLowerCase().includes(q)));
-  document.getElementById('dpCnt').textContent=list.length;
+  document.getElementById('dpCnt').textContent=DPDOCS.length;
   const lab=t=>(DOC_LABELS.find(x=>x[0]===t)||[t,t])[1];
   document.getElementById('dpList').innerHTML=list.length?list.map(e=>{
     const mine=DPDOCS.filter(x=>x.empId===e.id);
-    const opts=DOC_LABELS.filter(([t])=>t!=='photo').map(([t,l])=>`<option value="${t}">${l}</option>`).join('');
     return `<div style="padding:12px 0;border-bottom:1px solid var(--border);">
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
         <div style="min-width:180px;flex:1;"><b>${esc(e.name)}</b> <span style="color:var(--muted);font-size:12px;">${esc(e.id)}${e.designation?' · '+esc(e.designation):''}</span></div>
-        <select id="dpT-${esc(e.id)}" style="max-width:190px;">${opts}</select>
-        <button class="btn btn-orange" style="padding:7px 14px;font-size:12px;" onclick="dpUpload('${jsq(e.id)}')">⬆ Upload</button>
+        <button class="btn btn-orange" style="padding:6px 14px;font-size:12px;" onclick="openDocModal('${jsq(e.id)}')">⬆ Upload</button>
       </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">${mine.length?mine.map(x=>`<span style="background:rgba(120,130,160,.14);border-radius:10px;padding:5px 10px;font-size:12px;display:inline-flex;gap:8px;align-items:center;">
-        <b>${esc(x.type==='other'&&x.label?'📎 '+x.label:lab(x.type))}</b>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">${mine.length?mine.map(x=>`<span title="${esc(x.notes||'')}" style="background:rgba(120,130,160,.14);border-radius:10px;padding:5px 10px;font-size:12px;display:inline-flex;gap:8px;align-items:center;">
+        <b>${esc(x.label?lab(x.type).split(' ')[0]+' '+x.label:lab(x.type))}</b>
         <a href="${docUrl(x.id)}" target="_blank">View</a><a href="${docUrl(x.id,1)}" download="${esc(x.fileName)}">Download</a>
         <a href="#" style="color:var(--bad);" onclick="dpDel('${jsq(x.id)}');return false;">✕</a></span>`).join(''):'<span style="color:var(--muted);font-size:12px;">No documents uploaded yet</span>'}</div></div>`;
   }).join(''):'<div class="no-data">No employees found</div>';
-}
-async function dpUpload(empId){
-  const type=document.getElementById('dpT-'+empId).value; let label;
-  if(type==='other'){label=prompt('Document name (e.g. Salary certificate, NOC):'); if(label===null)return; label=label.trim()||undefined;}
-  const inp=document.getElementById('pfFile'); inp.value='';
-  inp.onchange=async()=>{
-    const m=document.getElementById('dpMsg'); m.style.color=''; m.textContent='Uploading…';
-    const r=await uploadCore(empId,inp.files[0],type,undefined,label);
-    m.style.color=r.ok?'var(--ok)':'var(--bad)'; m.textContent=r.ok?'✅ Uploaded.':'❌ '+r.error;
-    if(r.ok)loadDocsPanel();
-  };
-  inp.click();
 }
 async function dpDel(id){
   if(!confirm('Delete this document?'))return;
   const r=await fetch('/api/documents/'+encodeURIComponent(id),{method:'DELETE'}); const d=await r.json().catch(()=>({}));
   toast(r.ok?'🗑 Document deleted':'❌ '+(d.error||'Failed')); loadDocsPanel();
 }
+
+// ── UPLOAD DOCUMENT MODAL ──
+const DM_CATS=[['offer','📄','Offer Letter','Offer Letter'],['appointment','📃','Appointment Letter','Appointment Letter'],['experience','🎓','Experience Certificate','Experience Certificate'],['kyc','🛡','Government ID / KYC','Aadhaar, PAN, etc.'],['salary_slip','🧾','Salary Slip / Payroll','Uploaded payslip'],['other','📎','Other Documentation','Any other file']];
+let dmCat='offer', dmFile=null;
+async function openDocModal(empId,cat){
+  if(!EMPS.length)await loadEmp();
+  document.getElementById('dmEmp').innerHTML=EMPS.filter(e=>e.role!=='admin'&&e.active!==false).map(e=>`<option value="${esc(e.id)}">${esc(e.name)} (${esc(e.id)})${e.designation?' - '+esc(e.designation):''}</option>`).join('');
+  if(empId)document.getElementById('dmEmp').value=empId;
+  dmFile=null; document.getElementById('dmFile').value=''; document.getElementById('dmFileName').textContent='Click to select or drag & drop a document';
+  ['dmTitle','dmNotes','dmTo'].forEach(i=>document.getElementById(i).value=''); document.getElementById('dmMsg').textContent='';
+  dmPick(cat||'offer'); document.getElementById('docOverlay').classList.add('open');
+}
+function dmPick(c){
+  dmCat=c;
+  document.getElementById('dmCats').innerHTML=DM_CATS.map(([k,ic,t,sub])=>`<div class="cat ${k===c?'on':''}" onclick="dmPick('${k}')"><b>${ic} ${t}</b><small>${sub}</small></div>`).join('');
+  const gen=['offer','appointment','experience'].includes(c);
+  document.getElementById('dmGen').style.display=gen?'':'none';
+  document.getElementById('dmToWrap').style.display=c==='experience'?'':'none';
+}
+document.addEventListener('change',e=>{ if(e.target&&e.target.id==='dmFile'){dmFile=e.target.files[0]||null; document.getElementById('dmFileName').textContent=dmFile?dmFile.name+' · '+(dmFile.size/1024).toFixed(0)+' KB':'Click to select or drag & drop a document';} });
+document.addEventListener('dragover',e=>{ if(e.target.closest&&e.target.closest('#dmDz'))e.preventDefault(); });
+document.addEventListener('drop',e=>{ const z=e.target.closest&&e.target.closest('#dmDz'); if(!z)return; e.preventDefault(); const f=e.dataTransfer.files[0]; if(f){dmFile=f; document.getElementById('dmFileName').textContent=f.name+' · '+(f.size/1024).toFixed(0)+' KB';} });
+async function dmUpload(){
+  const m=document.getElementById('dmMsg'), btn=document.getElementById('dmSave');
+  if(!dmFile){m.style.color='var(--bad)'; m.textContent='❌ Choose a file first (or use Auto-Generate Letter).'; return;}
+  btn.disabled=true; m.style.color=''; m.textContent='Uploading…';
+  const r=await uploadCore(document.getElementById('dmEmp').value,dmFile,dmCat,undefined,document.getElementById('dmTitle').value.trim()||undefined,document.getElementById('dmNotes').value.trim()||undefined);
+  btn.disabled=false;
+  if(!r.ok){m.style.color='var(--bad)'; m.textContent='❌ '+r.error; return;}
+  closeOverlay('docOverlay'); toast('✅ Document uploaded'); refreshAfterDoc();
+}
+async function dmGenerate(){
+  const m=document.getElementById('dmMsg'); m.style.color=''; m.textContent='Generating letter…';
+  const r=await jpost('/api/employees/'+encodeURIComponent(document.getElementById('dmEmp').value)+'/letters/generate',{kind:dmCat,label:document.getElementById('dmTitle').value.trim()||undefined,toDate:document.getElementById('dmTo').value||undefined});
+  if(!r.ok){m.style.color='var(--bad)'; m.textContent='❌ '+(r.d.error||'Failed'); return;}
+  closeOverlay('docOverlay'); toast('✨ Letter generated & saved — please review it before sharing'); refreshAfterDoc();
+  if(r.d.document)window.open(docUrl(r.d.document.id),'_blank');
+}
+function refreshAfterDoc(){ if(CURP==='docs')loadDocsPanel(); else refreshDocCount(); }
 
 // ── MISSED PUNCH-OUTS ──
 async function loadMissedCount(){
@@ -1778,16 +1867,25 @@ async function loadSalary(){
 }
 function renderSalary(){
   if(!SAL)return;
-  const q=document.getElementById('salQ').value.toLowerCase();
-  const rows=SAL.rows.filter(x=>!q||x.name.toLowerCase().includes(q)||x.empId.toLowerCase().includes(q));
+  const q=document.getElementById('salQ').value.toLowerCase(), st=document.getElementById('salSt').value;
+  const stOf=x=>!x.slip?'none':x.slip.deliveredAt?'delivered':x.slip.finalized?'final':'draft';
+  const all=SAL.rows, rows=all.filter(x=>(!q||x.name.toLowerCase().includes(q)||x.empId.toLowerCase().includes(q))&&(!st||stOf(x)===st));
+  const dim=new Date(+SAL.month.slice(0,4),+SAL.month.slice(5,7),0).getDate();
+  const sum=f=>all.reduce((a,x)=>a+(+f(x)||0),0), del=all.filter(x=>x.slip&&x.slip.deliveredAt).length;
+  const kpi=(k,v,u,c)=>`<div class="kpi"><div class="kpi-k">${k}</div><div class="kpi-v" style="${c||''}">${v}<small>${u||''}</small></div></div>`;
+  document.getElementById('salKpi').innerHTML=kpi('Total net payout',money(sum(x=>x.net)),'','color:var(--orange,#f26522)')+kpi('Total days worked',sum(x=>x.earnedDays),' Days')+kpi('Overtime logged',(+sum(x=>x.otHours).toFixed(1)),' Hours','color:var(--ok)')+kpi('Delivered to employees',del+' / '+all.length,'');
   document.getElementById('salNote').textContent=`Per-day salary = monthly ÷ ${SAL.settings.daysMode==='fixed30'?'30':'days in month'} · Half day if under ${SAL.settings.halfDayBelowHours} h · Employees without a salary are not listed.`;
+  const pill=x=>!x.slip?'<span class="pill pill-no">Not generated</span>':x.slip.deliveredAt?'<span class="pill pill-ok">✔ Delivered</span>':x.slip.finalized?'<span class="pill pill-fin">🔒 Final</span>':'<span class="pill pill-dr">Draft v'+x.slip.version+'</span>';
   document.getElementById('salBody').innerHTML=rows.length?rows.map(x=>`<tr>
-    <td><b>${esc(x.name)}</b><br><small>${esc(x.empId)}${x.designation?' · '+esc(x.designation):''}</small></td>
-    <td>${money(x.monthly)}</td><td>${x.counts.present} / ${x.counts.half} / ${x.counts.absent}</td>
+    <td><b>${esc(x.name)}</b><br><small>${esc(x.empId)}</small></td><td>${esc(x.designation||'—')}<br><small>${esc(x.department||'')}</small></td>
+    <td><span class="pill pill-ok">${x.earnedDays} / ${dim}</span></td><td>${x.counts.present} / ${x.counts.half} / ${x.counts.absent}</td>
     <td>${x.hasIncomplete?`<span style="color:var(--bad);font-weight:800;">${x.counts.incomplete} ⚠️</span>`:'0'}</td>
-    <td>${x.earnedDays}</td><td>${x.advance?money(x.advance):'—'}</td><td><b>${money(x.net)}</b></td>
-    <td>${x.slip?(x.slip.finalized?'🔒 Final':'Draft v'+x.slip.version)+'<br><small>'+esc(x.slip.id)+'</small>':'—'}</td>
-    <td><button class="btn btn-blue" onclick="openSal('${jsq(x.empId)}')">View</button></td></tr>`).join(''):'<tr><td colspan="9" class="no-data">No employees with a salary set. Add a monthly salary in the Employees tab.</td></tr>';
+    <td>${x.otHours?`<span class="pill pill-dr">${(+x.otHours).toFixed(1)} hrs</span>`:'—'}</td>
+    <td>${money(x.gross!==undefined?x.gross:x.monthly)}</td><td>${x.advance?money(x.advance):'—'}</td><td><b style="color:var(--orange,#f26522)">${money(x.net)}</b></td>
+    <td>${pill(x)}</td>
+    <td style="white-space:nowrap;"><button class="btn btn-blue" style="padding:5px 10px;" onclick="openSal('${jsq(x.empId)}')">👁 View</button>
+      ${x.slip?`<button class="btn btn-green" title="Send on WhatsApp" style="padding:5px 10px;" onclick="slipShare('${jsq(x.slip.id)}')">📱</button>`:''}
+      <button class="btn" title="Upload a document for this employee" style="padding:5px 10px;" onclick="openDocModal('${jsq(x.empId)}','salary_slip')">⬆</button></td></tr>`).join(''):'<tr><td colspan="11" class="no-data">No employees with a salary set. Add a monthly salary in the Employees tab.</td></tr>';
 }
 async function slipBulk(kind){
   const m=document.getElementById('salMonth').value;
@@ -1795,8 +1893,20 @@ async function slipBulk(kind){
   const r=await jpost('/api/payslips/'+kind,{month:m});
   if(!r.ok){toast('❌ '+(r.d.error||'Failed'));return;}
   if(kind==='finalize')toast(`🔒 Finalized ${r.d.finalized}`+(r.d.blocked.length?` · ${r.d.blocked.length} blocked (incomplete days or month not over)`:''));
-  else toast(`✅ Generated ${r.d.made}`+(r.d.skipped?` · ${r.d.skipped} locked, skipped`:''));
+  else toast(`✅ Generated ${r.d.made} payslip(s) from attendance`+(r.d.skipped?` · ${r.d.skipped} locked, skipped`:''));
   loadSalary();
+}
+async function dispatchAll(){
+  const m=document.getElementById('salMonth').value;
+  if(!confirm('Dispatch all generated payslips of '+m+' to employees?\nEach is marked Delivered and gets a secure link (valid 7 days).'))return;
+  const r=await jpost('/api/payslips/dispatch',{month:m});
+  if(!r.ok){toast('❌ '+(r.d.error||'Failed'));return;}
+  document.getElementById('dispList').innerHTML=r.d.items.map(x=>`<div style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);flex-wrap:wrap;">
+    <div style="flex:1;min-width:150px;"><b>${esc(x.name)}</b> <small style="color:var(--muted);">${esc(x.empId)} · ${money(x.net)}</small><br><small style="color:var(--muted);">${x.mobile?esc(x.mobile):'⚠️ no mobile number'}</small></div>
+    <a class="btn btn-green" style="padding:6px 12px;text-decoration:none;" href="${x.whatsapp}" target="_blank">📱 WhatsApp</a>
+    <button class="btn" style="padding:6px 12px;" onclick="navigator.clipboard&&navigator.clipboard.writeText('${jsq(x.url)}');toast('🔗 Link copied');">Copy link</button></div>`).join('');
+  document.getElementById('dispOverlay').classList.add('open');
+  toast('🚀 '+r.d.count+' payslip(s) dispatched'); loadSalary();
 }
 let SD=null;
 async function openSal(id){
