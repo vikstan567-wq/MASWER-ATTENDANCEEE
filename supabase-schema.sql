@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS documents (
   status TEXT, uploaded_by TEXT, uploaded_at TEXT, replaced_at TEXT
 );
 ALTER TABLE documents ADD COLUMN IF NOT EXISTS replace_of TEXT;
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS label TEXT;
 CREATE INDEX IF NOT EXISTS idx_docs_emp ON documents (emp_id);
 CREATE TABLE IF NOT EXISTS payslips (
   id TEXT PRIMARY KEY, emp_id TEXT NOT NULL, month TEXT NOT NULL, version INTEGER, snapshot JSONB, net DOUBLE PRECISION,

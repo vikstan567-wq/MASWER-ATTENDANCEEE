@@ -1392,7 +1392,7 @@ async function docEmp(req, res, empId) {
   if (!e || e.role === 'admin' || !scopeFilter({ ...req, query: {} })(e)) { res.status(404).json({ error: 'Employee not found' }); return null; }
   return e;
 }
-const docView = d => ({ id: d.id, empId: d.empId, type: d.type, fileName: d.fileName, mime: d.mime, size: d.size, uploadedAt: d.uploadedAt, uploadedBy: d.uploadedBy });
+const docView = d => ({ id: d.id, empId: d.empId, type: d.type, label: d.label, fileName: d.fileName, mime: d.mime, size: d.size, uploadedAt: d.uploadedAt, uploadedBy: d.uploadedBy });
 const canDoc = (req, type) => hasPerm(req, 'docs') || type === 'photo';
 async function removeFile(d) {
   try {
@@ -1400,6 +1400,14 @@ async function removeFile(d) {
     else fs.unlinkSync(path.join(UP_DIR, d.path));
   } catch (e) { /* already gone */ }
 }
+// all documents of every employee in scope (Employee Documents screen)
+app.get('/api/documents', requireStaff, async (req, res) => {
+  if (!hasPerm(req, 'docs')) return noPerm(res);
+  const emps = (await db.collection('employees').find({}).toArray()).filter(e => e.role !== 'admin' && scopeFilter({ ...req, query: {} })(e));
+  const ok = new Set(emps.map(e => e.id));
+  const list = (await db.collection('documents').find({ status: 'ok' }).toArray()).filter(d => ok.has(d.empId));
+  res.json(list.map(docView));
+});
 app.get('/api/employees/:id/documents', requireStaff, async (req, res) => {
   const e = await docEmp(req, res, req.params.id); if (!e) return;
   const list = (await db.collection('documents').find({ empId: e.id, status: 'ok' }).toArray()).filter(d => canDoc(req, d.type));
@@ -1416,8 +1424,8 @@ app.post('/api/employees/:id/documents/init', requireStaff, async (req, res) => 
   if (!isFinite(size) || size <= 0 || size > DOC_MAX) return res.status(400).json({ error: 'File must be 5 MB or smaller' });
   let replaceOf = null;
   if (b.replaceOf) { replaceOf = await db.collection('documents').findOne({ id: String(b.replaceOf), empId: e.id }); if (!replaceOf) return res.status(404).json({ error: 'Document to replace not found' }); }
-  const id = newId('D'), p = `${e.id}/${id}.${DOC_MIME[mime]}`;
-  const doc = { id, empId: e.id, type, fileName: String(b.fileName || 'file').replace(/[^\w.\- ]/g, '_').slice(0, 80), mime, size, path: p, status: 'pending', replaceOf: replaceOf ? replaceOf.id : undefined, uploadedBy: req.user.id, uploadedAt: new Date().toISOString() };
+  const id = newId('D'), p = `${e.id}/${id}.${DOC_MIME[mime]}`, label = String(b.label || '').replace(/[<>]/g, '').trim().slice(0, 40) || undefined;
+  const doc = { id, empId: e.id, type, label, fileName: String(b.fileName || 'file').replace(/[^\w.\- ]/g, '_').slice(0, 80), mime, size, path: p, status: 'pending', replaceOf: replaceOf ? replaceOf.id : undefined, uploadedBy: req.user.id, uploadedAt: new Date().toISOString() };
   await db.collection('documents').insertOne(doc);
   if (useSB) {
     await ensureBucket();

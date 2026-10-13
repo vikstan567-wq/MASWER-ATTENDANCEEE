@@ -231,6 +231,19 @@
 
 
 
+      <!-- EMPLOYEE DOCUMENTS (all employees) -->
+      <div class="panel" id="panel-docs">
+        <div class="card">
+          <div class="card-top">
+            <h3>📁 Employee Documents (<span id="dpCnt">0</span>)</h3>
+            <input id="dpQ" placeholder="Search name / ID…" oninput="renderDocsPanel()" style="max-width:240px;"/>
+          </div>
+          <p style="font-size:12px;color:var(--muted);margin:0 0 10px;">Offer letter, appointment letter, experience letter, relieving letter, Aadhaar, PAN, bank details, photo or anything else (PDF / JPG / PNG, max 5 MB each).</p>
+          <div id="dpMsg" style="font-size:12px;min-height:16px;margin-bottom:6px;"></div>
+          <div id="dpList"></div>
+        </div>
+      </div>
+
       <!-- ATTENDANCE (full + project-wise) -->
       <div class="panel" id="panel-attendance">
         <div class="card">
@@ -892,12 +905,13 @@ function showPanel(p,el){
   document.querySelectorAll('.nav-i').forEach(x=>x.classList.remove('on'));
   document.getElementById('panel-'+p).classList.add('on');
   if(el)el.classList.add('on');
-  const titles={day:'Today\'s Attendance',monthly:'Monthly Report',all:'Full History',emp:'Employees',qr:'QR Code',projects:'Projects',loc:'Locations (Geofence)',admins:'HR Logins',bypass:'Location Bypass',itools:'IT Tools',psites:'Projects, GPS Radar & Site QR',managers:'Site Managers',attendance:'Attendance',sitewatch:'Live Site Watch',salary:'Salary & Payslips',missed:'Missed Punch-outs',sset:'Company & Salary Rules',audit:'Audit Log',itusers:'IT Users'};
+  const titles={day:'Today\'s Attendance',monthly:'Monthly Report',all:'Full History',emp:'Employees',qr:'QR Code',projects:'Projects',loc:'Locations (Geofence)',admins:'HR Logins',bypass:'Location Bypass',itools:'IT Tools',psites:'Projects, GPS Radar & Site QR',managers:'Site Managers',attendance:'Attendance',sitewatch:'Live Site Watch',salary:'Salary & Payslips',missed:'Missed Punch-outs',sset:'Company & Salary Rules',audit:'Audit Log',itusers:'IT Users',docs:'Employee Documents'};
   document.getElementById('panelTitle').textContent=titles[p]||p;
   if(['day','monthly','all'].includes(p)&&ME)refreshLocs();
   if(p==='all')loadAll();
   if(p==='monthly')loadMonthly();
   if(p==='emp')loadEmp();
+  if(p==='docs')loadDocsPanel();
   if(p==='qr')loadQR();
   if(p==='loc')loadLocation();
   if(p==='day')loadDay();
@@ -1495,7 +1509,7 @@ async function delMgr(id,name){ if(!confirm('Delete Site Manager '+id+' ('+name+
 const NAV=[
   {id:'att',label:'📋 Attendance',panels:[['attendance','Attendance'],['monthly','Monthly Report'],['missed','Missed Punch-outs','salary']]},
   {id:'watch',label:'📡 Site Watch',panels:[['sitewatch','Live Site Watch']]},
-  {id:'emp',label:'👥 Employees',panels:[['emp','Employees']]},
+  {id:'emp',label:'👥 Employees',panels:[['emp','Employees'],['docs','Employee Documents','docs']]},
   {id:'pay',label:'💰 Payroll',perm:'salary',panels:[['salary','Salary & Payslips'],['sset','Company & Salary Rules']]},
   {id:'site',label:'🏗 Projects & Sites',panels:[['psites','Projects & Sites'],['qr','QR Codes'],['managers','Site Managers']]},
   {id:'it',label:'🛠 IT Admin',it:true,panels:[['itools','IT Tools'],['admins','HR Logins'],['itusers','IT Users'],['bypass','Location Bypass'],['audit','Audit Log']]}
@@ -1593,10 +1607,10 @@ async function loadDocs(){
       <a href="#" style="color:var(--bad);" onclick="delDoc('${jsq(x.id)}');return false;">Delete</a></div>`).join(''):'<span style="color:var(--muted);">No documents yet.</span>';
   }catch{el.textContent='Could not load documents';}
 }
-async function uploadCore(empId,file,type,replaceOf){
+async function uploadCore(empId,file,type,replaceOf,label){
   if(!file)return {ok:false,error:'Choose a file first.'};
   if(file.size>5*1024*1024)return {ok:false,error:'File must be 5 MB or smaller.'};
-  const i=await jpost('/api/employees/'+encodeURIComponent(empId)+'/documents/init',{type,fileName:file.name,mime:file.type,size:file.size,replaceOf});
+  const i=await jpost('/api/employees/'+encodeURIComponent(empId)+'/documents/init',{type,fileName:file.name,mime:file.type,size:file.size,replaceOf,label});
   if(!i.ok)return {ok:false,error:i.d.error||'Failed'};
   let up;
   if(window.parent!==window&&parent.__mwUpload){up=await parent.__mwUpload(i.d.docId,file);}
@@ -1659,7 +1673,7 @@ async function renderPfDocs(){
     const mine=list.filter(x=>x.type===t);
     return `<div style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);flex-wrap:wrap;">
       <div style="min-width:130px;font-weight:700;">${l} ${mine.length?'<span style="color:var(--ok)">✅</span>':'<span style="color:var(--muted);font-weight:400;font-size:11px;">missing</span>'}</div>
-      <div style="flex:1;min-width:160px;font-size:12px;">${mine.map(x=>`<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><span style="overflow:hidden;text-overflow:ellipsis;max-width:220px;">${esc(x.fileName)} · ${(x.size/1024).toFixed(0)} KB</span>
+      <div style="flex:1;min-width:160px;font-size:12px;">${mine.map(x=>`<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><span style="overflow:hidden;text-overflow:ellipsis;max-width:220px;">${x.label?'<b>'+esc(x.label)+'</b> · ':''}${esc(x.fileName)} · ${(x.size/1024).toFixed(0)} KB</span>
         <a href="${docUrl(x.id)}" target="_blank">View</a><a href="${docUrl(x.id,1)}" download="${esc(x.fileName)}">Download</a>
         <a href="#" onclick="pfPick('${t}','${jsq(x.id)}');return false;">Replace</a><a href="#" style="color:var(--bad);" onclick="pfDel('${jsq(x.id)}');return false;">Delete</a></div>`).join('')||'<span style="color:var(--muted);">Nothing uploaded</span>'}</div>
       <button class="btn btn-orange" style="padding:6px 12px;font-size:11px;" onclick="pfPick('${t}')">⬆ ${mine.length&&t!=='other'?'Upload new':'Upload'}</button></div>`;
@@ -1669,7 +1683,7 @@ function pfPick(type,replaceOf){
   const inp=document.getElementById('pfFile'); inp.value='';
   inp.onchange=async()=>{
     const msg=document.getElementById('pfMsg'); msg.style.color=''; msg.textContent='Uploading…';
-    const r=await uploadCore(pfId,inp.files[0],type,replaceOf);
+    const r=await uploadCore(pfId,inp.files[0],type,replaceOf,type==='other'&&!replaceOf?(prompt('Document name (optional):')||undefined):undefined);
     msg.style.color=r.ok?'var(--ok)':'var(--bad)'; msg.textContent=r.ok?'✅ Uploaded.':'❌ '+r.error;
     if(r.ok){renderPfDocs(); if(type==='photo'){await loadEmp(); openProfileKeep();}}
   };
@@ -1686,6 +1700,56 @@ async function pfSalary(){
   closeOverlay('profOverlay');
   showPanel('salary',document.getElementById('nav-salary'));
   await new Promise(r=>setTimeout(r,500)); openSal(pfId);
+}
+
+
+// ── EMPLOYEE DOCUMENTS PANEL ──
+let DPDOCS=[];
+async function loadDocsPanel(){
+  const el=document.getElementById('dpList'); el.innerHTML='<div class="no-data">Loading…</div>';
+  try{
+    if(!EMPS.length)await loadEmp();
+    const r=await fetch('/api/documents'); const d=await r.json();
+    if(!r.ok){el.innerHTML='<div class="no-data">'+esc(d.error||'Could not load')+'</div>';return;}
+    DPDOCS=d; renderDocsPanel();
+  }catch{el.innerHTML='<div class="no-data">Could not load documents</div>';}
+}
+function renderDocsPanel(){
+  const q=(document.getElementById('dpQ').value||'').toLowerCase();
+  const list=EMPS.filter(e=>e.role!=='admin'&&(!q||(e.name||'').toLowerCase().includes(q)||(e.id||'').toLowerCase().includes(q)));
+  document.getElementById('dpCnt').textContent=list.length;
+  const lab=t=>(DOC_LABELS.find(x=>x[0]===t)||[t,t])[1];
+  document.getElementById('dpList').innerHTML=list.length?list.map(e=>{
+    const mine=DPDOCS.filter(x=>x.empId===e.id);
+    const opts=DOC_LABELS.filter(([t])=>t!=='photo').map(([t,l])=>`<option value="${t}">${l}</option>`).join('');
+    return `<div style="padding:12px 0;border-bottom:1px solid var(--border);">
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <div style="min-width:180px;flex:1;"><b>${esc(e.name)}</b> <span style="color:var(--muted);font-size:12px;">${esc(e.id)}${e.designation?' · '+esc(e.designation):''}</span></div>
+        <select id="dpT-${esc(e.id)}" style="max-width:190px;">${opts}</select>
+        <button class="btn btn-orange" style="padding:7px 14px;font-size:12px;" onclick="dpUpload('${jsq(e.id)}')">⬆ Upload</button>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">${mine.length?mine.map(x=>`<span style="background:rgba(120,130,160,.14);border-radius:10px;padding:5px 10px;font-size:12px;display:inline-flex;gap:8px;align-items:center;">
+        <b>${esc(x.type==='other'&&x.label?'📎 '+x.label:lab(x.type))}</b>
+        <a href="${docUrl(x.id)}" target="_blank">View</a><a href="${docUrl(x.id,1)}" download="${esc(x.fileName)}">Download</a>
+        <a href="#" style="color:var(--bad);" onclick="dpDel('${jsq(x.id)}');return false;">✕</a></span>`).join(''):'<span style="color:var(--muted);font-size:12px;">No documents uploaded yet</span>'}</div></div>`;
+  }).join(''):'<div class="no-data">No employees found</div>';
+}
+async function dpUpload(empId){
+  const type=document.getElementById('dpT-'+empId).value; let label;
+  if(type==='other'){label=prompt('Document name (e.g. Salary certificate, NOC):'); if(label===null)return; label=label.trim()||undefined;}
+  const inp=document.getElementById('pfFile'); inp.value='';
+  inp.onchange=async()=>{
+    const m=document.getElementById('dpMsg'); m.style.color=''; m.textContent='Uploading…';
+    const r=await uploadCore(empId,inp.files[0],type,undefined,label);
+    m.style.color=r.ok?'var(--ok)':'var(--bad)'; m.textContent=r.ok?'✅ Uploaded.':'❌ '+r.error;
+    if(r.ok)loadDocsPanel();
+  };
+  inp.click();
+}
+async function dpDel(id){
+  if(!confirm('Delete this document?'))return;
+  const r=await fetch('/api/documents/'+encodeURIComponent(id),{method:'DELETE'}); const d=await r.json().catch(()=>({}));
+  toast(r.ok?'🗑 Document deleted':'❌ '+(d.error||'Failed')); loadDocsPanel();
 }
 
 // ── MISSED PUNCH-OUTS ──
