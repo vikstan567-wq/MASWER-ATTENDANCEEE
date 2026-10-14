@@ -593,7 +593,7 @@
       <div class="field"><label>Designation</label><input id="eeDes" type="text"/></div>
       <div class="field"><label>Joining date</label><input id="eeJoin" type="date"/></div>
     </div>
-    <div class="field perm-salary-f" style="display:none"><label>Monthly salary</label><input id="eeSal" type="number" min="0"/></div>
+    <div class="perm-salary-f" style="display:none"><div style="font-weight:800;font-size:12px;margin:8px 0 4px;">💰 Salary structure (as on payslip)</div><div class="grid2"><div class="field"><label>Employee No (company ID)</label><input id="ee_empNo" type="text"/></div><div class="field"><label>BASIC (monthly)</label><input id="ee_basic" type="number" step="any" min="0"/></div><div class="field"><label>DA</label><input id="ee_da" type="number" step="any" min="0"/></div><div class="field"><label>HRA</label><input id="ee_hra" type="number" step="any" min="0"/></div><div class="field"><label>OTHER ALLOWANCE</label><input id="ee_otherAllow" type="number" step="any" min="0"/></div><div class="field"><label>PROJECT ALLOWANCE (₹ per day present)</label><input id="ee_projectPerDay" type="number" step="any" min="0"/></div><div class="field"><label>Travel (₹ per day, info only)</label><input id="ee_travelPerDay" type="number" step="any" min="0"/></div><div class="field"><label>Food (₹ per day, info only)</label><input id="ee_foodPerDay" type="number" step="any" min="0"/></div><div class="field"><label>PF (₹ per month)</label><input id="ee_pfAmount" type="number" step="any" min="0"/></div><div class="field"><label>ESI (₹ per month)</label><input id="ee_esiAmount" type="number" step="any" min="0"/></div><div class="field"><label>PROF TAX (₹ per month)</label><input id="ee_profTax" type="number" step="any" min="0"/></div><div class="field"><label>Leave opening balance (days)</label><input id="ee_leaveOpening" type="number" step="any" min="0"/></div><div class="field"><label>Bank name</label><input id="ee_bankName" type="text"/></div><div class="field"><label>Bank account no</label><input id="ee_bankAccount" type="text"/></div><div class="field"><label>PAN number</label><input id="ee_panNumber" type="text"/></div><div class="field"><label>ESI number</label><input id="ee_esiNo" type="text"/></div><div class="field"><label>PF number</label><input id="ee_pfNo" type="text"/></div><div class="field"><label>PF UAN</label><input id="ee_uanNo" type="text"/></div></div><div style="font-size:11px;color:var(--muted);">Full gross = BASIC + DA + HRA + OTHER. Actual pay = Full × effective days ÷ days in month (working days, weekly offs excluded).</div></div>
     <label style="display:flex;gap:8px;align-items:center;font-size:13px;margin-bottom:10px;"><input type="checkbox" id="eeActive"/> Active (untick to deactivate — they can no longer punch in)</label>
     <div class="field"><label>Department</label><input id="eeDept" type="text" list="deptList" placeholder="e.g. HR, Accounts, Sales"/></div>
     <div class="field"><label>Main location (geofence)</label><select id="eeLoc"></select></div>
@@ -687,7 +687,7 @@
       <div class="field"><label>Designation</label><input id="nDes" type="text" placeholder="e.g. Security Guard"/></div>
       <div class="field"><label>Joining date</label><input id="nJoin" type="date"/></div>
     </div>
-    <div class="field perm-salary-f" style="display:none"><label>Monthly salary</label><input id="nSal" type="number" min="0" placeholder="e.g. 18000"/></div>
+    <div class="perm-salary-f" style="display:none"><div style="font-weight:800;font-size:12px;margin:8px 0 4px;">💰 Salary structure (as on payslip)</div><div class="grid2"><div class="field"><label>Employee No (company ID)</label><input id="n_empNo" type="text"/></div><div class="field"><label>BASIC (monthly)</label><input id="n_basic" type="number" step="any" min="0"/></div><div class="field"><label>DA</label><input id="n_da" type="number" step="any" min="0"/></div><div class="field"><label>HRA</label><input id="n_hra" type="number" step="any" min="0"/></div><div class="field"><label>OTHER ALLOWANCE</label><input id="n_otherAllow" type="number" step="any" min="0"/></div><div class="field"><label>PROJECT ALLOWANCE (₹ per day present)</label><input id="n_projectPerDay" type="number" step="any" min="0"/></div><div class="field"><label>Travel (₹ per day, info only)</label><input id="n_travelPerDay" type="number" step="any" min="0"/></div><div class="field"><label>Food (₹ per day, info only)</label><input id="n_foodPerDay" type="number" step="any" min="0"/></div><div class="field"><label>PF (₹ per month)</label><input id="n_pfAmount" type="number" step="any" min="0"/></div><div class="field"><label>ESI (₹ per month)</label><input id="n_esiAmount" type="number" step="any" min="0"/></div><div class="field"><label>PROF TAX (₹ per month)</label><input id="n_profTax" type="number" step="any" min="0"/></div><div class="field"><label>Leave opening balance (days)</label><input id="n_leaveOpening" type="number" step="any" min="0"/></div><div class="field"><label>Bank name</label><input id="n_bankName" type="text"/></div><div class="field"><label>Bank account no</label><input id="n_bankAccount" type="text"/></div><div class="field"><label>PAN number</label><input id="n_panNumber" type="text"/></div><div class="field"><label>ESI number</label><input id="n_esiNo" type="text"/></div><div class="field"><label>PF number</label><input id="n_pfNo" type="text"/></div><div class="field"><label>PF UAN</label><input id="n_uanNo" type="text"/></div></div><div style="font-size:11px;color:var(--muted);">Full gross = BASIC + DA + HRA + OTHER. Actual pay = Full × effective days ÷ days in month (working days, weekly offs excluded).</div></div>
     <div class="field"><label>Location (geofence)</label><select id="nLoc"></select></div>
     <div class="modal-err" id="addErr"></div>
     <div class="modal-btns">
@@ -744,6 +744,7 @@
     <h3 id="sdTitle">Salary</h3>
     <div id="sdSum" style="display:flex;flex-wrap:wrap;gap:10px;margin:10px 0;"></div>
     <div id="sdActions" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;"></div>
+    <div id="sdAdj" style="margin-bottom:10px;"></div>
     <div id="sdAdv" style="margin-bottom:10px;"></div>
     <div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>Date</th><th>Day</th><th>Status</th><th>In</th><th>Out</th><th>Hours</th><th>Credit</th><th>Amount</th><th>Running total</th></tr></thead><tbody id="sdBody"></tbody></table></div>
     <div class="modal-btns"><button class="mb-cancel" onclick="closeOverlay('salOverlay')">Close</button></div>
@@ -1122,17 +1123,20 @@ async function loadEmp(){
   }catch{}
 }
  
+const SALF=['empNo', 'basic', 'da', 'hra', 'otherAllow', 'projectPerDay', 'travelPerDay', 'foodPerDay', 'pfAmount', 'esiAmount', 'profTax', 'leaveOpening', 'bankName', 'bankAccount', 'panNumber', 'esiNo', 'pfNo', 'uanNo'];
+function salRead(px){const b={};SALF.forEach(k=>{const el=document.getElementById(px+'_'+k);if(!el)return;const v=el.value.trim();b[k]=el.type==='number'?(v===''?0:Number(v)):v;});return b;}
+function salFill(px,e){SALF.forEach(k=>{const el=document.getElementById(px+'_'+k);if(el)el.value=e[k]==null||e[k]===0?'':e[k];});}
 function openAdd(){fillLocSelect(document.getElementById('nLoc'),true);document.getElementById('addErr').textContent='';document.getElementById('addOverlay').classList.add('open');}
 async function addEmp(){
   const name=document.getElementById('nName').value.trim(), mob=document.getElementById('nMob').value.trim();
   const err=document.getElementById('addErr');
   if(!name){err.textContent='❌ Name is required.';return;}
   const body={name,mobile:mob,locationId:document.getElementById('nLoc').value,department:document.getElementById('nDept').value.trim(),designation:document.getElementById('nDes').value.trim(),joiningDate:document.getElementById('nJoin').value};
-  if(PERMS.salary&&document.getElementById('nSal').value!=='')body.monthlySalary=Number(document.getElementById('nSal').value);
+  if(PERMS.salary)Object.assign(body,salRead('n'));
   const res=await fetch('/api/employees',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   const d=await res.json();
   if(!res.ok){err.textContent='❌ '+d.error;return;}
-  closeOverlay('addOverlay'); ['nName','nMob','nDept','nDes','nJoin','nSal'].forEach(x=>document.getElementById(x).value='');
+  closeOverlay('addOverlay'); ['nName','nMob','nDept','nDes','nJoin'].forEach(x=>document.getElementById(x).value='');SALF.forEach(k=>{const el=document.getElementById('n_'+k);if(el)el.value='';});
   loadEmp(); loadDay(); toast('✅ '+name+' added with ID '+((d.employee&&d.employee.id)||''));
 }
 
@@ -1878,7 +1882,7 @@ function renderSalary(){
   const pill=x=>!x.slip?'<span class="pill pill-no">Not generated</span>':x.slip.deliveredAt?'<span class="pill pill-ok">✔ Delivered</span>':x.slip.finalized?'<span class="pill pill-fin">🔒 Final</span>':'<span class="pill pill-dr">Draft v'+x.slip.version+'</span>';
   document.getElementById('salBody').innerHTML=rows.length?rows.map(x=>`<tr>
     <td><b>${esc(x.name)}</b><br><small>${esc(x.empId)}</small></td><td>${esc(x.designation||'—')}<br><small>${esc(x.department||'')}</small></td>
-    <td><span class="pill pill-ok">${x.earnedDays} / ${dim}</span></td><td>${x.counts.present} / ${x.counts.half} / ${x.counts.absent}</td>
+    <td><span class="pill pill-ok">${x.earnedDays} / ${x.workDays||dim}</span></td><td>${x.counts.present} / ${x.counts.half} / ${x.counts.absent}</td>
     <td>${x.hasIncomplete?`<span style="color:var(--bad);font-weight:800;">${x.counts.incomplete} ⚠️</span>`:'0'}</td>
     <td>${x.otHours?`<span class="pill pill-dr">${(+x.otHours).toFixed(1)} hrs</span>`:'—'}</td>
     <td>${money(x.gross!==undefined?x.gross:x.monthly)}</td><td>${x.advance?money(x.advance):'—'}</td><td><b style="color:var(--orange,#f26522)">${money(x.net)}</b></td>
@@ -1920,6 +1924,10 @@ function renderSal(){
   document.getElementById('sdTitle').textContent=`${e.name} (${e.id}) — ${c.month}`;
   const tile=(k,v)=>`<div style="background:var(--bg,#eef0f4);padding:8px 12px;border-radius:10px;min-width:110px;"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;">${k}</div><div style="font-weight:800;">${v}</div></div>`;
   document.getElementById('sdSum').innerHTML=tile('Per day',money(c.perDay))+tile('Present / Half / Absent',`${c.counts.present} / ${c.counts.half} / ${c.counts.absent}`)+tile('Incomplete',c.counts.incomplete)+tile('Paid days',`${c.earnedDays} of ${c.basis}`)+tile('Gross',money(c.gross))+(c.overtime.pay?tile('Overtime',money(c.overtime.pay)):'')+(c.late.deduction?tile('Late deduction','-'+money(c.late.deduction)):'')+tile('Advance','-'+money(c.advance))+tile('Net pay',money(c.net));
+  const sl=c.slip, adj=SD.adj||{};
+  document.getElementById('sdSum').innerHTML+=tile('Days in month',sl.workDays)+tile('Effective days',sl.effective)+tile('LOP',sl.lop)+tile('Leave balance',sl.leave.closing);
+  const ai=(id,l,v)=>`<label style="font-size:11px;">${l}<br><input id="${id}" type="number" min="0" step="any" value="${v||''}" style="width:90px;"${fin?' disabled':''}/></label>`;
+  document.getElementById('sdAdj').innerHTML=`<b style="font-size:12px;">Leave &amp; extra days</b> <span style="display:inline-flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin-left:6px;">${ai('adjLeave','Leave availed (days)',adj.leaveAvailed)}${ai('adjWages','Leave with wages (₹)',adj.leaveWages)}${ai('adjExtra','Extra days',adj.extraDays)}${fin?'':'<button class="btn" onclick="saveAdj()">Save</button>'}</span>`;
   const sid=slip&&slip.id;
   document.getElementById('sdActions').innerHTML=
     (fin?'':`<button class="btn btn-blue" onclick="slipOne('generate')">Generate payslip</button><button class="btn btn-green" onclick="slipOne('finalize')">🔒 Finalize</button>`)
@@ -1932,6 +1940,11 @@ function renderSal(){
   document.getElementById('sdBody').innerHTML=c.days.map(x=>{const dim=x.status==='future'||x.status==='prejoin';return `<tr style="${dim?'opacity:.45':''}"><td>${x.date}</td><td>${DN[x.dow]}</td><td style="color:${col[x.status]||'inherit'};font-weight:700;">${esc(x.label)}</td><td>${esc(x.in||'')}</td><td>${esc(x.out||'')}</td><td>${x.hours==null?'':Math.floor(x.hours)+'h '+String(Math.round((x.hours%1)*60)).padStart(2,'0')+'m'}</td><td>${x.credit==null?'':x.credit}</td><td>${x.credit==null?'':money(x.amount)}</td><td>${dim?'':money(x.running)}</td></tr>`}).join('');
 }
 async function reloadSal(){const id=SD.employee.id; await openSal(id); loadSalary();}
+async function saveAdj(){
+  const v=i=>document.getElementById(i).value;
+  const r=await jpost('/api/salary/adjust',{empId:SD.employee.id,month:SD.calc.month,leaveAvailed:v('adjLeave'),leaveWages:v('adjWages'),extraDays:v('adjExtra')});
+  if(!r.ok){toast('❌ '+r.d.error);return;} toast('✅ Saved'); reloadSal();
+}
 async function addAdv(){
   const amount=Number(document.getElementById('advAmt').value), note=document.getElementById('advNote').value;
   if(!(amount>0)){toast('❌ Enter an amount');return;}
@@ -2044,7 +2057,7 @@ function openEmpEdit(id){
   editEmpId=id;
   document.getElementById('eeTitle').textContent='Edit '+e.name+' ('+e.id+')';
   document.getElementById('eeDept').value=e.department||'';
-  document.getElementById('eeName').value=e.name||''; document.getElementById('eeMob').value=e.mobile||''; document.getElementById('eeDes').value=e.designation||''; document.getElementById('eeJoin').value=e.joiningDate||''; document.getElementById('eeSal').value=e.monthlySalary||''; document.getElementById('eeActive').checked=e.active!==false;
+  document.getElementById('eeName').value=e.name||''; document.getElementById('eeMob').value=e.mobile||''; document.getElementById('eeDes').value=e.designation||''; document.getElementById('eeJoin').value=e.joiningDate||''; salFill('ee',e); document.getElementById('eeActive').checked=e.active!==false;
   document.getElementById('docMsg').textContent=''; loadDocs();
   document.getElementById('eeLoc').innerHTML=locOptions(e.locationId,true);
   document.getElementById('eeExtra').innerHTML=LOCS.map(l=>`<label style="display:flex;gap:8px;align-items:center;font-size:13px;"><input type="checkbox" class="eeX" value="${esc(l.id)}"${(e.locationIds||[]).includes(l.id)?' checked':''}/> ${esc(l.name)}${l.projectName?' <span style="color:var(--muted);font-size:11px;">· '+esc(l.projectName)+'</span>':''}</label>`).join('')||'<span style="font-size:12px;color:var(--muted);">No locations yet</span>';
@@ -2053,7 +2066,7 @@ function openEmpEdit(id){
 }
 async function saveEmpEdit(){
   const body={name:document.getElementById('eeName').value.trim(),mobile:document.getElementById('eeMob').value.trim(),designation:document.getElementById('eeDes').value.trim(),joiningDate:document.getElementById('eeJoin').value,active:document.getElementById('eeActive').checked,department:document.getElementById('eeDept').value.trim(),locationId:document.getElementById('eeLoc').value,locationIds:[...document.querySelectorAll('.eeX:checked')].map(x=>x.value)};
-  if(PERMS.salary&&document.getElementById('eeSal').value!=='')body.monthlySalary=Number(document.getElementById('eeSal').value);
+  if(PERMS.salary)Object.assign(body,salRead('ee'));
   const r=await fetch('/api/employees/'+encodeURIComponent(editEmpId)+'/update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   const d=await r.json();
   if(!r.ok){document.getElementById('eeErr').textContent='❌ '+d.error;return;}

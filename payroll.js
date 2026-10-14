@@ -58,36 +58,57 @@ function recordHours(rec) {
 }
 const hm = h => (h === null || h === undefined) ? '—' : `${Math.floor(h)}h ${pad(Math.round((h - Math.floor(h)) * 60))}m`;
 
-// One employee, one month.
-//   emp      { id, name, monthlySalary, joiningDate }
-//   records  that employee's attendance records (any dates; filtered by month here)
-//   advances [{ amount, ... }] for that month
-//   today    'YYYY-MM-DD' (server's today, India time)
-//   nowMs    Date.now() (to decide whether an open punch is still a live night shift)
-function calcMonth({ emp, records, settings, advances, month, today, nowMs }) {
+// Salary structure of an employee (monthly, FULL month). Old employees that only have
+// a single "monthlySalary" are treated as Basic = monthlySalary.
+const num = v => { const n = Number(v); return isFinite(n) && n > 0 ? n : 0; };
+function structure(emp) {
+  let basic = num(emp.basic), da = num(emp.da), hra = num(emp.hra), other = num(emp.otherAllow);
+  if (basic + da + hra + other <= 0 && num(emp.monthlySalary) > 0) basic = num(emp.monthlySalary);
+  return { basic, da, hra, other, full: r2(basic + da + hra + other) };
+}
+function offDaysIn(S, month) {
+  let n = 0; const dim = daysInMonth(month);
+  for (let d = 1; d <= dim; d++) if (S.weeklyOffDays.includes(dowOf(`${month}-${pad(d)}`))) n++;
+  return n;
+}
+const whole = n => Math.round(n + 1e-9);
+
+// One employee, one month — company payslip model:
+//   DAYS IN MONTH  = calendar days minus weekly offs            (e.g. Sep 2026 -> 26)
+//   PRESENT        = full days + 0.5 per half day
+//   EXTRA DAYS     = days worked on a weekly off / holiday
+//   EFFECTIVE DAYS = present + paid holidays + extra days + paid leave availed
+//   Actual pay of each component = Full x effective / days-in-month (rounded to whole rupees)
+//   emp      { id, name, basic, da, hra, otherAllow, projectPerDay, travelPerDay, foodPerDay,
+//              pfAmount, esiAmount, profTax, monthlySalary (old), joiningDate }
+//   adj      { leaveAvailed, leaveWages, extraDays } for this month (entered by HR)
+//   leave    { opening } leave balance at the start of the month
+function calcMonth({ emp, records, settings, advances, month, today, nowMs, adj, leave }) {
   const S = settingsWith(settings);
+  adj = adj || {}; leave = leave || {};
   const dim = daysInMonth(month);
-  const basis = S.daysMode === 'fixed30' ? 30 : dim;
-  const monthly = Number(emp.monthlySalary) || 0;
-  const perDay = monthly > 0 ? monthly / basis : 0;
+  const workDays = Math.max(1, dim - offDaysIn(S, month));
+  const st = structure(emp), monthly = st.full;
+  const perDay = monthly > 0 ? monthly / workDays : 0;
   const byDate = {};
   (records || []).forEach(r => { if (r.date && r.date.startsWith(month)) byDate[r.date] = r; });
   const holidays = {}; S.holidays.forEach(h => { holidays[h.date] = h.name || 'Holiday'; });
   nowMs = nowMs || Date.now();
 
   const days = [];
-  const counts = { present: 0, half: 0, absent: 0, incomplete: 0, off: 0, holiday: 0, inprogress: 0 };
-  let earnedDays = 0, running = 0, otHours = 0, lateCount = 0;
+  const counts = { present: 0, half: 0, absent: 0, incomplete: 0, off: 0, holiday: 0, inprogress: 0, extra: 0 };
+  let otHours = 0, lateCount = 0, running = 0;
 
   for (let d = 1; d <= dim; d++) {
     const date = `${month}-${pad(d)}`;
     const dow = dowOf(date);
     const rec = byDate[date];
     const row = { date, dow, status: '', label: '', in: rec ? rec.time : '', out: rec ? (rec.checkOut || '') : '', hours: null, late: false, credit: null, amount: 0, shift: rec ? rec.shift : '' };
+    const workedOff = rec && rec.checkOut ? (() => { const h = recordHours(rec); row.hours = h; return (h !== null && S.halfDayBelowHours > 0 && h < S.halfDayBelowHours) ? 0.5 : 1; })() : 0;
     if (emp.joiningDate && date < emp.joiningDate) { row.status = 'prejoin'; row.label = 'Not joined'; }
     else if (date > today) { row.status = 'future'; row.label = '—'; }
-    else if (holidays[date] !== undefined) { row.status = 'holiday'; row.label = holidays[date]; row.credit = 1; counts.holiday++; }
-    else if (S.weeklyOffDays.includes(dow)) { row.status = 'off'; row.label = 'Week off'; row.credit = S.weeklyOffPaid ? 1 : 0; counts.off++; }
+    else if (S.weeklyOffDays.includes(dow)) { row.status = 'off'; row.label = workedOff ? 'Week off (worked)' : (holidays[date] || 'Week off'); row.credit = workedOff; counts.off++; counts.extra += workedOff; }
+    else if (holidays[date] !== undefined) { row.status = 'holiday'; row.label = workedOff ? holidays[date] + ' (worked)' : holidays[date]; row.credit = 1 + workedOff; counts.holiday++; counts.extra += workedOff; }
     else if (!rec) { row.status = 'absent'; row.label = 'Absent'; row.credit = 0; counts.absent++; }
     else if (!rec.checkOut) {
       const age = rec.markedAt ? nowMs - new Date(rec.markedAt).getTime() : Infinity;
@@ -101,27 +122,56 @@ function calcMonth({ emp, records, settings, advances, month, today, nowMs }) {
       if (row.late) lateCount++;
       if (S.overtimeEnabled && h !== null && h > S.overtimeAfterHours) otHours += h - S.overtimeAfterHours;
     }
-    if (row.credit !== null) { earnedDays += row.credit; row.amount = r2(row.credit * perDay); running += row.credit * perDay; }
+    if (row.credit !== null && row.credit > 0) { row.amount = r2(row.credit * perDay); running += row.credit * perDay; }
     row.running = r2(running);
     days.push(row);
   }
 
-  const cappedDays = Math.min(earnedDays, basis);
-  const gross = r2(cappedDays * perDay);
-  const otPay = S.overtimeEnabled && perDay > 0 ? r2(otHours * (perDay / (S.overtimeHourlyBasis || 8)) * (S.overtimeRate || 1)) : 0;
+  const present = counts.present + 0.5 * counts.half;
+  const leaveAvailed = Math.max(0, Number(adj.leaveAvailed) || 0);
+  const extraDays = r2(counts.extra + Math.max(0, Number(adj.extraDays) || 0));
+  const effective = r2(present + counts.holiday + extraDays + leaveAvailed);
+  const lop = Math.max(0, r2(counts.absent + counts.incomplete + 0.5 * counts.half - leaveAvailed));
+  const act = x => whole(x * effective / workDays);
+
+  const earnings = [];
+  earnings.push({ name: 'BASIC', full: st.basic, actual: act(st.basic) });
+  if (st.da) earnings.push({ name: 'DA', full: st.da, actual: act(st.da) });
+  if (st.hra) earnings.push({ name: 'HRA', full: st.hra, actual: act(st.hra) });
+  if (st.other) earnings.push({ name: 'OTHER ALLOWANCE', full: st.other, actual: act(st.other) });
+  if (num(emp.projectPerDay)) earnings.push({ name: 'PROJECT ALLOWANCE', full: null, actual: whole(num(emp.projectPerDay) * present) });
+  const leaveWages = num(adj.leaveWages);
+  if (leaveWages) earnings.push({ name: 'LEAVE WITH WAGES', full: null, actual: whole(leaveWages) });
+  const otPay = S.overtimeEnabled && perDay > 0 ? whole(otHours * (perDay / (S.overtimeHourlyBasis || 8)) * (S.overtimeRate || 1)) : 0;
+  if (otPay) earnings.push({ name: 'OVERTIME', full: null, actual: otPay });
+  const info = [];
+  if (num(emp.travelPerDay)) info.push({ name: 'Travel', amount: whole(num(emp.travelPerDay) * present) });
+  if (num(emp.foodPerDay)) info.push({ name: 'Food', amount: whole(num(emp.foodPerDay) * present) });
+  const totalFull = r2(earnings.reduce((a, x) => a + (x.full || 0), 0));
+  const totalActual = r2(earnings.reduce((a, x) => a + x.actual, 0));
+
   const chargeableLates = S.lateDeductionEnabled ? Math.max(0, lateCount - (S.lateFreePerMonth || 0)) : 0;
-  const lateDeduction = r2(chargeableLates * (S.lateDeductionDays || 0) * perDay);
+  const lateDeduction = whole(chargeableLates * (S.lateDeductionDays || 0) * perDay);
   const advance = r2((advances || []).reduce((a, x) => a + (Number(x.amount) || 0), 0));
-  const earnings = r2(gross + otPay);
-  const deductions = r2(lateDeduction + advance);
-  const net = Math.max(0, r2(earnings - deductions));
+  const ded = [];
+  if (num(emp.pfAmount)) ded.push({ name: 'PF', amount: num(emp.pfAmount) });
+  if (num(emp.esiAmount)) ded.push({ name: 'ESI', amount: num(emp.esiAmount) });
+  if (num(emp.profTax)) ded.push({ name: 'PROF TAX', amount: num(emp.profTax) });
+  if (lateDeduction) ded.push({ name: 'LATE DEDUCTION', amount: lateDeduction });
+  if (advance) ded.push({ name: 'ADVANCE', amount: advance });
+  const totalDed = r2(ded.reduce((a, x) => a + x.amount, 0));
+  const net = Math.max(0, r2(totalActual - totalDed));
+  const opening = Number(leave.opening) || 0;
 
   return {
-    month, empId: emp.id, monthly, basis, perDay: r2(perDay), daysInMonth: dim, counts, earnedDays: r2(cappedDays),
-    gross, overtime: { hours: r2(otHours), pay: otPay }, late: { count: lateCount, chargeable: chargeableLates, deduction: lateDeduction },
-    advance, earnings, deductions, net, days,
+    month, empId: emp.id, monthly, basis: workDays, perDay: r2(perDay), daysInMonth: dim, counts, earnedDays: effective,
+    gross: r2(totalActual - otPay), overtime: { hours: r2(otHours), pay: otPay }, late: { count: lateCount, chargeable: chargeableLates, deduction: lateDeduction },
+    advance, earnings: totalActual, deductions: totalDed, net, days,
+    slip: { workDays, lop, effective, present, holidays: counts.holiday, extra: extraDays, otHours: r2(otHours),
+      earnings, info, deductions: ded, totalFull, totalActual, totalDed,
+      leave: { opening: r2(opening), availed: r2(leaveAvailed), closing: r2(opening - leaveAvailed) } },
     hasIncomplete: counts.incomplete > 0, monthOpen: days.some(x => x.status === 'future' || x.status === 'inprogress')
   };
 }
 
-module.exports = { DEFAULTS, settingsWith, calcMonth, daysInMonth, recordHours, hm, r2 };
+module.exports = { DEFAULTS, settingsWith, calcMonth, structure, daysInMonth, recordHours, hm, r2 };

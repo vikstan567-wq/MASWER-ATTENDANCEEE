@@ -310,13 +310,18 @@ app.get('/api/employees', requireStaff, async (req, res) => {
   const emps = (await db.collection('employees').find({}).toArray()).filter(scopeFilter(req));
   const locs = await db.collection('locations').find({}).toArray();
   const nm = id => (locs.find(l => l.id === id) || {}).name || '';
-  res.json(emps.map(e => { const v = { ...staffView(e, req), locationName: nm(e.locationId), extraLocationNames: (e.locationIds || []).map(nm).filter(Boolean) }; if (!hasPerm(req, 'salary')) delete v.monthlySalary; return v; }));
+  res.json(emps.map(e => { const v = { ...staffView(e, req), locationName: nm(e.locationId), extraLocationNames: (e.locationIds || []).map(nm).filter(Boolean) }; return hasPerm(req, 'salary') ? v : stripSal(v); }));
 });
 // departments list (scope ke andar)
 app.get('/api/departments', requireView, async (req, res) => {
   const emps = (await db.collection('employees').find({}).toArray()).filter(scopeFilter({ ...req, query: {} }));
   res.json([...new Set(emps.map(e => e.department).filter(Boolean))].sort());
 });
+// salary structure / bank / statutory fields (HR only: need the 'salary' permission)
+const SAL_NUM = ['basic', 'da', 'hra', 'otherAllow', 'projectPerDay', 'travelPerDay', 'foodPerDay', 'pfAmount', 'esiAmount', 'profTax', 'leaveOpening'];
+const SAL_TXT = { empNo: 20, bankName: 60, bankAccount: 30, panNumber: 12, esiNo: 30, pfNo: 40, uanNo: 20 };
+const SAL_FIELDS = ['monthlySalary', ...SAL_NUM, ...Object.keys(SAL_TXT)];
+const stripSal = e => { const v = { ...e }; SAL_FIELDS.forEach(k => delete v[k]); return v; };
 const cleanDept = v => String(v || '').trim().slice(0, 40);
  
 // clean employee master fields
@@ -330,7 +335,18 @@ function cleanEmpFields(b, req) {
     const v = b.monthlySalary === '' || b.monthlySalary === null ? null : Number(b.monthlySalary);
     if (v !== null && (!isFinite(v) || v < 0 || v > 100000000)) err.push('Monthly salary must be a positive number'); else out.monthlySalary = v === null ? 0 : v;
   }
+  if (hasPerm(req, 'salary')) {
+    SAL_NUM.forEach(k => { if (b[k] === undefined) return; const v = b[k] === '' || b[k] === null ? 0 : Number(b[k]); if (!isFinite(v) || v < 0 || v > 100000000) err.push(k + ' must be a positive number'); else out[k] = v; });
+    Object.entries(SAL_TXT).forEach(([k, n]) => { if (b[k] !== undefined) { let v = String(b[k]).replace(/[<>]/g, '').trim().slice(0, n); if (k === 'panNumber') v = v.toUpperCase(); out[k] = v; } });
+  }
   return { out, err };
+}
+// keep monthlySalary (= Full gross) in step with the salary structure
+function syncGross(out, base) {
+  if (!['basic', 'da', 'hra', 'otherAllow'].some(k => out[k] !== undefined)) return;
+  const g = k => out[k] !== undefined ? out[k] : (Number((base || {})[k]) || 0);
+  const sum = g('basic') + g('da') + g('hra') + g('otherAllow');
+  if (sum > 0) out.monthlySalary = Math.round(sum * 100) / 100;
 }
 app.post('/api/employees', requireStaff, async (req, res) => {
   let locationId = req.body.locationId || '';
@@ -351,10 +367,11 @@ app.post('/api/employees', requireStaff, async (req, res) => {
   if (!id) return res.status(500).json({ error: 'Could not generate a unique Employee ID. Please try again.' });
   const emp = { id, name: out.name, mobile: out.mobile || 'N/A', role: 'employee', active: true, locationId: locationId || undefined, department: department || undefined,
     designation: out.designation || undefined, joiningDate: out.joiningDate || undefined, monthlySalary: out.monthlySalary !== undefined ? out.monthlySalary : undefined, createdAt: new Date().toISOString() };
+  syncGross(out, null);
+  SAL_FIELDS.forEach(k => { if (out[k] !== undefined && out[k] !== '') emp[k] = out[k]; });
   await db.collection('employees').insertOne(emp);
   await audit(req, 'employee.create', id, { name: emp.name, department: emp.department, locationId: emp.locationId });
-  if (!hasPerm(req, 'salary')) delete emp.monthlySalary;
-  res.json({ success: true, employee: emp });
+  res.json({ success: true, employee: hasPerm(req, 'salary') ? emp : stripSal(emp) });
 });
 
 // employee ki location badlo (IT: kisi bhi; Admin: apni locations ke andar)
@@ -376,6 +393,7 @@ app.post('/api/employees/:id/update', requireStaff, async (req, res) => {
   const set = {};
   const { out, err } = cleanEmpFields(req.body, req);
   if (err.length) return res.status(400).json({ error: err[0] });
+  syncGross(out, emp);
   Object.assign(set, out);
   if (req.body.active !== undefined) set.active = !!req.body.active;
   if (req.body.department !== undefined) {
@@ -395,7 +413,8 @@ app.post('/api/employees/:id/update', requireStaff, async (req, res) => {
   }
   if (Object.keys(set).length) {
     await db.collection('employees').updateOne({ id: emp.id }, { $set: set });
-    const was = {}; Object.keys(set).forEach(k => { was[k] = k === 'monthlySalary' && !hasPerm(req, 'salary') ? undefined : emp[k]; });
+    const was = {}; Object.keys(set).forEach(k => { was[k] = SAL_FIELDS.includes(k) && /^(bankAccount|panNumber|uanNo|pfNo|esiNo)$/.test(k) ? '(changed)' : emp[k]; });
+    Object.keys(set).forEach(k => { if (/^(bankAccount|panNumber|uanNo|pfNo|esiNo)$/.test(k)) set[k] = '(changed)'; });
     await audit(req, set.active === false && emp.active !== false ? 'employee.deactivate' : 'employee.update', emp.id, { before: was, after: set });
   }
   res.json({ success: true });
@@ -1090,12 +1109,21 @@ async function salaryEmp(req, id) {
   if (!scopeFilter({ ...req, query: {}, deptScope: req.deptScope })(e)) return null;
   return e;
 }
+// leave adjustments for one month + running leave balance (opening - availed in earlier months)
+function leaveCtxFrom(emp, month, adjs) {
+  const mine = adjs.filter(a => a.empId === emp.id);
+  const cur = mine.find(a => a.month === month) || {};
+  const prior = mine.filter(a => a.month < month).reduce((t, a) => t + (Number(a.leaveAvailed) || 0), 0);
+  return { adj: { leaveAvailed: cur.leaveAvailed || 0, leaveWages: cur.leaveWages || 0, extraDays: cur.extraDays || 0 },
+    leave: { opening: Math.max(0, (Number(emp.leaveOpening) || 0) - prior) } };
+}
 async function calcFor(emp, month, S) {
-  const [records, advances] = await Promise.all([
+  const [records, advances, adjs] = await Promise.all([
     db.collection('attendance').find({ empId: emp.id }).toArray(),
-    db.collection('advances').find({ empId: emp.id, month }).toArray()
+    db.collection('advances').find({ empId: emp.id, month }).toArray(),
+    db.collection('payadj').find({ empId: emp.id }).toArray()
   ]);
-  return payroll.calcMonth({ emp, records, settings: S, advances, month, today: today(), nowMs: Date.now() });
+  return payroll.calcMonth({ emp, records, settings: S, advances, month, today: today(), nowMs: Date.now(), ...leaveCtxFrom(emp, month, adjs) });
 }
 const slipId = (month, empId) => `PS-${month}-${empId}`;
 
@@ -1134,13 +1162,13 @@ app.get('/api/salary/month', requireStaff, async (req, res) => {
   if (!MONTH_RE.test(month)) return res.status(400).json({ error: 'Invalid month' });
   const S = await getSalarySettings();
   const emps = (await db.collection('employees').find({}).toArray()).filter(e => e.role !== 'admin' && Number(e.monthlySalary) > 0).filter(scopeFilter(req));
-  const [att, adv, slips] = await Promise.all([
-    db.collection('attendance').find({}).toArray(), db.collection('advances').find({ month }).toArray(), db.collection('payslips').find({ month }).toArray()
+  const [att, adv, slips, adjAll] = await Promise.all([
+    db.collection('attendance').find({}).toArray(), db.collection('advances').find({ month }).toArray(), db.collection('payslips').find({ month }).toArray(), db.collection('payadj').find({}).toArray()
   ]);
   const rows = emps.map(e => {
-    const c = payroll.calcMonth({ emp: e, records: att.filter(a => a.empId === e.id), settings: S, advances: adv.filter(a => a.empId === e.id), month, today: today(), nowMs: Date.now() });
+    const c = payroll.calcMonth({ emp: e, records: att.filter(a => a.empId === e.id), settings: S, advances: adv.filter(a => a.empId === e.id), month, today: today(), nowMs: Date.now(), ...leaveCtxFrom(e, month, adjAll) });
     const s = slips.find(x => x.empId === e.id);
-    return { empId: e.id, name: e.name, department: e.department || '', designation: e.designation || '', active: e.active !== false, monthly: c.monthly, perDay: c.perDay, counts: c.counts, earnedDays: c.earnedDays, overtime: c.overtime.pay, otHours: c.overtime.hours, gross: c.gross, lateDeduction: c.late.deduction, advance: c.advance, net: c.net, hasIncomplete: c.hasIncomplete, monthOpen: c.monthOpen, slip: s ? { id: s.id, version: s.version, finalized: !!s.finalized, deliveredAt: s.deliveredAt || null } : null };
+    return { empId: e.id, name: e.name, department: e.department || '', designation: e.designation || '', active: e.active !== false, monthly: c.monthly, workDays: c.basis, perDay: c.perDay, counts: c.counts, earnedDays: c.earnedDays, overtime: c.overtime.pay, otHours: c.overtime.hours, gross: c.gross, lateDeduction: c.late.deduction, advance: c.advance, net: c.net, hasIncomplete: c.hasIncomplete, monthOpen: c.monthOpen, slip: s ? { id: s.id, version: s.version, finalized: !!s.finalized, deliveredAt: s.deliveredAt || null } : null };
   });
   res.json({ month, settings: { daysMode: S.daysMode, halfDayBelowHours: S.halfDayBelowHours }, rows });
 });
@@ -1154,7 +1182,7 @@ app.get('/api/salary/employee/:id', requireStaff, async (req, res) => {
   const calc = await calcFor(e, month, S);
   const advances = await db.collection('advances').find({ empId: e.id, month }).toArray();
   const slip = await db.collection('payslips').findOne({ id: slipId(month, e.id) });
-  res.json({ employee: { id: e.id, name: e.name, designation: e.designation || '', department: e.department || '', joiningDate: e.joiningDate || '' }, calc, advances, slip: slip ? { id: slip.id, version: slip.version, finalized: !!slip.finalized, generatedAt: slip.generatedAt } : null });
+  res.json({ employee: { id: e.id, name: e.name, designation: e.designation || '', department: e.department || '', joiningDate: e.joiningDate || '', leaveOpening: e.leaveOpening || 0 }, calc, advances, adj: (await db.collection('payadj').findOne({ id: e.id + '-' + month })) || {}, slip: slip ? { id: slip.id, version: slip.version, finalized: !!slip.finalized, generatedAt: slip.generatedAt } : null });
 });
 app.post('/api/salary/advance', requireStaff, async (req, res) => {
   if (!hasPerm(req, 'salary')) return noPerm(res);
@@ -1168,6 +1196,21 @@ app.post('/api/salary/advance', requireStaff, async (req, res) => {
   await db.collection('advances').insertOne(a);
   await audit(req, 'advance.add', e.id, { month, amount });
   res.json({ success: true, advance: a });
+});
+app.post('/api/salary/adjust', requireStaff, async (req, res) => {
+  if (!hasPerm(req, 'salary')) return noPerm(res);
+  const b = req.body || {};
+  if (!MONTH_RE.test(String(b.month))) return res.status(400).json({ error: 'Invalid month' });
+  const e = await salaryEmp(req, b.empId);
+  if (!e) return res.status(404).json({ error: 'Employee not found' });
+  if (await isLocked(e.id, b.month + '-01')) return res.status(423).json({ error: 'This month is finalized. Unlock it first.' });
+  const n = (v, max) => { const x = v === '' || v == null ? 0 : Number(v); return isFinite(x) && x >= 0 && x <= max ? x : NaN; };
+  const leaveAvailed = n(b.leaveAvailed, 31), extraDays = n(b.extraDays, 31), leaveWages = n(b.leaveWages, 10000000);
+  if ([leaveAvailed, extraDays, leaveWages].some(isNaN)) return res.status(400).json({ error: 'Enter valid numbers' });
+  const id = e.id + '-' + b.month;
+  await db.collection('payadj').updateOne({ id }, { $set: { id, empId: e.id, month: b.month, leaveAvailed, extraDays, leaveWages, updatedBy: req.user.id, updatedAt: new Date().toISOString() } }, { upsert: true });
+  await audit(req, 'salary.adjust', e.id, { month: b.month, leaveAvailed, extraDays, leaveWages });
+  res.json({ success: true });
 });
 app.delete('/api/salary/advance/:id', requireStaff, async (req, res) => {
   if (!hasPerm(req, 'salary')) return noPerm(res);
@@ -1184,8 +1227,9 @@ app.delete('/api/salary/advance/:id', requireStaff, async (req, res) => {
 // ── payslips ──
 async function buildSnapshot(e, month, S) {
   const calc = await calcFor(e, month, S);
+  const locNameSync = (await locName(e.locationId)) || '';
   return { company: { name: S.companyName, address: S.companyAddress, logo: S.logo, currency: S.currency },
-    employee: { id: e.id, name: e.name, designation: e.designation || '', department: e.department || '', joiningDate: e.joiningDate || '', mobile: e.mobile || '' }, calc };
+    employee: { id: e.id, name: e.name, designation: e.designation || '', department: e.department || '', joiningDate: e.joiningDate || '', mobile: e.mobile || '', location: locNameSync, empNo: e.empNo || '', bankName: e.bankName || '', bankAccount: e.bankAccount || '', panNumber: e.panNumber || '', esiNo: e.esiNo || '', pfNo: e.pfNo || '', uanNo: e.uanNo || '' }, calc };
 }
 async function targetEmps(req, month, empId) {
   if (empId) { const e = await salaryEmp(req, empId); return e && Number(e.monthlySalary) > 0 ? [e] : []; }
@@ -1264,7 +1308,7 @@ app.get('/api/payslips/:id', requireStaff, async (req, res) => { const p = await
 
 // PDF
 const PDFDocument = (() => { try { return require('pdfkit'); } catch (e) { return null; } })();
-function payslipPdf(p) {
+function payslipPdfLegacy(p) {
   return new Promise((resolve, reject) => {
     const s = p.snapshot, c = s.calc, cur = s.company.currency || 'Rs.';
     const money = n => `${cur} ${Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -1311,6 +1355,72 @@ function payslipPdf(p) {
       cols.forEach(([x], i) => doc.text(String(v[i]), x, y, { width: i === 2 ? 115 : 60, lineBreak: false })); y += 11;
     });
     doc.fontSize(7).fillColor('#777').text('This is a computer-generated payslip.', 40, Math.min(y + 14, 810));
+    doc.end();
+  });
+}
+const ONES = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+const TENS = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+function inWords(n) {
+  n = Math.floor(Math.abs(n)); if (!n) return 'Zero';
+  const two = x => x < 20 ? ONES[x] : TENS[Math.floor(x / 10)] + (x % 10 ? ' ' + ONES[x % 10] : '');
+  const three = x => (x >= 100 ? ONES[Math.floor(x / 100)] + ' Hundred' + (x % 100 ? ' ' : '') : '') + (x % 100 ? two(x % 100) : '');
+  const out = [];
+  for (const [v, nm] of [[10000000, 'Crore'], [100000, 'Lakh'], [1000, 'Thousand']]) { if (n >= v) { out.push(three(Math.floor(n / v)) + ' ' + nm); n %= v; } }
+  if (n) out.push(three(n));
+  return out.join(' ');
+}
+const MONTHS_L = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+// Company-format payslip. Coordinates come from the company's sample (908px wide render -> A4 595pt).
+function payslipPdf(p) {
+  if (!p.snapshot.calc.slip) return payslipPdfLegacy(p);
+  return new Promise((resolve, reject) => {
+    const s = p.snapshot, c = s.calc, sl = c.slip, em = s.employee, K = 595 / 908;
+    const f2 = n => Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const doc = new PDFDocument({ size: 'A4', margin: 0 }); const bufs = [];
+    doc.on('data', d => bufs.push(d)); doc.on('end', () => resolve(Buffer.concat(bufs))); doc.on('error', reject);
+    const T = 'Times-Roman', TB = 'Times-Bold', TI = 'Times-Italic';
+    const X = v => v * K, Y = v => v * K;
+    const txt = (t, x, y, o = {}) => doc.text(String(t == null ? '' : t), X(x), Y(y), { lineBreak: false, ...o });
+    const rtxt = (t, xr, y, w = 120) => doc.text(String(t), X(xr) - w, Y(y), { width: w, align: 'right', lineBreak: false });
+    if (s.company.logo) { try { doc.image(Buffer.from(s.company.logo.split(',')[1], 'base64'), X(40), Y(48), { fit: [X(180), Y(50)] }); } catch (e) {} }
+    doc.font(TB).fontSize(12).text(s.company.name || '', 0, Y(42), { width: X(954), align: 'center' });
+    const addr = String(s.company.address || '').replace(/\r/g, '').split('\n').map(x => x.trim()).filter(Boolean);
+    doc.font(T).fontSize(6.8);
+    let ay = 66; addr.forEach(l => { doc.text(l, X(250), Y(ay), { width: X(450), align: 'center', lineBreak: false }); ay += 12; });
+    const [yy, mm] = c.month.split('-').map(Number);
+    doc.font(TB).fontSize(10.5).text(`Payslip for the month of ${MONTHS_L[mm - 1]} ${yy}`, 0, Y(141), { width: X(954), align: 'center' });
+    let jd = em.joiningDate || ''; if (/^\d{4}-\d{2}-\d{2}$/.test(jd)) { const [a, b, d] = jd.split('-'); jd = `${+d} ${MONTHS_L[+b - 1].slice(0, 3)} ${a}`; }
+    const left = [['Name:', em.name], ['Joining Date:', jd], ['Designation:', em.designation], ['Department:', em.department], ['Location:', em.location], ['DAYS IN MONTH:', sl.workDays], ['LOP:', sl.lop], ['EMP EFFECTIVE WORKDAYS:', sl.effective], ['PRESENT:', sl.present], ['HOLIDAYS:', sl.holidays], ['EXTRA DAYS:', sl.extra]];
+    const right = [['Employee No:', em.empNo || em.id], ['Bank Name:', em.bankName], ['Bank Account No:', em.bankAccount], ['PAN Number:', em.panNumber], ['ESI Number:', em.esiNo], ['PF No:', em.pfNo], ['PF UAN:', em.uanNo], ['Leave Opening Balance:', sl.leave.opening], ['Leave Availed:', sl.leave.availed], ['Leave Closing Balance:', sl.leave.closing], ['OT HOURS:', sl.otHours]];
+    doc.lineWidth(0.6).strokeColor('#444').rect(X(28), Y(178), X(854), Y(204)).stroke();
+    doc.moveTo(X(455), Y(178)).lineTo(X(455), Y(382)).strokeColor('#888').stroke();
+    doc.fontSize(8.6).fillColor('#000');
+    left.forEach((r, i) => { const y = 180 + i * 18.4; doc.font(T); txt(r[0], 33, y); txt(r[1], 245, y); });
+    right.forEach((r, i) => { const y = 180 + i * 18.4; doc.font(T); txt(r[0], 459, y); txt(r[1], 670, y); });
+    // earnings / deductions
+    doc.strokeColor('#444').rect(X(28), Y(398), X(854), Y(238)).stroke();
+    doc.moveTo(X(28), Y(608)).lineTo(X(882), Y(608)).stroke();
+    doc.moveTo(X(455), Y(398)).lineTo(X(455), Y(636)).strokeColor('#888').stroke();
+    doc.font(TB).fontSize(8.6).fillColor('#000');
+    doc.text('Earnings', X(30), Y(407), { width: X(255), align: 'center', lineBreak: false });
+    rtxt('Full', 363, 407, 60); rtxt('Actual', 452, 407, 60);
+    doc.text('Deductions', X(455), Y(407), { width: X(215), align: 'center', lineBreak: false }); rtxt('Actual', 878, 407, 80);
+    doc.font(T);
+    sl.earnings.forEach((e, i) => { const y = 429 + i * 23.2; txt(e.name, 33, y); if (e.full != null) rtxt(f2(e.full), 366, y); rtxt(f2(e.actual), 452, y); });
+    const ey = 429 + sl.earnings.length * 23.2; doc.fontSize(7);
+    sl.info.forEach((e, i) => { const y = ey + 2 + i * 20; txt(e.name + ' -', 35, y); txt(e.amount, 160, y); });
+    doc.fontSize(8.6);
+    sl.deductions.forEach((d, i) => { const y = 429 + i * 23.2; txt(d.name, 459, y); rtxt(f2(d.amount), 878, y); });
+    doc.font(TB);
+    txt('Total Earnings: Rs.', 33, 616); rtxt(f2(sl.totalFull), 366, 616); rtxt(f2(sl.totalActual), 452, 616);
+    txt('Total Deductions: Rs.', 459, 616); rtxt(f2(sl.totalDed), 878, 616);
+    doc.font(T); txt('Net Pay for the month ( Total Earnings - Total Deductions):', 33, 647);
+    doc.font(TB); txt(f2(c.net), 389, 647);
+    doc.font(TI); txt(`(Rupees ${inWords(c.net)} Only)`, 33, 674);
+    doc.moveTo(X(28), Y(712)).lineTo(X(882), Y(712)).lineWidth(0.4).strokeColor('#aaa').stroke();
+    doc.font(T).fontSize(7.5).fillColor('#777').text('This is a system generated payslip and does not require a signature', 0, Y(722), { width: X(910), align: 'center', lineBreak: false });
+    const d = new Date(Date.now() + 5.5 * 3600e3), pad = x => String(x).padStart(2, '0'), h12 = d.getUTCHours() % 12 || 12;
+    doc.fillColor('#000').fontSize(8).text(`Print Date:${pad(d.getUTCDate())} ${MONTHS_L[d.getUTCMonth()].slice(0, 3)} ${d.getUTCFullYear()}, ${pad(h12)}:${pad(d.getUTCMinutes())} ${d.getUTCHours() >= 12 ? 'PM' : 'AM'}`, X(28), Y(1245), { lineBreak: false });
     doc.end();
   });
 }
