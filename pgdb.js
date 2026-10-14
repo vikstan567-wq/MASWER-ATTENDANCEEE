@@ -193,7 +193,22 @@ class Collection {
 module.exports = async function createPgDb(connectionString) {
   const local = /localhost|127\.0\.0\.1/.test(connectionString);
   const pool = new Pool({ connectionString, ssl: local ? false : { rejectUnauthorized: false }, max: (process.env.NETLIFY || process.env.AWS_LAMBDA_FUNCTION_NAME) ? 1 : 8 });
-  await pool.query(SCHEMA);
+  // Run the schema only when it changed (keeps cold starts fast) and never from two instances at once.
+  let ver = 0; for (let i = 0; i < SCHEMA.length; i++) ver = (ver * 31 + SCHEMA.charCodeAt(i)) % 2147483647;
+  let done = false;
+  try { const r = await pool.query("SELECT n FROM counters WHERE key = 'schema_ver'"); done = r.rows[0] && r.rows[0].n === ver; } catch (e) {}
+  if (!done) {
+    const cl = await pool.connect();
+    try {
+      await cl.query('SELECT pg_advisory_lock(727401)');
+      let again = false;
+      try { const r = await cl.query("SELECT n FROM counters WHERE key = 'schema_ver'"); again = r.rows[0] && r.rows[0].n === ver; } catch (e) {}
+      if (!again) {
+        await cl.query(SCHEMA);
+        await cl.query("INSERT INTO counters (key, n) VALUES ('schema_ver', $1) ON CONFLICT (key) DO UPDATE SET n = $1", [ver]);
+      }
+    } finally { try { await cl.query('SELECT pg_advisory_unlock(727401)'); } catch (e) {} cl.release(); }
+  }
   return {
     collection: name => new Collection(pool, name),
     // safe even if two admins add employees at the same moment
