@@ -1159,6 +1159,10 @@ async function addEmp(){
   const name=document.getElementById('nName').value.trim(), mob=document.getElementById('nMob').value.trim();
   const err=document.getElementById('addErr');
   if(!name){err.textContent='❌ Name is required.';return;}
+  {const sc=(ME&&ME.departments)||[],dv=document.getElementById('nDept').value.trim();
+   if(sc.length){const hit=sc.find(x=>x.toLowerCase()===dv.toLowerCase());
+     if(!hit){err.textContent='❌ Your login can add employees only to: '+sc.join(', ')+(dv?'. "'+dv+'" is not allowed - ask IT to add it under HR Logins.':'. Please choose one.');return;}
+     document.getElementById('nDept').value=hit;}}
   const body={name,mobile:mob,locationId:document.getElementById('nLoc').value,department:document.getElementById('nDept').value.trim(),designation:document.getElementById('nDes').value.trim(),joiningDate:document.getElementById('nJoin').value};
   if(PERMS.salary)Object.assign(body,salRead('n'));
   const res=await fetch('/api/employees',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
@@ -1690,7 +1694,7 @@ function renderRdSide(){
     `<div class="rd-c g"><b>${c.insideRadar}</b><span>Inside radar</span></div><div class="rd-c o"><b>${c.outsideRadar}</b><span>Outside radar</span></div><div class="rd-c n"><b>${c.noSignal}</b><span>No signal</span></div><div class="rd-c"><b>${c.onDuty}</b><span>Punched in</span></div>`;
   const rank=p=>p.inside?0:p.live?1:2;
   const ppl=d.people.slice().sort((a,b)=>rank(a)-rank(b)||a.name.localeCompare(b.name));
-  document.getElementById('rdList').innerHTML=ppl.length?ppl.map(p=>`<div class="rd-row"><span class="rd-dot ${p.inside?'g':p.live?'o':'n'}"></span><div class="rd-nm"><b>${esc(p.name)}</b><small>${esc(p.id)}${p.designation?' · '+esc(p.designation):''}</small></div><div class="rd-d">${p.distance==null?'—':p.distance+' m'}<small>${p.live?'live':ago(p.ageSec)}</small></div></div>`).join(''):'<div class="no-data" style="padding:18px;">Nobody is punched in at this site right now.</div>';
+  document.getElementById('rdList').innerHTML=ppl.length?ppl.map(p=>`<div class="rd-row"><span class="rd-dot ${p.inside?'g':p.live?'o':'n'}"></span><div class="rd-nm"><b>${esc(p.name)}</b><small>${esc(p.id)}${p.designation?' · '+esc(p.designation):''}</small></div><div class="rd-d">${p.distance==null?'—':p.distance+' m'}<small>${p.live?'live':p.fromPunch?'at punch-in':ago(p.ageSec)}</small></div></div>`).join(''):'<div class="no-data" style="padding:18px;">Nobody is punched in at this site right now.</div>';
   document.getElementById('rdFoot').textContent='Updated '+new Date(d.at).toLocaleTimeString('en-IN',{timeZone:'Asia/Kolkata',hour:'2-digit',minute:'2-digit',second:'2-digit'})+' · refreshes every 10 s. Positions come from employee phones while they are punched in with the scan page open.';
 }
 function rdLoop(){

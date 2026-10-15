@@ -357,7 +357,11 @@ app.post('/api/employees', requireStaff, async (req, res) => {
   if (err.length) return res.status(400).json({ error: err[0] });
   if (req.scope !== '*' && !locationId && req.scope.length === 1) locationId = req.scope[0];
   if (req.scope !== '*' && !inScope(req, locationId)) return res.status(403).json({ error: 'You do not have permission to add employees to this location' });
-  if (req.deptScope && req.deptScope.length && !req.deptScope.includes(department)) return res.status(403).json({ error: department ? 'You can only add employees to your own departments: ' + req.deptScope.join(', ') : 'Please choose a department: ' + req.deptScope.join(', ') });
+  if (req.deptScope && req.deptScope.length) {
+    const hit = req.deptScope.find(x => String(x).toLowerCase() === String(department).toLowerCase());
+    if (hit) department = hit;
+    else return res.status(403).json({ error: department ? `Your login can add employees only to: ${req.deptScope.join(', ')}. "${department}" is not allowed. Ask IT to add it under HR Logins, or pick one of yours.` : 'Please choose a department: ' + req.deptScope.join(', ') });
+  }
   if (locationId && !await db.collection('locations').findOne({ id: locationId })) return res.status(400).json({ error: 'Location not found' });
   // auto Employee ID: EMP001, EMP002 ... (database counter — safe even if two admins add at once)
   let id = '';
@@ -503,6 +507,8 @@ app.post('/api/attendance', async (req, res) => {
     locationId: scanLoc(emp, req.body) || undefined, locationName: (await locName(scanLoc(emp, req.body))) || undefined,
     department: emp.department || undefined
   };
+  { const pl = parseFloat(req.body.lat), pg = parseFloat(req.body.lng);
+    if (isFinite(pl) && isFinite(pg)) { record.punchLat = pl; record.punchLng = pg; record.punchAcc = Math.round(parseFloat(req.body.accuracy) || 0) || undefined; } }
   await db.collection('attendance').insertOne(record);
   res.json({ success: true, record, employee: publicEmp(emp) });
 });
@@ -1761,9 +1767,11 @@ app.get('/api/sitewatch/radar', requireView, async (req, res) => {
     const trail = (byEmp[e.id] || []).slice(-14), lastP = trail[trail.length - 1];
     const ageSec = lastP ? Math.round((Date.now() - new Date(lastP.seenAt).getTime()) / 1000) : null;
     const live = ageSec !== null && ageSec * 1000 <= PING_LIVE_MS;
-    const d = lastP ? Math.round(distMeters(lastP.lat, lastP.lng, loc.lat, loc.lng)) : null;
-    people.push({ id: e.id, name: e.name, designation: e.designation || '', in: a.time || '', live, ageSec, distance: d,
-      inside: live && d <= (loc.radius || 100), pos: lastP ? xy(lastP) : null, acc: lastP ? lastP.acc : null, trail: trail.map(xy) });
+    const fromPunch = !lastP && isFinite(a.punchLat) && isFinite(a.punchLng);
+    const src = lastP || (fromPunch ? { lat: a.punchLat, lng: a.punchLng, acc: a.punchAcc } : null);
+    const d = src ? Math.round(distMeters(src.lat, src.lng, loc.lat, loc.lng)) : null;
+    people.push({ id: e.id, name: e.name, designation: e.designation || '', in: a.time || '', live, ageSec, distance: d, fromPunch,
+      inside: live && d <= (loc.radius || 100), pos: src ? xy(src) : null, acc: src ? src.acc : null, trail: trail.map(xy) });
   }
   const c = f => people.filter(f).length;
   res.json({ at: new Date().toISOString(), site: { id: loc.id, name: loc.name, radius: loc.radius || 100, projectName: loc.projectName || '' },
