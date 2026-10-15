@@ -350,12 +350,13 @@ function syncGross(out, base) {
 }
 app.post('/api/employees', requireStaff, async (req, res) => {
   let locationId = req.body.locationId || '';
-  const department = cleanDept(req.body.department);
+  let department = cleanDept(req.body.department);
+  if (!department && req.deptScope && req.deptScope.length === 1) department = req.deptScope[0];
   const { out, err } = cleanEmpFields({ ...req.body, name: req.body.name || '' }, req);
   if (err.length) return res.status(400).json({ error: err[0] });
   if (req.scope !== '*' && !locationId && req.scope.length === 1) locationId = req.scope[0];
   if (req.scope !== '*' && !inScope(req, locationId)) return res.status(403).json({ error: 'You do not have permission to add employees to this location' });
-  if (req.deptScope && req.deptScope.length && !req.deptScope.includes(department)) return res.status(403).json({ error: 'You can only add employees to your own department(s)' });
+  if (req.deptScope && req.deptScope.length && !req.deptScope.includes(department)) return res.status(403).json({ error: department ? 'You can only add employees to your own departments: ' + req.deptScope.join(', ') : 'Please choose a department: ' + req.deptScope.join(', ') });
   if (locationId && !await db.collection('locations').findOne({ id: locationId })) return res.status(400).json({ error: 'Location not found' });
   // auto Employee ID: EMP001, EMP002 ... (database counter — safe even if two admins add at once)
   let id = '';

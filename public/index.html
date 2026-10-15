@@ -55,9 +55,10 @@
   <div class="tnav-wrap">
     <div class="tnav">
       <div class="tn-logo"><span class="sp">+</span><span class="sn">maswer</span><span class="st">attend</span></div>
-      <div class="tn-groups" id="tnGroups"></div>
+      <div class="tn-crumb" id="tnCrumb"></div><div class="tn-spacer"></div>
       <div class="tn-right">
-        <div class="tn-btn edit-gate" onclick="promptPin()" title="Admin Tools">⚙ Tools</div>
+        <div class="tn-btn edit-gate" onclick="promptPin()" title="Admin Tools">Admin Tools</div>
+        <div class="tn-menu-wrap"><button type="button" class="tn-btn tn-dots" id="tnDots" aria-label="Menu" aria-haspopup="true" onclick="toggleNavMenu(event)"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button><div class="tn-menu" id="tnMenu" role="menu"></div></div>
         <div class="tn-user"><div><div class="tn-un" id="tnName">—</div><div class="tn-ur" id="tnRole"></div></div><div class="tn-av" id="tnAv"></div></div>
         <div class="tn-btn" onclick="logout()" title="Logout"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></div>
       </div>
@@ -84,10 +85,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
         Employees
       </div>
-            <div class="nav-i perm-nav" id="nav-salary" data-perm="salary" style="display:none" onclick="showPanel('salary',this)">💰 Salary &amp; Payslips</div>
-      <div class="nav-i perm-nav" id="nav-missed" data-perm="salary" style="display:none" onclick="showPanel('missed',this)">⚠️ Missed Punch-outs</div>
-      <div class="nav-i perm-nav" id="nav-sset" data-perm="salary" style="display:none" onclick="showPanel('sset',this)">⚙️ Company &amp; Salary Rules</div>
-      <div class="nav-i it-only" id="nav-audit" onclick="showPanel('audit',this)">📜 Audit Log</div>
+            <div class="nav-i perm-nav" id="nav-salary" data-perm="salary" style="display:none" onclick="showPanel('salary',this)">Salary &amp; Payslips</div>
+      <div class="nav-i perm-nav" id="nav-missed" data-perm="salary" style="display:none" onclick="showPanel('missed',this)">Missed Punch-outs</div>
+      <div class="nav-i perm-nav" id="nav-sset" data-perm="salary" style="display:none" onclick="showPanel('sset',this)">Company &amp; Salary Rules</div>
+      <div class="nav-i it-only" id="nav-audit" onclick="showPanel('audit',this)">Audit Log</div>
 <div class="nav-i" onclick="showPanel('qr',this)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="5" y="5" width="3" height="3" fill="currentColor"/><rect x="16" y="5" width="3" height="3" fill="currentColor"/><rect x="5" y="16" width="3" height="3" fill="currentColor"/></svg>
         QR Code
@@ -118,7 +119,7 @@
       </div>
     </nav>
     <div class="sb-bottom">
-      <div class="secret-btn edit-gate" onclick="promptPin()" title="Admin Tools">⚙ Admin Tools</div>
+      <div class="secret-btn edit-gate" onclick="promptPin()" title="Admin Tools">Admin Tools</div>
       <div class="logout-row" onclick="logout()">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
         Logout
@@ -130,10 +131,10 @@
     <div class="topbar">
       <div class="topbar-title" id="panelTitle">Today's Attendance</div>
       <div style="display:flex;align-items:center;gap:10px;">
-        <select id="projFilter" onchange="applyProjFilter()" style="display:none;padding:7px 11px;border-radius:10px;font-size:12px;font-weight:700;outline:none;"><option value="all">📁 All Projects</option></select>
-        <select id="deptFilter" onchange="applyLocFilter()" style="display:none;padding:7px 11px;border-radius:10px;font-size:12px;font-weight:700;outline:none;"><option value="all">🏢 All Departments</option></select>
-        <select id="locFilter" onchange="applyLocFilter()" style="display:none;padding:7px 11px;border-radius:10px;font-size:12px;font-weight:700;outline:none;"><option value="all">📍 All Locations</option></select>
-        <div class="edit-mode-badge" id="editBadge">✏️ Edit Mode ON <span onclick="turnOffEdit()" style="cursor:pointer;margin-left:4px;">✕</span></div>
+        <select id="projFilter" onchange="applyProjFilter()" style="display:none;padding:7px 11px;border-radius:10px;font-size:12px;font-weight:700;outline:none;"><option value="all">All Projects</option></select>
+        <select id="deptFilter" onchange="applyLocFilter()" style="display:none;padding:7px 11px;border-radius:10px;font-size:12px;font-weight:700;outline:none;"><option value="all">All Departments</option></select>
+        <select id="locFilter" onchange="applyLocFilter()" style="display:none;padding:7px 11px;border-radius:10px;font-size:12px;font-weight:700;outline:none;"><option value="all">All Locations</option></select>
+        <div class="edit-mode-badge" id="editBadge">Edit Mode ON <span onclick="turnOffEdit()" style="cursor:pointer;margin-left:4px;"></span></div>
         <div style="font-size:12px;color:var(--muted);" id="todayLbl"></div>
       </div>
     </div>
@@ -152,7 +153,7 @@
           <div class="card-top">
             <h3>Today's Attendance List</h3>
             <div class="btn-gap">
-              <button class="btn btn-green" onclick="location.href='/api/export/today'+locQS()">⬇ Excel</button>
+              <button class="btn btn-green" onclick="location.href='/api/export/today'+locQS()">Excel</button>
             </div>
           </div>
           <div class="fbar">
@@ -172,7 +173,7 @@
       <div class="panel" id="panel-monthly">
         <div class="card">
           <div class="card-top">
-            <h3>📅 Monthly Report</h3>
+            <h3>Monthly Report</h3>
             <div class="btn-gap">
               <select id="monthSel" onchange="loadMonthly()" style="padding:7px 11px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;outline:none;">
                 <option value="01">January</option><option value="02">February</option><option value="03">March</option>
@@ -183,7 +184,7 @@
               <select id="yearSel" onchange="loadMonthly()" style="padding:7px 11px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;outline:none;">
                 <option value="2025">2025</option><option value="2026">2026</option><option value="2027">2027</option>
               </select>
-              <button class="btn btn-green" onclick="exportMonthly()">⬇ Excel</button>
+              <button class="btn btn-green" onclick="exportMonthly()">Excel</button>
             </div>
           </div>
           <div class="charts-grid">
@@ -204,7 +205,7 @@
         <div class="card">
           <div class="card-top">
             <h3>Complete History</h3>
-            <button class="btn btn-green" onclick="location.href='/api/export/all'+locQS()">⬇ Full Excel</button>
+            <button class="btn btn-green" onclick="location.href='/api/export/all'+locQS()">Full Excel</button>
           </div>
           <div class="fbar">
             <input type="text" id="allQ" placeholder="Name or EMP ID..." oninput="loadAll()"/>
@@ -236,10 +237,10 @@
         <div class="card hub-card"><div class="hub-hdr" data-hub></div></div>
         <div class="card">
           <div class="card-top" style="flex-wrap:wrap;gap:10px;">
-            <h3>📁 Employee Documents (<span id="dpCnt">0</span>)</h3>
+            <h3>Employee Documents (<span id="dpCnt">0</span>)</h3>
             <div class="btn-gap">
               <input id="dpQ" placeholder="Search name / ID…" oninput="renderDocsPanel()" style="max-width:220px;"/>
-              <button class="btn btn-orange" onclick="openDocModal()">⬆ Upload Document</button>
+              <button class="btn btn-orange" onclick="openDocModal()">Upload Document</button>
             </div>
           </div>
           <p style="font-size:12px;color:var(--muted);margin:0 22px 10px;">Offer letter, appointment letter, experience certificate, KYC, salary slips and anything else (PDF / JPG / PNG, max 5 MB each). Only HR can see these.</p>
@@ -255,7 +256,7 @@
             <div><h3 style="font-size:20px;">Workforce Attendance Management <span class="at-badge" id="atSites">0 Sites</span></h3>
               <div style="font-size:12px;color:var(--muted);margin-top:4px;">Multi-project attendance ledger, geofence-verified punches and instant Excel export.</div></div>
             <div class="btn-gap">
-              <button class="btn btn-orange" onclick="atExcel('all')">⬇ Download All Projects Excel</button>
+              <button class="btn btn-orange" onclick="atExcel('all')">Download All Projects Excel</button>
               <button class="btn staff-only" onclick="openAdd()">＋ Add Employee</button>
               <button class="btn staff-only" onclick="openSiteAdd()">＋ Add Project Site</button>
               <button class="btn" onclick="loadAtt()" title="Refresh">⟳</button>
@@ -263,7 +264,7 @@
           </div>
         </div>
         <div class="stats-row" id="atStats"></div>
-        <div class="at-tabs"><div class="at-tab on" id="atT-full" onclick="atTab('full')">📋 Full Attendance (All Projects) <span class="at-cnt" id="atCntFull">0</span></div><div class="at-tab" id="atT-proj" onclick="atTab('proj')">📍 Project-Wise Attendance</div></div>
+        <div class="at-tabs"><div class="at-tab on" id="atT-full" onclick="atTab('full')">Full Attendance (All Projects) <span class="at-cnt" id="atCntFull">0</span></div><div class="at-tab" id="atT-proj" onclick="atTab('proj')">Project-Wise Attendance</div></div>
         <div class="card">
           <div class="fbar" style="flex-wrap:wrap;">
             <input type="text" id="atQ" placeholder="Search employee, ID, location..." oninput="renderAtt()" style="flex:2;min-width:200px;"/>
@@ -276,7 +277,7 @@
         </div>
         <div id="atFull" class="card">
           <div class="card-top"><h3>Full Master Attendance Records <small id="atCnt2" style="font-weight:400;color:var(--muted);"></small></h3>
-            <button class="btn btn-green" onclick="atExcel(document.getElementById('atProj').value||'all')">⬇ Export to Excel</button></div>
+            <button class="btn btn-green" onclick="atExcel(document.getElementById('atProj').value||'all')">Export to Excel</button></div>
           <div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>Employee</th><th>EMP ID</th><th>Project</th><th>Location</th><th>Date</th><th>In Time</th><th>Out Time</th><th>Working Hours</th><th>Status</th><th></th></tr></thead><tbody id="atBody"></tbody></table></div>
         </div>
         <div id="atProjView" style="display:none;"></div>
@@ -299,7 +300,7 @@
       <!-- SITE MANAGERS -->
       <div class="panel" id="panel-managers">
         <div class="card" style="max-width:760px;">
-          <div class="card-top"><h3 id="mgFormTitle">🧭 Create Site Manager</h3></div>
+          <div class="card-top"><h3 id="mgFormTitle">Create Site Manager</h3></div>
           <div style="padding:0 22px 22px;">
             <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">A Site Manager can only <b>view</b> attendance (and export it) for every project in the states you give. New projects added in those states appear automatically.</div>
             <div class="grid2"><div class="field"><label>Manager ID *</label><input id="mgId" type="text" placeholder="e.g. SM001"/></div><div class="field"><label>Name *</label><input id="mgName" type="text" placeholder="Manager name"/></div></div>
@@ -308,7 +309,7 @@
               <div id="mgNames" style="font-size:12px;color:var(--ok);margin-top:4px;min-height:16px;"></div>
               <div id="mgChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;"></div></div>
             <div class="modal-err" id="mgErr"></div>
-            <div style="display:flex;gap:10px;"><button class="btn btn-orange" style="flex:2;padding:12px;" onclick="saveMgr()">➕ Save</button><button class="btn" style="flex:1;padding:12px;" onclick="resetMgr()">New</button></div>
+            <div style="display:flex;gap:10px;"><button class="btn btn-orange" style="flex:2;padding:12px;" onclick="saveMgr()">Save</button><button class="btn" style="flex:1;padding:12px;" onclick="resetMgr()">New</button></div>
           </div>
         </div>
         <div class="card"><div class="card-top"><h3>Site Managers (<span id="mgCnt">0</span>)</h3></div>
@@ -319,7 +320,7 @@
       <div class="panel" id="panel-sitewatch">
         <div class="stats-row" id="swTotals" style="grid-template-columns:repeat(auto-fit,minmax(130px,1fr));"></div>
         <div class="card">
-          <div class="card-top"><h3>📡 Live Site Watch <small id="swAt" style="font-weight:400;color:var(--muted);"></small></h3>
+          <div class="card-top"><h3>Live Site Watch <small id="swAt" style="font-weight:400;color:var(--muted);"></small></h3>
             <div class="btn-gap"><button class="btn" onclick="loadWatch()">⟳ Refresh</button></div></div>
           <div class="fbar"><input type="text" id="swQ" placeholder="Find an employee on any site..." oninput="renderWatch()"/>
             <select id="swF" onchange="renderWatch()"><option value="">All sites</option><option value="inside">Sites with people working now</option><option value="empty">Sites with nobody</option></select></div>
@@ -336,15 +337,15 @@
         <div class="card">
           <div class="card-top" style="flex-wrap:wrap;gap:10px;">
             <div class="fbar" style="padding:0;flex:1;">
-              <label style="font-size:12px;font-weight:700;align-self:center;">📅 Month:</label>
+              <label style="font-size:12px;font-weight:700;align-self:center;">Month:</label>
               <input type="month" id="salMonth" onchange="loadSalary()" style="flex:0 0 auto;"/>
               <input type="text" id="salQ" placeholder="Search Name / EMP ID…" oninput="renderSalary()"/>
               <select id="salSt" onchange="renderSalary()"><option value="">All Status</option><option value="none">Not generated</option><option value="draft">Draft</option><option value="final">Final (locked)</option><option value="delivered">Delivered</option></select>
             </div>
             <div class="btn-gap">
-              <button class="btn btn-orange" onclick="slipBulk('generate')">✨ Generate from Attendance</button>
-              <button class="btn btn-green" onclick="dispatchAll()">🚀 Dispatch All to Employees</button>
-              <button class="btn" onclick="slipBulk('finalize')">🔒 Finalize month</button>
+              <button class="btn btn-orange" onclick="slipBulk('generate')">Generate from Attendance</button>
+              <button class="btn btn-green" onclick="dispatchAll()">Dispatch All to Employees</button>
+              <button class="btn" onclick="slipBulk('finalize')">Finalize month</button>
             </div>
           </div>
           <div id="salNote" style="padding:0 22px 8px;font-size:12px;color:var(--muted);"></div>
@@ -406,7 +407,7 @@
       <!-- PROJECTS PANEL (IT) -->
       <div class="panel" id="panel-projects">
         <div class="card" style="max-width:560px;">
-          <div class="card-top"><h3 id="prjFormTitle">📁 Add New Project</h3></div>
+          <div class="card-top"><h3 id="prjFormTitle">Add New Project</h3></div>
           <div style="padding:0 22px 22px;">
             <div class="grid2">
               <div class="field"><label>Project ID *</label><input id="prjId" type="text" placeholder="e.g. PRJ001"/></div>
@@ -414,7 +415,7 @@
             </div>
             <div class="modal-err" id="prjErr"></div>
             <div style="display:flex;gap:10px;">
-              <button class="btn btn-orange" style="flex:2;padding:12px;" onclick="saveProject()">💾 Save</button>
+              <button class="btn btn-orange" style="flex:2;padding:12px;" onclick="saveProject()">Save</button>
               <button class="btn" style="flex:1;padding:12px;" onclick="resetPrjForm()">New</button>
             </div>
             <p style="font-size:12px;color:var(--muted);margin-top:12px;">After creating a project, add locations under it in the "Location" panel. The QR code for each location is generated there.</p>
@@ -433,8 +434,8 @@
       <div class="panel" id="panel-loc">
         <div class="card" style="max-width:560px;">
           <div class="card-top">
-            <h3 id="locFormTitle">📍 Add New Location (Geofence)</h3>
-            <button class="btn btn-orange" onclick="useMyLocation()">📱 Use My Location</button>
+            <h3 id="locFormTitle">Add New Location (Geofence)</h3>
+            <button class="btn btn-orange" onclick="useMyLocation()">Use My Location</button>
           </div>
           <div style="padding:0 22px 22px;">
             <div style="background:#E6F1FB;border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:12px;color:#185FA5;line-height:1.7;">
@@ -449,7 +450,7 @@
             <div class="field"><label>Radius (meters)</label><input id="locRadius" type="number" value="100"/></div>
             <div id="locStatus" style="min-height:16px;font-size:12px;margin-bottom:12px;font-weight:600;"></div>
             <div style="display:flex;gap:10px;">
-              <button class="btn btn-orange" style="flex:2;padding:12px;" onclick="saveLocation()">💾 Save</button>
+              <button class="btn btn-orange" style="flex:2;padding:12px;" onclick="saveLocation()">Save</button>
               <button class="btn" style="flex:1;padding:12px;" onclick="resetLocForm()">New</button>
             </div>
           </div>
@@ -466,7 +467,7 @@
       <!-- ADMINS PANEL (IT) -->
       <div class="panel" id="panel-admins">
         <div class="card" style="max-width:640px;">
-          <div class="card-top"><h3 id="adFormTitle">👑 Create New HR ID</h3></div>
+          <div class="card-top"><h3 id="adFormTitle">Create New HR ID</h3></div>
           <div style="padding:0 22px 22px;">
             <div class="grid2">
               <div class="field"><label>HR ID *</label><input id="adId" type="text" placeholder="e.g. AD001"/></div>
@@ -480,7 +481,7 @@
             </div>
             <div class="modal-err" id="adErr"></div>
             <div style="display:flex;gap:10px;">
-              <button class="btn btn-orange" style="flex:2;padding:12px;" onclick="saveAdmin()">➕ Save</button>
+              <button class="btn btn-orange" style="flex:2;padding:12px;" onclick="saveAdmin()">Save</button>
               <button class="btn" style="flex:1;padding:12px;" onclick="resetAdForm()">New</button>
             </div>
           </div>
@@ -498,7 +499,7 @@
       <div class="panel" id="panel-bypass">
         <div class="card" style="max-width:500px;">
           <div class="card-top">
-            <h3>🛡 Location Bypass</h3>
+            <h3>Location Bypass</h3>
           </div>
           <div style="padding:18px;">
             <div style="background:#FAEEDA;border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:12px;color:#854F0B;line-height:1.7;">
@@ -525,8 +526,8 @@
         </div>
         <div class="card">
           <div class="card-top">
-            <h3>📱 Phone Unlock</h3>
-            <button class="btn btn-blue" onclick="loadITools()">🔄 Refresh</button>
+            <h3>Phone Unlock</h3>
+            <button class="btn btn-blue" onclick="loadITools()">Refresh</button>
           </div>
           <div style="padding:0 22px 16px;">
             <div style="background:#E6F1FB;border-radius:10px;padding:12px 14px;font-size:12px;color:#185FA5;line-height:1.7;">
@@ -543,7 +544,7 @@
       <!-- IT USERS PANEL (admin only) -->
       <div class="panel" id="panel-itusers">
         <div class="card" style="max-width:640px;">
-          <div class="card-top"><h3>🛠 Create New IT User</h3></div>
+          <div class="card-top"><h3>Create New IT User</h3></div>
           <div style="padding:0 22px 22px;">
             <div class="grid2">
               <div class="field"><label>IT ID *</label><input id="iuId" type="text" placeholder="e.g. IT001"/></div>
@@ -551,7 +552,7 @@
             </div>
             <div class="field"><label>Password * (minimum 6 characters)</label><input id="iuPwd" type="password" placeholder="New password"/></div>
             <div class="modal-err" id="iuErr"></div>
-            <button class="btn btn-orange" style="width:100%;padding:12px;" onclick="addITUser()">➕ Create IT User</button>
+            <button class="btn btn-orange" style="width:100%;padding:12px;" onclick="addITUser()">Create IT User</button>
           </div>
         </div>
         <div class="card">
@@ -576,7 +577,7 @@
     <p style="font-size:12px;color:var(--muted);">Employees at this location scan this QR code to mark their attendance.</p>
     <div class="modal-btns">
       <button class="mb-cancel" onclick="closeOverlay('qrOverlay')">Close</button>
-      <a class="mb-add" id="qrmDl" style="text-decoration:none;text-align:center;">⬇ Download</a>
+      <a class="mb-add" id="qrmDl" style="text-decoration:none;text-align:center;">Download</a>
     </div>
   </div>
 </div>
@@ -593,7 +594,7 @@
       <div class="field"><label>Designation</label><input id="eeDes" type="text"/></div>
       <div class="field"><label>Joining date</label><input id="eeJoin" type="date"/></div>
     </div>
-    <div class="perm-salary-f" style="display:none"><div style="font-weight:800;font-size:12px;margin:8px 0 4px;">💰 Salary structure (as on payslip)</div><div class="grid2"><div class="field"><label>Employee No (company ID)</label><input id="ee_empNo" type="text"/></div><div class="field"><label>BASIC (monthly)</label><input id="ee_basic" type="number" step="any" min="0"/></div><div class="field"><label>DA</label><input id="ee_da" type="number" step="any" min="0"/></div><div class="field"><label>HRA</label><input id="ee_hra" type="number" step="any" min="0"/></div><div class="field"><label>OTHER ALLOWANCE</label><input id="ee_otherAllow" type="number" step="any" min="0"/></div><div class="field"><label>PROJECT ALLOWANCE (₹ per day present)</label><input id="ee_projectPerDay" type="number" step="any" min="0"/></div><div class="field"><label>Travel (₹ per day, info only)</label><input id="ee_travelPerDay" type="number" step="any" min="0"/></div><div class="field"><label>Food (₹ per day, info only)</label><input id="ee_foodPerDay" type="number" step="any" min="0"/></div><div class="field"><label>PF (₹ per month)</label><input id="ee_pfAmount" type="number" step="any" min="0"/></div><div class="field"><label>ESI (₹ per month)</label><input id="ee_esiAmount" type="number" step="any" min="0"/></div><div class="field"><label>PROF TAX (₹ per month)</label><input id="ee_profTax" type="number" step="any" min="0"/></div><div class="field"><label>Leave opening balance (days)</label><input id="ee_leaveOpening" type="number" step="any" min="0"/></div><div class="field"><label>Bank name</label><input id="ee_bankName" type="text"/></div><div class="field"><label>Bank account no</label><input id="ee_bankAccount" type="text"/></div><div class="field"><label>PAN number</label><input id="ee_panNumber" type="text"/></div><div class="field"><label>ESI number</label><input id="ee_esiNo" type="text"/></div><div class="field"><label>PF number</label><input id="ee_pfNo" type="text"/></div><div class="field"><label>PF UAN</label><input id="ee_uanNo" type="text"/></div></div><div style="font-size:11px;color:var(--muted);">Full gross = BASIC + DA + HRA + OTHER. Actual pay = Full × effective days ÷ days in month (working days, weekly offs excluded).</div></div>
+<div class="perm-salary-f sal-block" style="display:none"><div class="sec-t">Salary structure</div><div class="sec-s">Earnings (₹ per month)</div><div class="grid2"><div class="field"><label>Basic</label><input id="ee_basic" type="number" step="any" min="0" inputmode="decimal"/></div><div class="field"><label>DA</label><input id="ee_da" type="number" step="any" min="0" inputmode="decimal"/></div><div class="field"><label>HRA</label><input id="ee_hra" type="number" step="any" min="0" inputmode="decimal"/></div><div class="field"><label>Other allowance</label><input id="ee_otherAllow" type="number" step="any" min="0" inputmode="decimal"/></div></div><div class="sec-s">Per-day allowances (₹ per day present)</div><div class="grid2"><div class="field"><label>Project allowance</label><input id="ee_projectPerDay" type="number" step="any" min="0" inputmode="decimal"/></div><div class="field"><label>Travel (shown on slip only)</label><input id="ee_travelPerDay" type="number" step="any" min="0" inputmode="decimal"/></div><div class="field"><label>Food (shown on slip only)</label><input id="ee_foodPerDay" type="number" step="any" min="0" inputmode="decimal"/></div></div><div class="sec-s">Deductions (₹ per month)</div><div class="grid2"><div class="field"><label>PF</label><input id="ee_pfAmount" type="number" step="any" min="0" inputmode="decimal"/></div><div class="field"><label>ESI</label><input id="ee_esiAmount" type="number" step="any" min="0" inputmode="decimal"/></div><div class="field"><label>Professional tax</label><input id="ee_profTax" type="number" step="any" min="0" inputmode="decimal"/></div></div><div class="sec-s">Employee & leave</div><div class="grid2"><div class="field"><label>Employee No</label><input id="ee_empNo" type="text"/></div><div class="field"><label>Leave opening balance (days)</label><input id="ee_leaveOpening" type="number" step="any" min="0" inputmode="decimal"/></div></div><div class="sec-s">Bank & statutory details</div><div class="grid2"><div class="field"><label>Bank name</label><input id="ee_bankName" type="text"/></div><div class="field"><label>Bank account no</label><input id="ee_bankAccount" type="text"/></div><div class="field"><label>PAN</label><input id="ee_panNumber" type="text"/></div><div class="field"><label>ESI no</label><input id="ee_esiNo" type="text"/></div><div class="field"><label>PF no</label><input id="ee_pfNo" type="text"/></div><div class="field"><label>PF UAN</label><input id="ee_uanNo" type="text"/></div></div><div class="sec-note">Gross = Basic + DA + HRA + Other allowance. Actual pay = Full × effective days ÷ working days in the month (weekly offs excluded).</div></div>
     <label style="display:flex;gap:8px;align-items:center;font-size:13px;margin-bottom:10px;"><input type="checkbox" id="eeActive"/> Active (untick to deactivate — they can no longer punch in)</label>
     <div class="field"><label>Department</label><input id="eeDept" type="text" list="deptList" placeholder="e.g. HR, Accounts, Sales"/></div>
     <div class="field"><label>Main location (geofence)</label><select id="eeLoc"></select></div>
@@ -603,7 +604,7 @@
       <div style="display:flex;gap:6px;flex-wrap:wrap;">
         <select id="docType"><option value="photo">Photo</option><option value="aadhaar">Aadhaar</option><option value="pan">PAN</option><option value="offer">Offer letter</option><option value="appointment">Appointment letter</option><option value="experience">Experience letter</option><option value="relieving">Relieving letter</option><option value="bank">Bank details</option><option value="other">Other</option></select>
         <input type="file" id="docFile" accept="application/pdf,image/jpeg,image/png"/>
-        <button class="btn btn-blue" type="button" onclick="uploadDoc()">⬆ Upload</button>
+        <button class="btn btn-blue" type="button" onclick="uploadDoc()">Upload</button>
       </div>
       <div id="docMsg" style="font-size:11px;color:var(--muted);margin-top:4px;"></div>
     </div>
@@ -620,15 +621,15 @@
 <div class="overlay" id="docOverlay">
   <div class="modal" style="width:min(760px,96vw);max-height:94vh;overflow:auto;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-      <div><h3 style="margin:0;">⬆ Upload Employee Document</h3><div style="font-size:12px;color:var(--muted);">Offer Letter, Appointment Letter, Experience Certificate, KYC or any other file</div></div>
-      <button class="btn" onclick="closeOverlay('docOverlay')">✕</button>
+      <div><h3 style="margin:0;">Upload Employee Document</h3><div style="font-size:12px;color:var(--muted);">Offer Letter, Appointment Letter, Experience Certificate, KYC or any other file</div></div>
+      <button class="btn" onclick="closeOverlay('docOverlay')"></button>
     </div>
     <div class="dm-h">1. Employee</div>
     <select id="dmEmp" style="width:100%;"></select>
     <div class="dm-h">2. Document category</div>
     <div class="cat-grid" id="dmCats"></div>
-    <div class="dm-h" style="display:flex;justify-content:space-between;align-items:center;">3. File upload or template <a href="#" id="dmGen" onclick="dmGenerate();return false;" style="display:none;color:var(--orange,#f26522);font-weight:800;">✨ 1-Click Auto-Generate Letter</a></div>
-    <label class="dz" id="dmDz" for="dmFile"><div style="font-size:26px;">⬆</div><b id="dmFileName">Click to select or drag &amp; drop a document</b><small>PDF, JPG, PNG (Max 5 MB)</small></label>
+    <div class="dm-h" style="display:flex;justify-content:space-between;align-items:center;">3. File upload or template <a href="#" id="dmGen" onclick="dmGenerate();return false;" style="display:none;color:var(--orange,#f26522);font-weight:800;">1-Click Auto-Generate Letter</a></div>
+    <label class="dz" id="dmDz" for="dmFile"><div style="font-size:26px;"></div><b id="dmFileName">Click to select or drag &amp; drop a document</b><small>PDF, JPG, PNG (Max 5 MB)</small></label>
     <input type="file" id="dmFile" accept="application/pdf,image/jpeg,image/png" style="display:none"/>
     <div class="grid2" style="margin-top:12px;">
       <div class="field"><label>Document title</label><input id="dmTitle" type="text" maxlength="60" placeholder="e.g. Offer Letter - Site Supervisor"/></div>
@@ -638,7 +639,7 @@
     <div id="dmMsg" style="font-size:12px;min-height:16px;margin:6px 0;"></div>
     <div style="display:flex;gap:10px;justify-content:flex-end;">
       <button class="btn" onclick="closeOverlay('docOverlay')">Cancel</button>
-      <button class="btn btn-orange" id="dmSave" onclick="dmUpload()">⬆ Save &amp; Upload Document</button>
+      <button class="btn btn-orange" id="dmSave" onclick="dmUpload()">Save &amp; Upload Document</button>
     </div>
   </div>
 </div>
@@ -647,7 +648,7 @@
 <div class="overlay" id="dispOverlay">
   <div class="modal" style="width:min(680px,96vw);max-height:92vh;overflow:auto;">
     <div style="display:flex;justify-content:space-between;align-items:center;">
-      <h3 style="margin:0;">🚀 Payslips dispatched</h3><button class="btn" onclick="closeOverlay('dispOverlay')">✕</button>
+      <h3 style="margin:0;">Payslips dispatched</h3><button class="btn" onclick="closeOverlay('dispOverlay')"></button>
     </div>
     <p style="font-size:12px;color:var(--muted);">Every payslip is marked <b>Delivered</b> and has a secure link (valid 7 days, no login needed). Tap <b>WhatsApp</b> to send each employee their message — WhatsApp opens with the text ready.</p>
     <div id="dispList"></div>
@@ -663,12 +664,12 @@
     </div>
     <div id="pfInfo" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin-bottom:14px;font-size:12px;"></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
-      <button class="btn btn-blue" onclick="pfEdit()">✏️ Edit details</button>
-      <button class="btn perm-nav-b" id="pfSalBtn" onclick="pfSalary()">💰 Salary &amp; payslip</button>
+      <button class="btn btn-blue" onclick="pfEdit()">Edit details</button>
+      <button class="btn perm-nav-b" id="pfSalBtn" onclick="pfSalary()">Salary &amp; payslip</button>
     </div>
-    <h4 style="margin:6px 0;">📁 Documents <small style="font-weight:400;color:var(--muted);">(PDF / JPG / PNG, max 5 MB)</small></h4>
+    <h4 style="margin:6px 0;">Documents <small style="font-weight:400;color:var(--muted);">(PDF / JPG / PNG, max 5 MB)</small></h4>
     <div id="pfDocs"></div>
-    <div id="pfSlipsWrap" style="display:none;"><h4 style="margin:14px 0 6px;">🧾 Payslips (generated)</h4><div id="pfSlips" style="font-size:12px;"></div></div>
+    <div id="pfSlipsWrap" style="display:none;"><h4 style="margin:14px 0 6px;">Payslips (generated)</h4><div id="pfSlips" style="font-size:12px;"></div></div>
     <div id="pfMsg" style="font-size:12px;margin-top:6px;min-height:16px;"></div>
     <input type="file" id="pfFile" accept="application/pdf,image/jpeg,image/png" style="display:none"/>
     <div class="modal-btns"><button class="mb-cancel" onclick="closeOverlay('profOverlay')">Close</button></div>
@@ -678,17 +679,17 @@
 <!-- ADD EMPLOYEE MODAL -->
 <div class="overlay" id="addOverlay">
   <div class="modal">
-    <h3>➕ Add New Employee</h3>
+    <h3>Add New Employee</h3>
     <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">EMP ID is generated automatically (EMP001, EMP002 …).</div>
     <div class="field"><label>Full Name *</label><input id="nName" type="text" placeholder="Employee name"/></div>
     <div class="field"><label>Mobile Number</label><input id="nMob" type="text" placeholder="10-digit number"/></div>
-    <div class="field"><label>Department (optional)</label><input id="nDept" type="text" list="deptList" placeholder="e.g. HR, Accounts, Sales"/><datalist id="deptList"></datalist></div>
+    <div class="field"><label>Department</label><input id="nDept" type="text" list="deptList" placeholder="e.g. HR, Accounts, Sales"/><datalist id="deptList"></datalist></div>
         <div class="grid2">
       <div class="field"><label>Designation</label><input id="nDes" type="text" placeholder="e.g. Security Guard"/></div>
       <div class="field"><label>Joining date</label><input id="nJoin" type="date"/></div>
     </div>
-    <div class="perm-salary-f" style="display:none"><div style="font-weight:800;font-size:12px;margin:8px 0 4px;">💰 Salary structure (as on payslip)</div><div class="grid2"><div class="field"><label>Employee No (company ID)</label><input id="n_empNo" type="text"/></div><div class="field"><label>BASIC (monthly)</label><input id="n_basic" type="number" step="any" min="0"/></div><div class="field"><label>DA</label><input id="n_da" type="number" step="any" min="0"/></div><div class="field"><label>HRA</label><input id="n_hra" type="number" step="any" min="0"/></div><div class="field"><label>OTHER ALLOWANCE</label><input id="n_otherAllow" type="number" step="any" min="0"/></div><div class="field"><label>PROJECT ALLOWANCE (₹ per day present)</label><input id="n_projectPerDay" type="number" step="any" min="0"/></div><div class="field"><label>Travel (₹ per day, info only)</label><input id="n_travelPerDay" type="number" step="any" min="0"/></div><div class="field"><label>Food (₹ per day, info only)</label><input id="n_foodPerDay" type="number" step="any" min="0"/></div><div class="field"><label>PF (₹ per month)</label><input id="n_pfAmount" type="number" step="any" min="0"/></div><div class="field"><label>ESI (₹ per month)</label><input id="n_esiAmount" type="number" step="any" min="0"/></div><div class="field"><label>PROF TAX (₹ per month)</label><input id="n_profTax" type="number" step="any" min="0"/></div><div class="field"><label>Leave opening balance (days)</label><input id="n_leaveOpening" type="number" step="any" min="0"/></div><div class="field"><label>Bank name</label><input id="n_bankName" type="text"/></div><div class="field"><label>Bank account no</label><input id="n_bankAccount" type="text"/></div><div class="field"><label>PAN number</label><input id="n_panNumber" type="text"/></div><div class="field"><label>ESI number</label><input id="n_esiNo" type="text"/></div><div class="field"><label>PF number</label><input id="n_pfNo" type="text"/></div><div class="field"><label>PF UAN</label><input id="n_uanNo" type="text"/></div></div><div style="font-size:11px;color:var(--muted);">Full gross = BASIC + DA + HRA + OTHER. Actual pay = Full × effective days ÷ days in month (working days, weekly offs excluded).</div></div>
     <div class="field"><label>Location (geofence)</label><select id="nLoc"></select></div>
+    <div class="perm-salary-f sal-block" style="display:none"><div class="sec-t">Salary structure</div><div class="sec-s">Earnings (₹ per month)</div><div class="grid2"><div class="field"><label>Basic</label><input id="n_basic" type="number" step="any" min="0" inputmode="decimal"/></div><div class="field"><label>DA</label><input id="n_da" type="number" step="any" min="0" inputmode="decimal"/></div><div class="field"><label>HRA</label><input id="n_hra" type="number" step="any" min="0" inputmode="decimal"/></div><div class="field"><label>Other allowance</label><input id="n_otherAllow" type="number" step="any" min="0" inputmode="decimal"/></div></div><div class="sec-s">Per-day allowances (₹ per day present)</div><div class="grid2"><div class="field"><label>Project allowance</label><input id="n_projectPerDay" type="number" step="any" min="0" inputmode="decimal"/></div><div class="field"><label>Travel (shown on slip only)</label><input id="n_travelPerDay" type="number" step="any" min="0" inputmode="decimal"/></div><div class="field"><label>Food (shown on slip only)</label><input id="n_foodPerDay" type="number" step="any" min="0" inputmode="decimal"/></div></div><div class="sec-s">Deductions (₹ per month)</div><div class="grid2"><div class="field"><label>PF</label><input id="n_pfAmount" type="number" step="any" min="0" inputmode="decimal"/></div><div class="field"><label>ESI</label><input id="n_esiAmount" type="number" step="any" min="0" inputmode="decimal"/></div><div class="field"><label>Professional tax</label><input id="n_profTax" type="number" step="any" min="0" inputmode="decimal"/></div></div><div class="sec-s">Employee & leave</div><div class="grid2"><div class="field"><label>Employee No</label><input id="n_empNo" type="text"/></div><div class="field"><label>Leave opening balance (days)</label><input id="n_leaveOpening" type="number" step="any" min="0" inputmode="decimal"/></div></div><div class="sec-s">Bank & statutory details</div><div class="grid2"><div class="field"><label>Bank name</label><input id="n_bankName" type="text"/></div><div class="field"><label>Bank account no</label><input id="n_bankAccount" type="text"/></div><div class="field"><label>PAN</label><input id="n_panNumber" type="text"/></div><div class="field"><label>ESI no</label><input id="n_esiNo" type="text"/></div><div class="field"><label>PF no</label><input id="n_pfNo" type="text"/></div><div class="field"><label>PF UAN</label><input id="n_uanNo" type="text"/></div></div><div class="sec-note">Gross = Basic + DA + HRA + Other allowance. Actual pay = Full × effective days ÷ working days in the month (weekly offs excluded).</div></div>
     <div class="modal-err" id="addErr"></div>
     <div class="modal-btns">
       <button class="mb-cancel" onclick="closeOverlay('addOverlay')">Cancel</button>
@@ -710,10 +711,10 @@
     </div>
     <div class="field" id="spStateF"><label>State <small style="color:var(--muted);font-weight:400;">(code is added automatically)</small></label><div style="display:flex;gap:8px;align-items:center;"><select id="spState" style="flex:1;" onchange="document.getElementById('spStateCode').textContent=this.value||'—'"><option value="">— Select state —</option></select><b id="spStateCode" style="font-family:monospace;color:var(--brand);min-width:48px;">—</b></div></div>
     <div class="field" id="spSiteNameF" style="display:none;"><label>Site / Gate name *</label><input id="spSiteName" type="text" placeholder="e.g. Gate 2"/></div>
-    <div class="field"><label style="display:flex;justify-content:space-between;">Site Address <a href="#" onclick="spAddr();return false;" style="color:var(--brand);font-size:11px;">➤ Auto-fill Device Address</a></label><input id="spAddr" type="text" placeholder="Plot 14, Sector 62, Gate 2"/></div>
+    <div class="field"><label style="display:flex;justify-content:space-between;">Site Address <a href="#" onclick="spAddr();return false;" style="color:var(--brand);font-size:11px;">Auto-fill Device Address</a></label><input id="spAddr" type="text" placeholder="Plot 14, Sector 62, Gate 2"/></div>
     <div style="background:rgba(120,130,160,.1);border-radius:16px;padding:14px;margin-bottom:12px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px;"><b>🎯 Radar Perimeter &amp; GPS</b>
-        <span style="display:flex;gap:6px;"><button class="btn" type="button" onclick="spGps()">💻 Get Device GPS</button><button class="btn" type="button" onclick="spIp()">🌐 IP / Net</button></span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px;"><b>Radar Perimeter &amp; GPS</b>
+        <span style="display:flex;gap:6px;"><button class="btn" type="button" onclick="spGps()">Get Device GPS</button><button class="btn" type="button" onclick="spIp()">IP / Net</button></span></div>
       <div class="grid2"><div class="field"><label>Latitude</label><input id="spLat" type="text" placeholder="28.6139"/></div><div class="field"><label>Longitude</label><input id="spLng" type="text" placeholder="77.2090"/></div></div>
       <div style="display:flex;justify-content:space-between;align-items:center;"><label style="font-size:12px;font-weight:800;">Allowed distance from site centre</label><b id="spRadV" style="color:var(--brand);font-family:monospace;font-size:16px;">250 m</b></div>
       <input id="spRad" type="range" min="50" max="1000" step="10" value="250" oninput="document.getElementById('spRadV').textContent=this.value+' m'" style="width:100%;accent-color:#F26A21;"/>
@@ -721,7 +722,7 @@
     </div>
     <div class="modal-err" id="spErr"></div>
     <div class="modal-btns">
-      <button class="mb-cancel" id="spDel" style="display:none;color:var(--bad);margin-right:auto;" onclick="spDelete()">🗑 Delete</button>
+      <button class="mb-cancel" id="spDel" style="display:none;color:var(--bad);margin-right:auto;" onclick="spDelete()">Delete</button>
       <button class="mb-cancel" onclick="closeOverlay('siteOverlay')">Cancel</button>
       <button class="mb-add" id="spSave" onclick="spSave()">Create &amp; Generate QR Poster</button>
     </div>
@@ -754,7 +755,7 @@
 <!-- PIN MODAL -->
 <div class="overlay" id="pinOverlay">
   <div class="modal" style="width:300px;">
-    <h3>🔒 Enter Secret PIN</h3>
+    <h3>Enter Secret PIN</h3>
     <p style="font-size:12px;color:var(--muted);margin-bottom:14px;">A PIN is required to access Admin Tools</p>
     <div class="field"><input id="pinInput" type="password" placeholder="Enter PIN" onkeydown="if(event.key==='Enter')verifyPin()"/></div>
     <div class="modal-err" id="pinErr"></div>
@@ -768,14 +769,12 @@
 <!-- EDIT OPTIONS MODAL -->
 <div class="overlay" id="editOptionsOverlay">
   <div class="modal" style="width:320px;text-align:center;">
-    <h3>🛠 Admin Tools</h3>
+    <h3>Admin Tools</h3>
     <p style="font-size:12px;color:var(--muted);margin-bottom:18px;">What would you like to do?</p>
     <div style="display:flex;flex-direction:column;gap:10px;">
-      <button onclick="enableEditMode()" style="padding:16px;background:#E6F1FB;color:#185FA5;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;text-align:left;">
-        ✏️ Attendance Edit Mode<br><small style="font-weight:400;font-size:11px;color:#7b8299;">Change the time, shift or status of an existing record</small>
+      <button onclick="enableEditMode()" style="padding:16px;background:#E6F1FB;color:#185FA5;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;text-align:left;">Attendance Edit Mode<br><small style="font-weight:400;font-size:11px;color:#7b8299;">Change the time, shift or status of an existing record</small>
       </button>
-      <button onclick="openManualAdd()" style="padding:16px;background:#EAF3DE;color:#3B6D11;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;text-align:left;">
-        ➕ Add Attendance Manually<br><small style="font-weight:400;font-size:11px;color:#7b8299;">Manually enter attendance for an employee</small>
+      <button onclick="openManualAdd()" style="padding:16px;background:#EAF3DE;color:#3B6D11;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;text-align:left;">Add Attendance Manually<br><small style="font-weight:400;font-size:11px;color:#7b8299;">Manually enter attendance for an employee</small>
       </button>
     </div>
     <button onclick="closeOverlay('editOptionsOverlay')" style="margin-top:14px;padding:8px 20px;background:var(--gray);color:var(--text);border:none;border-radius:8px;font-size:13px;cursor:pointer;">Cancel</button>
@@ -785,7 +784,7 @@
 <!-- EDIT ATTENDANCE MODAL -->
 <div class="overlay" id="editOverlay">
   <div class="modal">
-    <h3>✏️ Edit Attendance</h3>
+    <h3>Edit Attendance</h3>
     <div style="background:#FFF3E6;border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:#854F0B;font-weight:600;" id="editRecInfo"></div>
     <div class="grid2">
       <div class="field"><label>Check-in Time</label><input id="editCheckIn" type="text" placeholder="08:30 AM"/></div>
@@ -820,7 +819,7 @@
 <!-- MANUAL ADD ATTENDANCE MODAL -->
 <div class="overlay" id="manualAddOverlay">
   <div class="modal">
-    <h3>➕ Add Attendance Manually</h3>
+    <h3>Add Attendance Manually</h3>
     <div class="field">
       <label>Employee EMP ID *</label>
       <input id="maEmpId" type="text" placeholder="e.g. MW001" oninput="searchEmpForManual()"/>
@@ -1023,7 +1022,7 @@ async function loadDay(){
       <td>${d.totalHours||'—'}</td>
       <td>${badgeHtml(d.status)}</td>
       <td style="white-space:nowrap;">
-        ${d.attended?`<button class="edit-btn edit-gate" onclick="openEdit('${d.id}','${d.date}','${d.name}','${d.time||''}','${d.checkOut||''}','${d.shift||'G'}')">✏️ Edit</button> <button class="edit-gate" onclick="delAttendance('${d.id}','${d.date}','${d.name}')" style="padding:4px 8px;background:#FCEBEB;color:#A32D2D;border:none;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer;">🗑</button>`:'—'}
+        ${d.attended?`<button class="edit-btn edit-gate" onclick="openEdit('${d.id}','${d.date}','${d.name}','${d.time||''}','${d.checkOut||''}','${d.shift||'G'}')">Edit</button> <button class="edit-gate" onclick="delAttendance('${d.id}','${d.date}','${d.name}')" style="padding:4px 8px;background:#FCEBEB;color:#A32D2D;border:none;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer;"></button>`:'—'}
       </td>
     </tr>`).join('');
     applyEditMode();
@@ -1091,8 +1090,8 @@ async function loadAll(){
       <td>${shiftBadge(r.shift)}</td><td>${r.time||'—'}</td><td>${r.checkOut||'—'}</td>
       <td>${r.totalHours||'—'}</td><td>${badgeHtml(r.status)}</td>
       <td style="white-space:nowrap;">
-        <button class="edit-btn edit-gate" onclick="openEdit('${r.empId}','${r.date}','${r.empName}','${r.time||''}','${r.checkOut||''}','${r.shift||'G'}')">✏️ Edit</button>
-        <button class="edit-gate" onclick="delAttendance('${r.empId}','${r.date}','${r.empName}')" style="padding:4px 8px;background:#FCEBEB;color:#A32D2D;border:none;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer;">🗑</button>
+        <button class="edit-btn edit-gate" onclick="openEdit('${r.empId}','${r.date}','${r.empName}','${r.time||''}','${r.checkOut||''}','${r.shift||'G'}')">Edit</button>
+        <button class="edit-gate" onclick="delAttendance('${r.empId}','${r.date}','${r.empName}')" style="padding:4px 8px;background:#FCEBEB;color:#A32D2D;border:none;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer;"></button>
       </td>
     </tr>`).join('');
     applyEditMode();
@@ -1111,12 +1110,12 @@ async function loadEmp(){
       const init=e.name.split(' ').map(x=>x[0]).join('').substring(0,2).toUpperCase();
       return`<div class="ec">
         <div class="ec-top"><div class="ec-av" style="background:${bg};color:${tc};${e.photoDocId?'padding:0;overflow:hidden;':''}">${e.photoDocId?`<img src="${docUrl(e.photoDocId)}" style="width:100%;height:100%;object-fit:cover;" alt=""/>`:init}</div>
-        <div style="cursor:pointer;" onclick="openProfile('${jsq(e.id)}')"><div class="ec-name">${e.name}</div><div class="ec-id">${e.id}</div><div class="ec-mob">📱 ${e.mobile}</div>${e.designation?`<div class="ec-mob">${esc(e.designation)}</div>`:''}${e.active===false?'<div class="ec-mob" style="color:var(--bad);font-weight:800;">INACTIVE</div>':''}</div></div>
-        ${e.role==='admin'?'':`<div style="font-size:11px;color:var(--muted);line-height:1.7;margin:6px 0;">🏢 ${esc(e.department||'No department')}<br>📍 ${esc(e.locationName||'No location')}${(e.extraLocationNames||[]).length?' + '+esc(e.extraLocationNames.join(', ')):''}</div>`}
+        <div style="cursor:pointer;" onclick="openProfile('${jsq(e.id)}')"><div class="ec-name">${e.name}</div><div class="ec-id">${e.id}</div><div class="ec-mob">${e.mobile}</div>${e.designation?`<div class="ec-mob">${esc(e.designation)}</div>`:''}${e.active===false?'<div class="ec-mob" style="color:var(--bad);font-weight:800;">INACTIVE</div>':''}</div></div>
+        ${e.role==='admin'?'':`<div style="font-size:11px;color:var(--muted);line-height:1.7;margin:6px 0;">${esc(e.department||'No department')}<br>${esc(e.locationName||'No location')}${(e.extraLocationNames||[]).length?' + '+esc(e.extraLocationNames.join(', ')):''}</div>`}
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;">
-          ${e.role==='admin'?'':`<button class="btn btn-orange" style="padding:5px 10px;font-size:10px;" onclick="openProfile('${jsq(e.id)}')">👤 Profile &amp; Documents</button>`}
-          ${e.role==='admin'?'':`<button class="btn btn-blue" style="padding:5px 10px;font-size:10px;" onclick="openEmpEdit('${jsq(e.id)}')">✏️ Edit</button>`}
-          ${e.role!=='admin'?`<button onclick="delEmp('${e.id}','${e.name}')" style="padding:5px 10px;background:#FCEBEB;color:#A32D2D;border:none;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;">🗑 Delete</button>`:'<span style="font-size:10px;color:var(--muted);">Super Admin</span>'}
+          ${e.role==='admin'?'':`<button class="btn btn-orange" style="padding:5px 10px;font-size:10px;" onclick="openProfile('${jsq(e.id)}')">Profile &amp; Documents</button>`}
+          ${e.role==='admin'?'':`<button class="btn btn-blue" style="padding:5px 10px;font-size:10px;" onclick="openEmpEdit('${jsq(e.id)}')">Edit</button>`}
+          ${e.role!=='admin'?`<button onclick="delEmp('${e.id}','${e.name}')" style="padding:5px 10px;background:#FCEBEB;color:#A32D2D;border:none;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;">Delete</button>`:'<span style="font-size:10px;color:var(--muted);">Super Admin</span>'}
         </div>
       </div>`;
     }).join('');
@@ -1124,9 +1123,10 @@ async function loadEmp(){
 }
  
 const SALF=['empNo', 'basic', 'da', 'hra', 'otherAllow', 'projectPerDay', 'travelPerDay', 'foodPerDay', 'pfAmount', 'esiAmount', 'profTax', 'leaveOpening', 'bankName', 'bankAccount', 'panNumber', 'esiNo', 'pfNo', 'uanNo'];
+document.addEventListener('input',e=>{const t=e.target;if(!t||!t.id)return;if(/_(uanNo|bankAccount)$/.test(t.id))t.value=t.value.replace(/\D/g,'');else if(/_panNumber$/.test(t.id))t.value=t.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,10);});
 function salRead(px){const b={};SALF.forEach(k=>{const el=document.getElementById(px+'_'+k);if(!el)return;const v=el.value.trim();b[k]=el.type==='number'?(v===''?0:Number(v)):v;});return b;}
 function salFill(px,e){SALF.forEach(k=>{const el=document.getElementById(px+'_'+k);if(el)el.value=e[k]==null||e[k]===0?'':e[k];});}
-function openAdd(){fillLocSelect(document.getElementById('nLoc'),true);document.getElementById('addErr').textContent='';document.getElementById('addOverlay').classList.add('open');}
+function openAdd(){const dl=document.getElementById('deptList'),sc=(ME&&ME.departments)||[];if(sc.length){dl.innerHTML=sc.map(x=>`<option value="${esc(x)}">`).join('');if(sc.length===1)document.getElementById('nDept').value=sc[0];document.getElementById('nDept').placeholder='Your departments: '+sc.join(', ');}fillLocSelect(document.getElementById('nLoc'),true);document.getElementById('addErr').textContent='';document.getElementById('addOverlay').classList.add('open');}
 async function addEmp(){
   const name=document.getElementById('nName').value.trim(), mob=document.getElementById('nMob').value.trim();
   const err=document.getElementById('addErr');
@@ -1166,8 +1166,8 @@ async function loadProjects(){
   document.getElementById('prjCnt').textContent=d.length;
   document.getElementById('prjBody').innerHTML=d.length?d.map(p=>`<tr>
     <td><b>${esc(p.id)}</b></td><td>${esc(p.name)}</td><td>${p.locations}</td>
-    <td style="white-space:nowrap;"><button class="btn btn-blue" onclick="editProject('${jsq(p.id)}')">✏️ Edit</button>
-    <button class="btn" style="color:var(--bad);" onclick="delProject('${jsq(p.id)}','${jsq(p.name)}')">🗑</button></td>
+    <td style="white-space:nowrap;"><button class="btn btn-blue" onclick="editProject('${jsq(p.id)}')">Edit</button>
+    <button class="btn" style="color:var(--bad);" onclick="delProject('${jsq(p.id)}','${jsq(p.name)}')"></button></td>
   </tr>`).join(''):'<tr><td colspan="4" class="no-data">No projects yet</td></tr>';
 }
 function editProject(id){
@@ -1198,11 +1198,11 @@ async function loadQR(){
     const g=document.getElementById('qrGrid');
     g.innerHTML=QRS.length?QRS.map(q=>`<div class="qr-box" style="text-align:center;">
       <div style="font-size:11px;color:var(--muted);font-weight:700;">${esc(q.projectName||'')} ${q.projectId?'· '+esc(q.projectId):''}</div>
-      <div style="font-size:15px;font-weight:800;margin:4px 0 10px;">📍 ${esc(q.name)}</div>
+      <div style="font-size:15px;font-weight:800;margin:4px 0 10px;">${esc(q.name)}</div>
       <div class="qr-img"><img src="${q.qr}" alt="QR"/></div>
       <div class="qr-url" style="word-break:break-all;">${esc(q.url)}</div>
       <div style="font-size:12px;color:var(--muted);margin:6px 0;">${q.employees} employee(s) at this location</div>
-      <button class="btn btn-blue" style="width:100%;" onclick="printQR('${jsq(q.id)}')">🖨 Print</button>
+      <button class="btn btn-blue" style="width:100%;" onclick="printQR('${jsq(q.id)}')">Print</button>
     </div>`).join(''):'<div class="no-data" style="padding:30px;">No locations yet. Please create a project and a location first.</div>';
   }catch{}
 }
@@ -1392,23 +1392,23 @@ function renderAtt(){
   const rows=atFiltered(), st=window._atStats||{inside:0,staff:0};
   const ot=rows.reduce((a,r)=>a+Math.max(0,hrsOf(r.totalHours)-8),0);
   document.getElementById('atSites').textContent=(LOCS.length||0)+' Sites';
-  const tile=(i,l,v,c)=>`<div class="stat-box"><div class="sl" style="margin-bottom:6px;">${i} ${l}</div><div class="sv ${c}">${v}</div></div>`;
-  document.getElementById('atStats').innerHTML=tile('🏢','Total Projects',PROJECTS.length,'b')+tile('👥','Total Workforce',st.staff,'b')+tile('✅','Present On-Site',st.inside,'g')+tile('⏱','Total Overtime (over 8h)',(Math.round(ot*10)/10)+'h','a');
+  const tile=(i,l,v,c)=>`<div class="stat-box"><div class="sl" style="margin-bottom:6px;">${l}</div><div class="sv ${c}">${v}</div></div>`;
+  document.getElementById('atStats').innerHTML=tile('','Total Projects',PROJECTS.length,'b')+tile('','Total Workforce',st.staff,'b')+tile('','Present On-Site',st.inside,'g')+tile('','Total Overtime (over 8h)',(Math.round(ot*10)/10)+'h','a');
   document.getElementById('atCntFull').textContent=rows.length; document.getElementById('atCnt2').textContent='('+rows.length+' entries)';
   document.getElementById('atFull').style.display=atMode==='full'?'':'none';
   document.getElementById('atProjView').style.display=atMode==='proj'?'':'none';
-  const none='<div class="no-data" style="padding:40px;text-align:center;">🪖<br><b>No Attendance Records Found</b><br><small>Have employees scan the project QR code, or pick another date.</small></div>';
+  const none='<div class="no-data" style="padding:40px;text-align:center;"><br><b>No Attendance Records Found</b><br><small>Have employees scan the project QR code, or pick another date.</small></div>';
   const line=(r,i,withProj)=>`<tr><td>${avHtml(r.empName,i)}${esc(r.empName)}</td><td>${esc(r.empId)}</td>${withProj?`<td>${esc(r.projectName||'—')}</td>`:''}<td>${esc(r.locationName||'—')}</td><td>${esc(r.date)}</td><td>${esc(r.time||'—')}</td><td>${r.checkOut?esc(r.checkOut):(r.time?'<span style="color:var(--ok);font-weight:700;">● Working</span>':'—')}</td><td>${r.totalHours&&r.totalHours!=='N/A'?esc(r.totalHours):'—'}</td><td>${badgeHtml(r.status)}</td></tr>`;
   if(atMode==='full'){
-    document.getElementById('atBody').innerHTML=rows.length?rows.map((r,i)=>line(r,i,true).replace(/<\/tr>$/,`<td style="white-space:nowrap;"><button class="edit-btn edit-gate" onclick="openEdit('${jsq(r.empId)}','${jsq(r.date)}','${jsq(r.empName)}','${jsq(r.time||'')}','${jsq(r.checkOut||'')}','${jsq(r.shift||'G')}')">✏️ Edit</button></td></tr>`)).join(''):`<tr><td colspan="10">${none}</td></tr>`;
+    document.getElementById('atBody').innerHTML=rows.length?rows.map((r,i)=>line(r,i,true).replace(/<\/tr>$/,`<td style="white-space:nowrap;"><button class="edit-btn edit-gate" onclick="openEdit('${jsq(r.empId)}','${jsq(r.date)}','${jsq(r.empName)}','${jsq(r.time||'')}','${jsq(r.checkOut||'')}','${jsq(r.shift||'G')}')">Edit</button></td></tr>`)).join(''):`<tr><td colspan="10">${none}</td></tr>`;
     applyEditMode();
   }else{
     const g={}; rows.forEach(r=>{const k=r.projectId||'-';(g[k]=g[k]||{id:r.projectId,name:r.projectName||'No project',rows:[]}).rows.push(r);});
     const list=Object.values(g);
     document.getElementById('atProjView').innerHTML=list.length?list.map(x=>{
       const working=x.rows.filter(r=>r.time&&!r.checkOut).length, hrs=x.rows.reduce((a,r)=>a+hrsOf(r.totalHours),0);
-      return `<div class="card"><div class="card-top"><h3>🏢 ${esc(x.name)} <small style="font-weight:400;color:var(--muted);">${esc(x.id||'')} · ${x.rows.length} records · ${working} working now · ${Math.round(hrs*10)/10}h total</small></h3>
-        <button class="btn btn-green" onclick="atExcel('${jsq(x.id||'all')}')">⬇ Excel</button></div>
+      return `<div class="card"><div class="card-top"><h3>${esc(x.name)} <small style="font-weight:400;color:var(--muted);">${esc(x.id||'')} · ${x.rows.length} records · ${working} working now · ${Math.round(hrs*10)/10}h total</small></h3>
+        <button class="btn btn-green" onclick="atExcel('${jsq(x.id||'all')}')">Excel</button></div>
         <div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>Employee</th><th>EMP ID</th><th>Location</th><th>Date</th><th>In Time</th><th>Out Time</th><th>Working Hours</th><th>Status</th></tr></thead><tbody>${x.rows.map((r,i)=>line(r,i,false)).join('')}</tbody></table></div></div>`;
     }).join(''):`<div class="card">${none}</div>`;
   }
@@ -1438,16 +1438,16 @@ async function loadPsites(){
 function renderPsites(){
   document.getElementById('psActive').textContent=PSPROJ.length+' Active';
   const el=document.getElementById('psList');
-  if(!PSPROJ.length){el.innerHTML='<div class="card"><div class="no-data" style="padding:40px;text-align:center;">🏗<br><b>No projects yet</b><br><small>Click “Add New Project Site” to create your first project and its QR poster.</small></div></div>';return;}
+  if(!PSPROJ.length){el.innerHTML='<div class="card"><div class="no-data" style="padding:40px;text-align:center;"><br><b>No projects yet</b><br><small>Click “Add New Project Site” to create your first project and its QR poster.</small></div></div>';return;}
   el.innerHTML=PSPROJ.map(pr=>{
     const sites=LOCS.filter(l=>l.projectId===pr.id);
     return `<div class="card"><div class="card-top" style="flex-wrap:wrap;gap:10px;">
-      <div><h3>🏢 ${esc(pr.name)} <span class="at-badge">${esc(pr.id)}</span></h3><div style="font-size:12px;color:var(--muted);margin-top:3px;">${pr.stateName?'<span class="sw-chip g">'+esc(pr.stateName)+' · '+esc(pr.stateCode)+'</span> ':''}${pr.client?'Client: '+esc(pr.client)+' · ':''}${sites.length} site(s)</div></div>
-      <div class="btn-gap"><button class="btn" onclick="openSiteModal('addsite','${jsq(pr.id)}')">＋ Add site / gate</button>${sites.length?'':`<button class="btn" style="color:var(--bad);" onclick="delProject('${jsq(pr.id)}')">🗑 Delete project</button>`}</div></div>
+      <div><h3>${esc(pr.name)} <span class="at-badge">${esc(pr.id)}</span></h3><div style="font-size:12px;color:var(--muted);margin-top:3px;">${pr.stateName?'<span class="sw-chip g">'+esc(pr.stateName)+' · '+esc(pr.stateCode)+'</span> ':''}${pr.client?'Client: '+esc(pr.client)+' · ':''}${sites.length} site(s)</div></div>
+      <div class="btn-gap"><button class="btn" onclick="openSiteModal('addsite','${jsq(pr.id)}')">＋ Add site / gate</button>${sites.length?'':`<button class="btn" style="color:var(--bad);" onclick="delProject('${jsq(pr.id)}')">Delete project</button>`}</div></div>
       <div style="padding:0 22px 16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;">`+(sites.map(l=>`<div class="sw-card">
-        <div class="sw-top"><div class="sw-name">📍 ${esc(l.name)}</div><span class="sw-chip g">${l.radius} m radar</span></div>
+        <div class="sw-top"><div class="sw-name">${esc(l.name)}</div><span class="sw-chip g">${l.radius} m radar</span></div>
         <div style="font-size:12px;color:var(--muted);margin:8px 0;line-height:1.6;">${esc(l.address||'No address')}<br><span style="font-family:monospace;">${Number(l.lat).toFixed(5)}, ${Number(l.lng).toFixed(5)}</span></div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;"><button class="btn btn-blue" onclick="openSiteModal('edit','${jsq(pr.id)}','${jsq(l.id)}')">🎯 Radar settings</button><button class="btn" onclick="showQRModal('${jsq(l.id)}')">▦ QR</button><button class="btn" onclick="printQR('${jsq(l.id)}')">🖨 Print</button></div></div>`).join('')||'<div style="color:var(--muted);font-size:12px;">No site yet — add a site to get a QR code.</div>')+`</div></div>`;
+        <div style="display:flex;gap:8px;flex-wrap:wrap;"><button class="btn btn-blue" onclick="openSiteModal('edit','${jsq(pr.id)}','${jsq(l.id)}')">Radar settings</button><button class="btn" onclick="showQRModal('${jsq(l.id)}')">▦ QR</button><button class="btn" onclick="printQR('${jsq(l.id)}')">Print</button></div></div>`).join('')||'<div style="color:var(--muted);font-size:12px;">No site yet — add a site to get a QR code.</div>')+`</div></div>`;
   }).join('');
 }
 function openSiteAdd(){showPanel('psites',null); setTimeout(()=>openSiteModal('new'),150);}
@@ -1538,7 +1538,7 @@ async function loadManagers(){
   const r=await fetch('/api/managers'); const d=await r.json(); if(!r.ok){toast('❌ '+d.error);return;}
   MGRS=d; document.getElementById('mgCnt').textContent=d.length;
   document.getElementById('mgBody').innerHTML=d.length?d.map(m=>`<tr><td><b>${esc(m.id)}</b></td><td>${esc(m.name)}</td><td>${m.stateCodes.map((c,i)=>`<span class="sw-chip g" style="margin:2px;">${esc(m.states[i])} · ${esc(c)}</span>`).join('')}</td>
-    <td style="white-space:nowrap;"><button class="btn btn-blue" onclick="editMgrRow('${jsq(m.id)}')">✏️ Edit</button> <button class="btn" style="color:var(--bad);" onclick="delMgr('${jsq(m.id)}','${jsq(m.name)}')">🗑</button></td></tr>`).join(''):'<tr><td colspan="4" class="no-data">No Site Managers yet</td></tr>';
+    <td style="white-space:nowrap;"><button class="btn btn-blue" onclick="editMgrRow('${jsq(m.id)}')">Edit</button> <button class="btn" style="color:var(--bad);" onclick="delMgr('${jsq(m.id)}','${jsq(m.name)}')"></button></td></tr>`).join(''):'<tr><td colspan="4" class="no-data">No Site Managers yet</td></tr>';
   renderMgChips();
 }
 function mgCodes(){return document.getElementById('mgCodes').value.split(/[,\s]+/).map(x=>x.trim()).filter(Boolean);}
@@ -1573,17 +1573,24 @@ let CURP='day';
 function navGroups(){
   if(userRole==='manager')return [{id:'att',label:'📋 Attendance',panels:[['attendance','Attendance'],['monthly','Monthly Report']]},{id:'watch',label:'📡 Site Watch',panels:[['sitewatch','Live Site Watch']]}];
   return NAV.filter(g=>(!g.it||userRole==='it')&&(!g.perm||PERMS[g.perm])).map(g=>({...g,panels:g.panels.filter(x=>!x[2]||PERMS[x[2]])})).filter(g=>g.panels.length);}
+function stripEmoji(t){return String(t).replace(/^[^A-Za-z]+/,'');}
 function renderTopNav(){
   const nm=document.getElementById('sbName').textContent, rl=document.getElementById('sbRole').textContent;
   document.getElementById('tnName').textContent=nm; document.getElementById('tnRole').textContent=rl;
   document.getElementById('tnAv').textContent=(nm||'?').trim().split(/\s+/).map(x=>x[0]).join('').substring(0,2).toUpperCase();
-  document.getElementById('tnGroups').innerHTML=navGroups().map(g=>`<div class="tn-g" id="tg-${g.id}" onclick="showPanel('${g.panels[0][0]}',null)">${g.label}</div>`).join('');
+  document.getElementById('tnMenu').innerHTML=navGroups().map(g=>`<div class="tm-g" id="tg-${g.id}"><div class="tm-h">${esc(stripEmoji(g.label))}</div>${g.panels.map(([id,l])=>`<div class="tm-i" data-p="${id}" role="menuitem" onclick="showPanel('${id}',null);closeNavMenu()">${esc(l)}</div>`).join('')}</div>`).join('');
   syncNav(CURP);
 }
+function toggleNavMenu(e){e.stopPropagation();document.getElementById('tnMenu').classList.toggle('open');}
+function closeNavMenu(){const m=document.getElementById('tnMenu');if(m)m.classList.remove('open');}
+document.addEventListener('click',e=>{if(!e.target.closest||!e.target.closest('.tn-menu-wrap'))closeNavMenu();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeNavMenu();});
 function syncNav(p){
   CURP=p;
   const gs=navGroups(), g=gs.find(x=>x.panels.some(y=>y[0]===p));
-  document.querySelectorAll('.tn-g').forEach(x=>x.classList.toggle('on',!!g&&x.id==='tg-'+g.id));
+  document.querySelectorAll('.tm-i').forEach(x=>x.classList.toggle('on',x.dataset.p===p));
+  const pn=g&&g.panels.find(y=>y[0]===p);
+  document.getElementById('tnCrumb').innerHTML=g?`<span>${esc(stripEmoji(g.label))}</span>${pn&&g.panels.length>1?`<i>/</i><b>${esc(pn[1])}</b>`:''}`:'';
   const sub=document.getElementById('tnSub');
   sub.innerHTML=g&&g.panels.length>1?g.panels.map(([id,l])=>`<div class="ts-i${id===p?' on':''}" onclick="showPanel('${id}',null)">${l}</div>`).join(''):'';
   sub.style.display=sub.innerHTML?'flex':'none';
@@ -1614,7 +1621,7 @@ function renderWatch(){
       const pct=s.assigned?Math.min(100,Math.round(s.inside*100/s.assigned)):0;
       const ppl=s.people.filter(p=>!q||p.name.toLowerCase().includes(q)||p.id.toLowerCase().includes(q));
       const open=!!q;
-      return `<div class="sw-card"><div class="sw-top"><div class="sw-name">📍 ${esc(s.name)}</div><div class="sw-live ${s.inside?'on':''}"><span></span>${s.inside?'LIVE':'EMPTY'}</div></div>
+      return `<div class="sw-card"><div class="sw-top"><div class="sw-name">${esc(s.name)}</div><div class="sw-live ${s.inside?'on':''}"><span></span>${s.inside?'LIVE':'EMPTY'}</div></div>
         <div class="sw-big"><b>${s.inside}</b><small> working now</small></div>
         <div class="sw-bar"><i style="width:${pct}%"></i></div>
         <div class="sw-stats"><div><b>${s.assigned}</b>Assigned</div><div><b>${s.left}</b>Out</div><div><b style="color:var(--bad)">${s.absent}</b>Not in</div><div><b style="color:#B26A00">${s.late}</b>Late</div></div>
@@ -1727,11 +1734,11 @@ async function renderPfDocs(){
   el.innerHTML=DOC_LABELS.filter(([t])=>PERMS.docs||t==='photo').map(([t,l])=>{
     const mine=list.filter(x=>x.type===t);
     return `<div style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);flex-wrap:wrap;">
-      <div style="min-width:130px;font-weight:700;">${l} ${mine.length?'<span style="color:var(--ok)">✅</span>':'<span style="color:var(--muted);font-weight:400;font-size:11px;">missing</span>'}</div>
+      <div style="min-width:130px;font-weight:700;">${l} ${mine.length?'<span style="color:var(--ok)"></span>':'<span style="color:var(--muted);font-weight:400;font-size:11px;">missing</span>'}</div>
       <div style="flex:1;min-width:160px;font-size:12px;">${mine.map(x=>`<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><span style="overflow:hidden;text-overflow:ellipsis;max-width:220px;">${x.label?'<b>'+esc(x.label)+'</b> · ':''}${esc(x.fileName)} · ${(x.size/1024).toFixed(0)} KB</span>
         <a href="${docUrl(x.id)}" target="_blank">View</a><a href="${docUrl(x.id,1)}" download="${esc(x.fileName)}">Download</a>
         <a href="#" onclick="pfPick('${t}','${jsq(x.id)}');return false;">Replace</a><a href="#" style="color:var(--bad);" onclick="pfDel('${jsq(x.id)}');return false;">Delete</a></div>`).join('')||'<span style="color:var(--muted);">Nothing uploaded</span>'}</div>
-      <button class="btn btn-orange" style="padding:6px 12px;font-size:11px;" onclick="pfPick('${t}')">⬆ ${mine.length&&t!=='other'?'Upload new':'Upload'}</button></div>`;
+      <button class="btn btn-orange" style="padding:6px 12px;font-size:11px;" onclick="pfPick('${t}')">${mine.length&&t!=='other'?'Upload new':'Upload'}</button></div>`;
   }).join('');
 }
 function pfPick(type,replaceOf){
@@ -1761,8 +1768,8 @@ async function pfSalary(){
 // ── PAYROLL HUB HEADER (shared by Attendance Payroll + Employee Documents) ──
 function renderHub(){
   const on=CURP==='docs'?'docs':'salary';
-  const html=`<div class="hub-top"><div class="hub-ico">🧾</div><div><div class="hub-title">Employee Documents &amp; Attendance-Driven Payroll</div><div class="hub-sub">Automatic payslip generation from QR / radar attendance and official employee document storage</div></div></div>
-    <div class="hub-tabs"><button class="hub-tab ${on==='salary'?'on':''}" onclick="showPanel('salary',null)">💰 Attendance Payroll</button><button class="hub-tab ${on==='docs'?'on':''}" onclick="showPanel('docs',null)">📁 Employee Documents <span class="hub-cnt">${DPDOCS.length}</span></button></div>`;
+  const html=`<div class="hub-top"><div class="hub-ico"></div><div><div class="hub-title">Payroll &amp; Documents</div><div class="hub-sub">Automatic payslip generation from QR / radar attendance and official employee document storage</div></div></div>
+    <div class="hub-tabs"><button class="hub-tab ${on==='salary'?'on':''}" onclick="showPanel('salary',null)">Attendance Payroll</button><button class="hub-tab ${on==='docs'?'on':''}" onclick="showPanel('docs',null)">Employee Documents <span class="hub-cnt">${DPDOCS.length}</span></button></div>`;
   document.querySelectorAll('[data-hub]').forEach(el=>el.innerHTML=html);
 }
 async function refreshDocCount(){
@@ -1792,12 +1799,12 @@ function renderDocsPanel(){
     return `<div style="padding:12px 0;border-bottom:1px solid var(--border);">
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
         <div style="min-width:180px;flex:1;"><b>${esc(e.name)}</b> <span style="color:var(--muted);font-size:12px;">${esc(e.id)}${e.designation?' · '+esc(e.designation):''}</span></div>
-        <button class="btn btn-orange" style="padding:6px 14px;font-size:12px;" onclick="openDocModal('${jsq(e.id)}')">⬆ Upload</button>
+        <button class="btn btn-orange" style="padding:6px 14px;font-size:12px;" onclick="openDocModal('${jsq(e.id)}')">Upload</button>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">${mine.length?mine.map(x=>`<span title="${esc(x.notes||'')}" style="background:rgba(120,130,160,.14);border-radius:10px;padding:5px 10px;font-size:12px;display:inline-flex;gap:8px;align-items:center;">
         <b>${esc(x.label?lab(x.type).split(' ')[0]+' '+x.label:lab(x.type))}</b>
         <a href="${docUrl(x.id)}" target="_blank">View</a><a href="${docUrl(x.id,1)}" download="${esc(x.fileName)}">Download</a>
-        <a href="#" style="color:var(--bad);" onclick="dpDel('${jsq(x.id)}');return false;">✕</a></span>`).join(''):'<span style="color:var(--muted);font-size:12px;">No documents uploaded yet</span>'}</div></div>`;
+        <a href="#" style="color:var(--bad);" onclick="dpDel('${jsq(x.id)}');return false;"></a></span>`).join(''):'<span style="color:var(--muted);font-size:12px;">No documents uploaded yet</span>'}</div></div>`;
   }).join(''):'<div class="no-data">No employees found</div>';
 }
 async function dpDel(id){
@@ -1854,7 +1861,7 @@ async function loadMissed(){
   if(!r.ok){toast('❌ '+d.error);return;}
   document.getElementById('msCnt').textContent=d.length; document.getElementById('sI').textContent=d.length;
   document.getElementById('msBody').innerHTML=d.length?d.map(x=>`<tr><td>${esc(x.date)}</td><td>${esc(x.name)}</td><td>${esc(x.empId)}</td><td>${esc(x.department||'—')}</td><td>${esc(x.checkIn||'—')}</td>
-    <td>${PERMS.editPunch?`<button class="btn btn-blue" onclick="openEdit('${jsq(x.empId)}','${jsq(x.date)}','${jsq(x.name)}','${jsq(x.checkIn||'')}','','${jsq(x.shift||'G')}')">✏️ Add punch-out</button>`:''}</td></tr>`).join(''):'<tr><td colspan="6" class="no-data">No missed punch-outs 🎉</td></tr>';
+    <td>${PERMS.editPunch?`<button class="btn btn-blue" onclick="openEdit('${jsq(x.empId)}','${jsq(x.date)}','${jsq(x.name)}','${jsq(x.checkIn||'')}','','${jsq(x.shift||'G')}')">Add punch-out</button>`:''}</td></tr>`).join(''):'<tr><td colspan="6" class="no-data">No missed punch-outs 🎉</td></tr>';
 }
 
 // ── SALARY ──
@@ -1879,7 +1886,7 @@ function renderSalary(){
   const kpi=(k,v,u,c)=>`<div class="kpi"><div class="kpi-k">${k}</div><div class="kpi-v" style="${c||''}">${v}<small>${u||''}</small></div></div>`;
   document.getElementById('salKpi').innerHTML=kpi('Total net payout',money(sum(x=>x.net)),'','color:var(--orange,#f26522)')+kpi('Total days worked',sum(x=>x.earnedDays),' Days')+kpi('Overtime logged',(+sum(x=>x.otHours).toFixed(1)),' Hours','color:var(--ok)')+kpi('Delivered to employees',del+' / '+all.length,'');
   document.getElementById('salNote').textContent=`Per-day salary = monthly ÷ ${SAL.settings.daysMode==='fixed30'?'30':'days in month'} · Half day if under ${SAL.settings.halfDayBelowHours} h · Employees without a salary are not listed.`;
-  const pill=x=>!x.slip?'<span class="pill pill-no">Not generated</span>':x.slip.deliveredAt?'<span class="pill pill-ok">✔ Delivered</span>':x.slip.finalized?'<span class="pill pill-fin">🔒 Final</span>':'<span class="pill pill-dr">Draft v'+x.slip.version+'</span>';
+  const pill=x=>!x.slip?'<span class="pill pill-no">Not generated</span>':x.slip.deliveredAt?'<span class="pill pill-ok">Delivered</span>':x.slip.finalized?'<span class="pill pill-fin">Final</span>':'<span class="pill pill-dr">Draft v'+x.slip.version+'</span>';
   document.getElementById('salBody').innerHTML=rows.length?rows.map(x=>`<tr>
     <td><b>${esc(x.name)}</b><br><small>${esc(x.empId)}</small></td><td>${esc(x.designation||'—')}<br><small>${esc(x.department||'')}</small></td>
     <td><span class="pill pill-ok">${x.earnedDays} / ${x.workDays||dim}</span></td><td>${x.counts.present} / ${x.counts.half} / ${x.counts.absent}</td>
@@ -1887,9 +1894,9 @@ function renderSalary(){
     <td>${x.otHours?`<span class="pill pill-dr">${(+x.otHours).toFixed(1)} hrs</span>`:'—'}</td>
     <td>${money(x.gross!==undefined?x.gross:x.monthly)}</td><td>${x.advance?money(x.advance):'—'}</td><td><b style="color:var(--orange,#f26522)">${money(x.net)}</b></td>
     <td>${pill(x)}</td>
-    <td style="white-space:nowrap;"><button class="btn btn-blue" style="padding:5px 10px;" onclick="openSal('${jsq(x.empId)}')">👁 View</button>
-      ${x.slip?`<button class="btn btn-green" title="Send on WhatsApp" style="padding:5px 10px;" onclick="slipShare('${jsq(x.slip.id)}')">📱</button>`:''}
-      <button class="btn" title="Upload a document for this employee" style="padding:5px 10px;" onclick="openDocModal('${jsq(x.empId)}','salary_slip')">⬆</button></td></tr>`).join(''):'<tr><td colspan="11" class="no-data">No employees with a salary set. Add a monthly salary in the Employees tab.</td></tr>';
+    <td style="white-space:nowrap;"><button class="btn btn-blue" style="padding:5px 10px;" onclick="openSal('${jsq(x.empId)}')">View</button>
+      ${x.slip?`<button class="btn btn-green" title="Send on WhatsApp" style="padding:5px 10px;" onclick="slipShare('${jsq(x.slip.id)}')"></button>`:''}
+      <button class="btn" title="Upload a document for this employee" style="padding:5px 10px;" onclick="openDocModal('${jsq(x.empId)}','salary_slip')"></button></td></tr>`).join(''):'<tr><td colspan="11" class="no-data">No employees with a salary set. Add a monthly salary in the Employees tab.</td></tr>';
 }
 async function slipBulk(kind){
   const m=document.getElementById('salMonth').value;
@@ -1907,7 +1914,7 @@ async function dispatchAll(){
   if(!r.ok){toast('❌ '+(r.d.error||'Failed'));return;}
   document.getElementById('dispList').innerHTML=r.d.items.map(x=>`<div style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);flex-wrap:wrap;">
     <div style="flex:1;min-width:150px;"><b>${esc(x.name)}</b> <small style="color:var(--muted);">${esc(x.empId)} · ${money(x.net)}</small><br><small style="color:var(--muted);">${x.mobile?esc(x.mobile):'⚠️ no mobile number'}</small></div>
-    <a class="btn btn-green" style="padding:6px 12px;text-decoration:none;" href="${x.whatsapp}" target="_blank">📱 WhatsApp</a>
+    <a class="btn btn-green" style="padding:6px 12px;text-decoration:none;" href="${x.whatsapp}" target="_blank">WhatsApp</a>
     <button class="btn" style="padding:6px 12px;" onclick="navigator.clipboard&&navigator.clipboard.writeText('${jsq(x.url)}');toast('🔗 Link copied');">Copy link</button></div>`).join('');
   document.getElementById('dispOverlay').classList.add('open');
   toast('🚀 '+r.d.count+' payslip(s) dispatched'); loadSalary();
@@ -1930,11 +1937,11 @@ function renderSal(){
   document.getElementById('sdAdj').innerHTML=`<b style="font-size:12px;">Leave &amp; extra days</b> <span style="display:inline-flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin-left:6px;">${ai('adjLeave','Leave availed (days)',adj.leaveAvailed)}${ai('adjWages','Leave with wages (₹)',adj.leaveWages)}${ai('adjExtra','Extra days',adj.extraDays)}${fin?'':'<button class="btn" onclick="saveAdj()">Save</button>'}</span>`;
   const sid=slip&&slip.id;
   document.getElementById('sdActions').innerHTML=
-    (fin?'':`<button class="btn btn-blue" onclick="slipOne('generate')">Generate payslip</button><button class="btn btn-green" onclick="slipOne('finalize')">🔒 Finalize</button>`)
-    +(sid?`<button class="btn" onclick="slipPdf('${jsq(sid)}')">⬇ PDF (${fin?'Final':'Draft'} v${slip.version})</button><button class="btn" onclick="slipShare('${jsq(sid)}')">📤 Share</button>`:'')
-    +(fin?`<button class="btn" style="color:var(--bad);" onclick="slipUnlock()">🔓 Unlock</button>`:'')
+    (fin?'':`<button class="btn btn-blue" onclick="slipOne('generate')">Generate payslip</button><button class="btn btn-green" onclick="slipOne('finalize')">Finalize</button>`)
+    +(sid?`<button class="btn" onclick="slipPdf('${jsq(sid)}')">PDF (${fin?'Final':'Draft'} v${slip.version})</button><button class="btn" onclick="slipShare('${jsq(sid)}')">Share</button>`:'')
+    +(fin?`<button class="btn" style="color:var(--bad);" onclick="slipUnlock()">Unlock</button>`:'')
     +(fin?'<span style="font-size:12px;color:var(--muted);align-self:center;">Locked — attendance and advances cannot be changed.</span>':'');
-  document.getElementById('sdAdv').innerHTML=`<b style="font-size:12px;">Advances / deductions</b> `+advances.map(a=>`<span style="display:inline-flex;gap:6px;align-items:center;background:#FFF3E6;border-radius:8px;padding:3px 8px;margin:2px;font-size:12px;">${money(a.amount)} ${esc(a.note||'')}${fin?'':` <a href="#" style="color:var(--bad);" onclick="delAdv('${jsq(a.id)}');return false;">✕</a>`}</span>`).join('')
+  document.getElementById('sdAdv').innerHTML=`<b style="font-size:12px;">Advances / deductions</b> `+advances.map(a=>`<span style="display:inline-flex;gap:6px;align-items:center;background:#FFF3E6;border-radius:8px;padding:3px 8px;margin:2px;font-size:12px;">${money(a.amount)} ${esc(a.note||'')}${fin?'':` <a href="#" style="color:var(--bad);" onclick="delAdv('${jsq(a.id)}');return false;"></a>`}</span>`).join('')
     +(fin?'':` <span style="display:inline-flex;gap:4px;"><input id="advAmt" type="number" min="1" placeholder="Amount" style="width:90px;"/><input id="advNote" type="text" placeholder="Note" style="width:120px;"/><button class="btn" onclick="addAdv()">Add</button></span>`);
   const DN=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'], col={present:'var(--ok)',half:'#B26A00',absent:'var(--bad)',incomplete:'var(--bad)',off:'var(--muted)',holiday:'var(--info)'};
   document.getElementById('sdBody').innerHTML=c.days.map(x=>{const dim=x.status==='future'||x.status==='prejoin';return `<tr style="${dim?'opacity:.45':''}"><td>${x.date}</td><td>${DN[x.dow]}</td><td style="color:${col[x.status]||'inherit'};font-weight:700;">${esc(x.label)}</td><td>${esc(x.in||'')}</td><td>${esc(x.out||'')}</td><td>${x.hours==null?'':Math.floor(x.hours)+'h '+String(Math.round((x.hours%1)*60)).padStart(2,'0')+'m'}</td><td>${x.credit==null?'':x.credit}</td><td>${x.credit==null?'':money(x.amount)}</td><td>${dim?'':money(x.running)}</td></tr>`}).join('');
@@ -2021,7 +2028,7 @@ async function refreshLocs(){
   LOCS=ME&&ME.scope!=='*'?all.filter(l=>ME.scope.includes(l.id)):all;
   const pf=document.getElementById('projFilter'), curP=pf.value;
   let projs=[]; try{const pr=await fetch('/api/projects'); if(pr.ok)projs=await pr.json();}catch{}
-  pf.innerHTML='<option value="all">📁 All Projects</option>'+projs.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('');
+  pf.innerHTML='<option value="all">All Projects</option>'+projs.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('');
   pf.value=projs.some(p=>p.id===curP)?curP:'all';
   pf.style.display=(projs.length&&!(ME&&ME.project&&ME.project!=='ALL'))?'':'none';
   fillLocFilter();
@@ -2031,7 +2038,7 @@ async function fillDeptFilter(){
   let ds=[]; try{const r=await fetch('/api/departments'); if(r.ok)ds=await r.json();}catch{}
   DEPTS=ds;
   const f=document.getElementById('deptFilter'), cur=f.value;
-  f.innerHTML='<option value="all">🏢 All Departments</option>'+ds.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('');
+  f.innerHTML='<option value="all">All Departments</option>'+ds.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('');
   f.value=ds.includes(cur)?cur:'all';
   f.style.display=ds.length?'':'none';
   const dl=document.getElementById('deptList'); if(dl)dl.innerHTML=ds.map(x=>`<option value="${esc(x)}">`).join('');
@@ -2040,7 +2047,7 @@ let DEPTS=[];
 function fillLocFilter(){
   const f=document.getElementById('locFilter'), cur=f.value, p=document.getElementById('projFilter').value;
   const list=p&&p!=='all'?LOCS.filter(l=>l.projectId===p):LOCS;
-  f.innerHTML='<option value="all">📍 All Locations</option>'+list.map(l=>`<option value="${esc(l.id)}">${esc(l.name)}</option>`).join('');
+  f.innerHTML='<option value="all">All Locations</option>'+list.map(l=>`<option value="${esc(l.id)}">${esc(l.name)}</option>`).join('');
   f.value=list.some(l=>l.id===cur)?cur:'all';
   f.style.display=list.length>1?'':'none';
 }
@@ -2086,9 +2093,9 @@ async function loadLocation(){
   document.getElementById('locBody').innerHTML=LOCS.length?LOCS.map(l=>`<tr>
     <td>${esc(l.projectName||'—')}<div style="font-size:10px;color:var(--muted)">${esc(l.projectId||'')}</div></td><td><b>${esc(l.name)}</b></td><td>${l.lat}, ${l.lng}</td><td>${l.radius} m</td>
     <td>${emps.filter(e=>e.locationId===l.id).length}</td>
-    <td style="white-space:nowrap;"><button class="btn btn-blue" onclick="editLoc('${jsq(l.id)}')">✏️ Edit</button>
+    <td style="white-space:nowrap;"><button class="btn btn-blue" onclick="editLoc('${jsq(l.id)}')">Edit</button>
     <button class="btn" onclick="showQRModal('${jsq(l.id)}')">▦ QR</button>
-    <button class="btn" style="color:var(--bad);" onclick="removeLocation('${jsq(l.id)}','${jsq(l.name)}')">🗑</button></td>
+    <button class="btn" style="color:var(--bad);" onclick="removeLocation('${jsq(l.id)}','${jsq(l.name)}')"></button></td>
   </tr>`).join(''):'<tr><td colspan="6" class="no-data">No locations yet</td></tr>';
 }
 function resetLocForm(){
@@ -2156,8 +2163,8 @@ async function loadAdmins(){
     <td><b>${esc(a.id)}</b></td><td>${esc(a.name)}</td>
     <td>${a.allLocations?'All locations':esc((a.locations||[]).map(i=>(LOCS.find(l=>l.id===i)||{}).name||i).join(', ')||'—')}</td>
     <td>${esc((a.departments||[]).join(', ')||'All')}</td>
-    <td style="white-space:nowrap;"><button class="btn btn-blue" onclick="editAdmin('${jsq(a.id)}')">✏️ Edit</button>
-    <button class="btn" style="color:var(--bad);" onclick="delAdmin('${jsq(a.id)}','${jsq(a.name)}')">🗑</button></td>
+    <td style="white-space:nowrap;"><button class="btn btn-blue" onclick="editAdmin('${jsq(a.id)}')">Edit</button>
+    <button class="btn" style="color:var(--bad);" onclick="delAdmin('${jsq(a.id)}','${jsq(a.name)}')"></button></td>
   </tr>`).join(''):'<tr><td colspan="5" class="no-data">No HR IDs yet</td></tr>';
 }
 function editAdmin(id){
@@ -2199,10 +2206,10 @@ async function loadBypass() {
     el.innerHTML = list.map(e => `
       <div style="display:flex;align-items:center;justify-content:space-between;background:#f8f9fb;border-radius:10px;padding:12px 14px;border:1px solid var(--border);">
         <div>
-          <div style="font-size:13px;font-weight:700;color:var(--text);">✅ ${e.name}</div>
+          <div style="font-size:13px;font-weight:700;color:var(--text);">${e.name}</div>
           <div style="font-size:11px;color:var(--muted);">${e.id} — Location check bypassed</div>
         </div>
-        <button onclick="removeBypass('${e.id}')" style="padding:5px 10px;background:#FCEBEB;color:#A32D2D;border:none;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;">🗑 Remove</button>
+        <button onclick="removeBypass('${e.id}')" style="padding:5px 10px;background:#FCEBEB;color:#A32D2D;border:none;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;">Remove</button>
       </div>
     `).join('');
   } catch(e) { console.error(e); }
@@ -2256,7 +2263,7 @@ async function loadITools(){
     body.innerHTML=d.open.length?d.open.map(o=>`<tr>
       <td>${esc(o.empName)}</td><td>${esc(o.empId)}</td><td>${esc(o.locationName||'—')}</td><td>${esc(o.shift||'—')}</td><td>${esc(o.time||'—')}</td>
       <td><span class="badge ${o.phoneLocked?'bl':'bp'}">${o.phoneLocked?'🔒 Locked':'🔓 Open'}</span></td>
-      <td>${o.phoneLocked?`<button class="btn btn-blue" onclick="unlockPhone('${jsq(o.empId)}','${jsq(o.empName)}')">🔓 Unlock phone</button>`:'—'}</td>
+      <td>${o.phoneLocked?`<button class="btn btn-blue" onclick="unlockPhone('${jsq(o.empId)}','${jsq(o.empName)}')">Unlock phone</button>`:'—'}</td>
     </tr>`).join(''):'<tr><td colspan="7" class="no-data">No employees are currently inside (everyone has punched out)</td></tr>';
   }catch(e){toast('❌ Server error');}
 }
@@ -2273,8 +2280,8 @@ async function loadITUsers(){
   document.getElementById('iuCnt').textContent=d.length;
   document.getElementById('iuBody').innerHTML=d.length?d.map(u=>`<tr>
     <td><b>${esc(u.id)}</b></td><td>${esc(u.name)}</td><td>${u.createdAt?new Date(u.createdAt).toLocaleDateString('en-IN'):'—'}</td>
-    <td style="white-space:nowrap;"><button class="btn btn-blue" onclick="resetITPass('${jsq(u.id)}')">🔑 Password</button>
-    <button class="btn" style="color:var(--bad);" onclick="delITUser('${jsq(u.id)}','${jsq(u.name)}')">🗑</button></td>
+    <td style="white-space:nowrap;"><button class="btn btn-blue" onclick="resetITPass('${jsq(u.id)}')">Password</button>
+    <button class="btn" style="color:var(--bad);" onclick="delITUser('${jsq(u.id)}','${jsq(u.name)}')"></button></td>
   </tr>`).join(''):'<tr><td colspan="4" class="no-data">No IT users yet</td></tr>';
 }
 async function addITUser(){
