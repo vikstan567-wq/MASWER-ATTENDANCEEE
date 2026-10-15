@@ -59,6 +59,10 @@ ALTER TABLE locpings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE employees ADD COLUMN IF NOT EXISTS salt TEXT;
 ALTER TABLE employees ADD COLUMN IF NOT EXISTS pass_hash TEXT;
 CREATE TABLE IF NOT EXISTS requests (id TEXT PRIMARY KEY, emp_id TEXT NOT NULL, emp_name TEXT, department TEXT, location_id TEXT, kind TEXT, status TEXT, req_type TEXT, from_date TEXT, to_date TEXT, days DOUBLE PRECISION, date TEXT, in_time TEXT, out_time TEXT, subject TEXT, message TEXT, note TEXT, decided_by TEXT, decided_at TEXT, created_at TEXT);
+ALTER TABLE requests ADD COLUMN IF NOT EXISTS mgr_status TEXT;
+ALTER TABLE requests ADD COLUMN IF NOT EXISTS mgr_note TEXT;
+ALTER TABLE requests ADD COLUMN IF NOT EXISTS mgr_by TEXT;
+ALTER TABLE requests ADD COLUMN IF NOT EXISTS mgr_at TEXT;
 ALTER TABLE requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE attendance ADD COLUMN IF NOT EXISTS edit_reason TEXT;
 CREATE TABLE IF NOT EXISTS documents (

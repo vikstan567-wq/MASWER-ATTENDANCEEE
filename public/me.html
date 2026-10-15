@@ -187,7 +187,7 @@ async function sendReq(){
 const KL={leave:'Leave',correction:'Attendance fix',query:'Question'}, SL={pending:['Pending','p-w'],approved:['Approved','p-ok'],rejected:['Rejected','p-bad'],answered:['Answered','p-i']};
 function reqHtml(x,cancel){
   const s=SL[x.status]||['',''], line=x.kind==='leave'?`${esc(x.reqType)} · ${esc(x.fromDate)} to ${esc(x.toDate)} · ${x.days} day(s)`:x.kind==='correction'?`${esc(x.reqType)} · ${esc(x.date)}${x.inTime?' · in '+esc(x.inTime):''}${x.outTime?' · out '+esc(x.outTime):''}`:esc(x.subject);
-  return `<div class="me-li"><div class="g"><b>${KL[x.kind]}</b><small>${line}</small><small>${esc(x.message)}</small>${x.note?`<div class="me-note"><b style="display:inline">HR:</b> ${esc(x.note)}</div>`:''}${cancel&&x.status==='pending'?`<button class="me-link" style="padding:6px 0" onclick="cancelReq('${esc(x.id)}')">Cancel request</button>`:''}</div><span class="pill ${s[1]}">${s[0]}</span></div>`;
+  return `<div class="me-li"><div class="g"><b>${KL[x.kind]}</b><small>${line}</small><small>${esc(x.message)}</small>${x.mgrStatus?`<small>Site manager: ${x.mgrStatus==='recommended'?'recommends':'does not recommend'}${x.mgrNote?' ('+esc(x.mgrNote)+')':''}</small>`:''}${x.note?`<div class="me-note"><b style="display:inline">HR:</b> ${esc(x.note)}</div>`:''}${cancel&&x.status==='pending'?`<button class="me-link" style="padding:6px 0" onclick="cancelReq('${esc(x.id)}')">Cancel request</button>`:''}</div><span class="pill ${s[1]}">${s[0]}</span></div>`;
 }
 async function loadReqs(){
   const r=await api('/api/me/requests'); const l=r.ok?r.d:[];

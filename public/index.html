@@ -358,7 +358,7 @@
       <div class="panel" id="panel-requests">
         <div class="card">
           <div class="card-top"><h3>Employee Requests (<span id="rqCnt">0</span> pending)</h3></div>
-          <div style="padding:0 22px 8px;font-size:12px;color:var(--muted);">Leave applications, attendance correction requests and questions sent by employees from their account page. Approving leave updates payroll. Approving a correction updates the attendance record.</div>
+          <div style="padding:0 22px 8px;font-size:12px;color:var(--muted);">Leave applications, attendance correction requests and questions sent by employees from their account page. Site Managers recommend or decline, and HR gives the final decision. Approving leave updates payroll. Approving a correction updates the attendance record.</div>
           <div style="display:flex;gap:10px;flex-wrap:wrap;padding:0 22px 12px;">
             <select id="rqSt" style="padding:8px 12px;border-radius:10px;" onchange="loadRequests()"><option value="pending">Pending</option><option value="">All</option><option value="approved">Approved</option><option value="rejected">Rejected</option><option value="answered">Answered</option></select>
             <select id="rqKind" style="padding:8px 12px;border-radius:10px;" onchange="loadRequests()"><option value="">All types</option><option value="leave">Leave</option><option value="correction">Attendance fix</option><option value="query">Questions</option></select>
@@ -1599,7 +1599,7 @@ const NAV=[
 ];
 let CURP='day';
 function navGroups(){
-  if(userRole==='manager')return [{id:'att',label:'📋 Attendance',panels:[['attendance','Attendance'],['monthly','Monthly Report']]},{id:'watch',label:'📡 Site Watch',panels:[['sitewatch','Live Site Watch']]}];
+  if(userRole==='manager')return [{id:'att',label:'📋 Attendance',panels:[['attendance','Attendance'],['monthly','Monthly Report']]},{id:'watch',label:'📡 Site Watch',panels:[['sitewatch','Live Site Watch']]},{id:'req',label:'📨 Requests',panels:[['requests','Employee Requests']]}];
   return NAV.filter(g=>(!g.it||userRole==='it')&&(!g.perm||PERMS[g.perm])).map(g=>({...g,panels:g.panels.filter(x=>!x[2]||PERMS[x[2]])})).filter(g=>g.panels.length);}
 function stripEmoji(t){return String(t).replace(/^[^A-Za-z]+/,'');}
 function renderTopNav(){
@@ -1735,7 +1735,7 @@ const RQK={leave:'Leave',correction:'Attendance fix',query:'Question'};
 const RQS={pending:['Pending','p-w'],approved:['Approved','p-ok'],rejected:['Rejected','p-bad'],answered:['Answered','p-i']};
 let RQ=[];
 function setReqBadge(n){document.querySelectorAll('.tm-i[data-p="requests"]').forEach(x=>{x.textContent='Requests'+(n?' ('+n+')':'');});}
-async function loadReqBadge(){ if(!PERMS.salary)return; try{const r=await fetch('/api/requests?status=pending'); if(r.ok){const d=await r.json(); setReqBadge(d.pending);}}catch{} }
+async function loadReqBadge(){ if(!PERMS.salary&&userRole!=='manager')return; try{const r=await fetch('/api/requests?status=pending'); if(r.ok){const d=await r.json(); setReqBadge(d.pending);}}catch{} }
 async function loadRequests(){
   const st=document.getElementById('rqSt').value, k=document.getElementById('rqKind').value;
   const r=await fetch('/api/requests?status='+encodeURIComponent(st)+'&kind='+encodeURIComponent(k)); const d=await r.json();
@@ -1744,9 +1744,15 @@ async function loadRequests(){
   document.getElementById('rqBody').innerHTML=RQ.length?RQ.map(x=>{
     const det=x.kind==='leave'?`${esc(x.reqType)} · ${esc(x.fromDate)} to ${esc(x.toDate)} · <b>${x.days}</b> day(s)<br><small>${esc(x.message)}</small>`:x.kind==='correction'?`${esc(x.reqType)} · ${esc(x.date)}${x.inTime?' · in '+esc(x.inTime):''}${x.outTime?' · out '+esc(x.outTime):''}<br><small>${esc(x.message)}</small>`:`<b>${esc(x.subject)}</b><br><small>${esc(x.message)}</small>`;
     const s=RQS[x.status]||['',''], note=x.note?`<br><small style="color:var(--muted)">Reply: ${esc(x.note)}</small>`:'';
-    const act=x.status!=='pending'?'':x.kind==='query'?`<button class="btn btn-blue" onclick="decideReq('${jsq(x.id)}','reply')">Reply</button>`:`<button class="btn btn-green" onclick="decideReq('${jsq(x.id)}','approve')">Approve</button> <button class="btn" style="color:var(--bad)" onclick="decideReq('${jsq(x.id)}','reject')">Reject</button>`;
-    return `<tr><td style="white-space:nowrap">${new Date(x.createdAt).toLocaleDateString('en-IN',{day:'2-digit',month:'short',timeZone:'Asia/Kolkata'})}</td><td><b>${esc(x.empName)}</b><br><small>${esc(x.empId)}${x.department?' · '+esc(x.department):''}</small></td><td>${RQK[x.kind]}</td><td style="min-width:240px">${det}${note}</td><td><span class="pill ${s[1]}">${s[0]}</span></td><td style="white-space:nowrap">${act}</td></tr>`;
+    const rec=x.mgrStatus?`<br><small style="color:${x.mgrStatus==='recommended'?'var(--ok)':'var(--bad)'}"><b>Site manager${x.mgrBy?' ('+esc(x.mgrBy)+')':''}:</b> ${x.mgrStatus==='recommended'?'recommends':'does not recommend'}${x.mgrNote?' — '+esc(x.mgrNote):''}</small>`:'';
+    const act=x.status!=='pending'?'':userRole==='manager'?`<button class="btn btn-green" onclick="recommendReq('${jsq(x.id)}',true)">Recommend</button> <button class="btn" style="color:var(--bad)" onclick="recommendReq('${jsq(x.id)}',false)">Not recommend</button>`:x.kind==='query'?`<button class="btn btn-blue" onclick="decideReq('${jsq(x.id)}','reply')">Reply</button>`:`<button class="btn btn-green" onclick="decideReq('${jsq(x.id)}','approve')">Approve</button> <button class="btn" style="color:var(--bad)" onclick="decideReq('${jsq(x.id)}','reject')">Reject</button>`;
+    return `<tr><td style="white-space:nowrap">${new Date(x.createdAt).toLocaleDateString('en-IN',{day:'2-digit',month:'short',timeZone:'Asia/Kolkata'})}</td><td><b>${esc(x.empName)}</b><br><small>${esc(x.empId)}${x.department?' · '+esc(x.department):''}</small></td><td>${RQK[x.kind]}</td><td style="min-width:240px">${det}${rec}${note}</td><td><span class="pill ${s[1]}">${s[0]}</span></td><td style="white-space:nowrap">${act}</td></tr>`;
   }).join(''):'<tr><td colspan="6" class="no-data">No requests here</td></tr>';
+}
+async function recommendReq(id,yes){
+  let note=''; if(!yes){note=await askReason('Why do you not recommend this?'); if(!note)return;}
+  const r=await jpost('/api/requests/'+encodeURIComponent(id)+'/recommend',{recommend:yes,note});
+  if(!r.ok){toast('❌ '+(r.d.error||'Failed'));return;} toast('✅ Sent to HR'); loadRequests();
 }
 async function decideReq(id,decision){
   let note='';

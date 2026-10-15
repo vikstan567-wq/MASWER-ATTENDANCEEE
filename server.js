@@ -1891,7 +1891,7 @@ async function leaveDays(from, to) {
   const S = await getSalarySettings(), off = new Set((S.weeklyOffDays || []).map(Number)), hol = new Set((S.holidays || []).map(h => h.date));
   return dayList(from, to).filter(d => !off.has(new Date(d + 'T00:00:00Z').getUTCDay()) && !hol.has(d));
 }
-const reqView = r => ({ id: r.id, kind: r.kind, status: r.status, reqType: r.reqType || '', fromDate: r.fromDate || '', toDate: r.toDate || '', days: r.days || 0, date: r.date || '', inTime: r.inTime || '', outTime: r.outTime || '', subject: r.subject || '', message: r.message || '', note: r.note || '', createdAt: r.createdAt, decidedAt: r.decidedAt || '', empId: r.empId, empName: r.empName, department: r.department || '' });
+const reqView = r => ({ id: r.id, kind: r.kind, status: r.status, reqType: r.reqType || '', fromDate: r.fromDate || '', toDate: r.toDate || '', days: r.days || 0, date: r.date || '', inTime: r.inTime || '', outTime: r.outTime || '', subject: r.subject || '', message: r.message || '', note: r.note || '', mgrStatus: r.mgrStatus || '', mgrNote: r.mgrNote || '', mgrBy: r.mgrBy || '', createdAt: r.createdAt, decidedAt: r.decidedAt || '', empId: r.empId, empName: r.empName, department: r.department || '' });
 app.get('/api/me/requests', requireEmp, async (req, res) => {
   const list = await db.collection('requests').find({ empId: req.emp.id }).toArray();
   list.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))); res.json(list.map(reqView));
@@ -1929,15 +1929,29 @@ app.delete('/api/me/requests/:id', requireEmp, async (req, res) => {
 });
 
 // HR side
-app.get('/api/requests', requireStaff, async (req, res) => {
-  if (!hasPerm(req, 'salary')) return noPerm(res);
-  const ok = scopeFilter(req), st = String(req.query.status || '');
-  let list = (await db.collection('requests').find({}).toArray()).filter(r => ok({ locationId: r.locationId, department: r.department }));
+app.get('/api/requests', requireView, async (req, res) => {
+  const isMgr = req.user.role === 'manager';
+  if (!isMgr && !hasPerm(req, 'salary')) return noPerm(res);
+  const ok = isMgr ? scopeFilter({ ...req, query: {}, deptScope: [] }) : scopeFilter(req), st = String(req.query.status || '');
+  const base = (await db.collection('requests').find({}).toArray()).filter(r => (!isMgr || r.kind !== 'query') && ok({ locationId: r.locationId, department: r.department }));
+  let list = base.slice();
   if (st) list = list.filter(r => r.status === st);
   if (req.query.kind) list = list.filter(r => r.kind === req.query.kind);
   list.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
-  const all = (await db.collection('requests').find({}).toArray()).filter(r => ok({ locationId: r.locationId, department: r.department }));
+  const all = base;
   res.json({ pending: all.filter(r => r.status === 'pending').length, requests: list.slice(0, 300).map(reqView) });
+});
+// Site Manager: recommends or does not recommend (HR takes the final decision)
+app.post('/api/requests/:id/recommend', requireView, async (req, res) => {
+  if (req.user.role !== 'manager') return res.status(403).json({ error: 'Only a Site Manager can recommend' });
+  const r = await db.collection('requests').findOne({ id: req.params.id });
+  if (!r || r.kind === 'query' || !scopeFilter({ ...req, query: {}, deptScope: [] })({ locationId: r.locationId, department: r.department })) return res.status(404).json({ error: 'Request not found' });
+  if (r.status !== 'pending') return res.status(409).json({ error: 'HR has already answered this request' });
+  const yes = !!(req.body || {}).recommend, note = String((req.body || {}).note || '').replace(/[<>]/g, '').trim().slice(0, 200);
+  if (!yes && !note) return res.status(400).json({ error: 'Give a short reason' });
+  await db.collection('requests').updateOne({ id: r.id }, { $set: { mgrStatus: yes ? 'recommended' : 'not_recommended', mgrNote: note, mgrBy: req.user.name || req.user.id, mgrAt: new Date().toISOString() } });
+  await audit(req, 'request.recommend', r.empId, { id: r.id, recommend: yes });
+  res.json({ success: true });
 });
 app.post('/api/requests/:id/decide', requireStaff, async (req, res) => {
   if (!hasPerm(req, 'salary')) return noPerm(res);
