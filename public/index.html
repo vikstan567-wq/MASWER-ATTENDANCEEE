@@ -62,13 +62,17 @@
 <div id="adminPage">
   <div class="tnav-wrap">
     <div class="tnav">
-      <div class="tn-logo"><span class="sp">+</span><span class="sn">maswer</span><span class="st">attend</span></div>
-      <div class="tn-crumb" id="tnCrumb"></div><div class="tn-spacer"></div>
+      <div class="tn-left">
+        <div class="tn-menu-wrap"><button type="button" class="tn-btn tn-dots" id="tnDots" aria-label="Menu" aria-haspopup="true" onclick="toggleNavMenu(event)"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button><div class="tn-menu" id="tnMenu" role="menu"></div></div>
+        <div class="tn-logo"><span class="sp">+</span><span class="sn">maswer</span><span class="st">attend</span></div>
+        <div class="tn-sep"></div>
+        <div class="tn-crumb" id="tnCrumb"></div>
+      </div>
       <div class="tn-right">
         <div class="tn-btn edit-gate" onclick="promptPin()" title="Admin Tools">Admin Tools</div>
-        <div class="tn-menu-wrap"><button type="button" class="tn-btn tn-dots" id="tnDots" aria-label="Menu" aria-haspopup="true" onclick="toggleNavMenu(event)"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button><div class="tn-menu" id="tnMenu" role="menu"></div></div>
-        <div class="tn-user"><div><div class="tn-un" id="tnName">—</div><div class="tn-ur" id="tnRole"></div></div><div class="tn-av" id="tnAv"></div></div>
-        <div class="tn-btn" onclick="logout()" title="Logout"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></div>
+        <div class="tn-user"><div class="tn-av" id="tnAv"></div><div><div class="tn-un" id="tnName">—</div><div class="tn-ur" id="tnRole"></div></div></div>
+        <div class="tn-btn tn-ic" onclick="logout()" title="Logout" aria-label="Logout"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></div>
+        <span id="tnTheme"></span>
       </div>
     </div>
     <div class="tsub" id="tnSub"></div>
@@ -926,6 +930,8 @@ function setLoginRole(r){
   document.getElementById('lpwd').placeholder='Enter your password';
   document.getElementById('loginErr').textContent='';
 }
+fetch('/api/ping').catch(()=>{});
+setInterval(()=>{if(!document.hidden)fetch('/api/ping').catch(()=>{});},240000);
 async function doLogin(){
   const id=document.getElementById('lid').value.trim(), pw=document.getElementById('lpwd').value.trim();
   const err=document.getElementById('loginErr');
@@ -966,7 +972,9 @@ async function chooseProject(){
   }catch{err.textContent='❌ Unable to connect to the server.';}
 }
 let projectLabel='';
+function dockTheme(inApp){const b=document.querySelector('.theme-fab'),s=document.getElementById('tnTheme');if(!b||!s)return;if(inApp){b.classList.add('inline');s.appendChild(b);}else{b.classList.remove('inline');document.body.appendChild(b);}}
 async function enterApp(){
+    dockTheme(true);
     document.getElementById('loginPage').style.display='none';
     document.getElementById('adminPage').style.display='flex';
     document.getElementById('sbName').textContent=adminName;
@@ -992,7 +1000,7 @@ function showPanel(p,el){
   if(el)el.classList.add('on');
   const titles={day:'Today\'s Attendance',monthly:'Monthly Report',all:'Full History',emp:'Employees',qr:'QR Code',projects:'Projects',loc:'Locations (Geofence)',admins:'HR Logins',bypass:'Location Bypass',itools:'IT Tools',psites:'Projects, GPS Radar & Site QR',managers:'Site Managers',attendance:'Attendance',sitewatch:'Live Site Watch',requests:'Employee Requests',salary:'Attendance Payroll',missed:'Missed Punch-outs',sset:'Company & Salary Rules',audit:'Audit Log',itusers:'IT Users',docs:'Employee Documents'};
   document.getElementById('panelTitle').textContent=titles[p]||p;
-  if(['day','monthly','all'].includes(p)&&ME)refreshLocs();
+  if(['day','monthly','all'].includes(p)&&ME)refreshLocs(false);
   if(p==='all')loadAll();
   if(p==='monthly')loadMonthly();
   if(p==='emp')loadEmp();
@@ -1137,7 +1145,7 @@ async function loadAll(){
 // ── EMPLOYEES ──
 async function loadEmp(){
   try{
-    if(ME)await refreshLocs();
+    if(ME)await refreshLocs(false);
     const res=await fetch('/api/employees');
     const emps=await res.json(); EMPS=emps;
     document.getElementById('empCnt').textContent=emps.length;
@@ -1409,7 +1417,7 @@ function atAllDates(){atDateAll=!atDateAll; if(atDateAll)document.getElementById
 const todayIST=()=>new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kolkata'});
 function hrsOf(t){const m=/(\d+)h\s*(\d+)m/.exec(t||''); return m?(+m[1])+(+m[2])/60:0;}
 async function initAtt(){
-  try{await refreshLocs();}catch{}
+  try{await refreshLocs(false);}catch{}
   const d=document.getElementById('atDate'); if(!d.value&&!atDateAll)d.value=todayIST();
   try{const r=await fetch('/api/projects'); if(r.ok){PROJECTS=await r.json(); const cur=document.getElementById('atProj').value; document.getElementById('atProj').innerHTML='<option value="">All projects</option>'+PROJECTS.map(p=>`<option value="${esc(p.id)}">${esc(p.name)} (${esc(p.id)})</option>`).join(''); document.getElementById('atProj').value=cur;}}catch{}
   const dd=document.getElementById('atDept'), cd=dd.value; dd.innerHTML='<option value="">All departments</option>'+DEPTS.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join(''); dd.value=cd; dd.style.display=DEPTS.length?'':'none';
@@ -1471,7 +1479,7 @@ function atExcel(project){
 let SP={mode:'new',projId:'',locId:''}, PSPROJ=[];
 const rawFetch=(u,o)=>(window.parent!==window&&parent.fetch?parent.fetch(u,o):fetch(u,o));
 async function loadPsites(){
-  await loadStates(); await refreshLocs();
+  await loadStates(); await refreshLocs(false);
   try{const r=await fetch('/api/projects'); PSPROJ=r.ok?await r.json():[];}catch{PSPROJ=[];}
   renderPsites();
 }
@@ -2167,23 +2175,31 @@ const locQS=(pre='?')=>{
   return parts.length?pre+parts.join('&'):'';
 };
 async function initSession(){
-  const r=await fetch('/api/me'); ME=await r.json();
   await refreshLocs();
 }
-async function refreshLocs(){
-  try{const mr=await fetch('/api/me'); if(mr.ok)ME=await mr.json();}catch{}
-  const r=await fetch('/api/locations'); const all=await r.json();
+let _rlP=null,_rlT=0;
+function refreshLocs(force){
+  if(_rlP)return _rlP;
+  if(force===false&&Date.now()-_rlT<4000)return Promise.resolve();
+  _rlP=_refreshLocs().finally(()=>{_rlP=null;_rlT=Date.now();});
+  return _rlP;
+}
+async function _refreshLocs(){
+  const j=async(p)=>{try{const r=await fetch(p);return r.ok?await r.json():null;}catch{return null;}};
+  const [me,all0,pj,ds]=await Promise.all([j('/api/me'),j('/api/locations'),j('/api/projects'),j('/api/departments')]);
+  if(me)ME=me;
+  const all=all0||[];
   LOCS=ME&&ME.scope!=='*'?all.filter(l=>ME.scope.includes(l.id)):all;
   const pf=document.getElementById('projFilter'), curP=pf.value;
-  let projs=[]; try{const pr=await fetch('/api/projects'); if(pr.ok)projs=await pr.json();}catch{}
+  const projs=pj||[];
   pf.innerHTML='<option value="all">All Projects</option>'+projs.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('');
   pf.value=projs.some(p=>p.id===curP)?curP:'all';
   pf.style.display=(projs.length&&!(ME&&ME.project&&ME.project!=='ALL'))?'':'none';
   fillLocFilter();
-  fillDeptFilter();
+  fillDeptFilter(ds||[]);
 }
-async function fillDeptFilter(){
-  let ds=[]; try{const r=await fetch('/api/departments'); if(r.ok)ds=await r.json();}catch{}
+async function fillDeptFilter(pre){
+  let ds=pre||[]; if(!pre){try{const r=await fetch('/api/departments'); if(r.ok)ds=await r.json();}catch{}}
   DEPTS=ds;
   const f=document.getElementById('deptFilter'), cur=f.value;
   f.innerHTML='<option value="all">All Departments</option>'+ds.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('');
@@ -2235,7 +2251,7 @@ async function setEmpLoc(id,locationId){
 // ── LOCATIONS (IT) ──
 let editLocId=null;
 async function loadLocation(){
-  await refreshLocs(); await fillProjectSelect();
+  await refreshLocs(false); await fillProjectSelect();
   const emps=await (await fetch('/api/employees')).json();
   document.getElementById('locCnt').textContent=LOCS.length;
   document.getElementById('locBody').innerHTML=LOCS.length?LOCS.map(l=>`<tr>
@@ -2302,7 +2318,7 @@ function resetAdForm(){
 }
 let ADMINS=[];
 async function loadAdmins(){
-  await refreshLocs();
+  await refreshLocs(false);
   const r=await fetch('/api/admins'); const d=await r.json();
   if(!r.ok){toast('❌ '+d.error);return;}
   ADMINS=d; if(!editAdId)renderAdLocs();
@@ -2454,7 +2470,7 @@ async function delITUser(id,name){
   toast('🗑 IT user deleted'); loadITUsers();
 }
 
-function logout(){fetch('/api/logout',{method:'POST'});document.getElementById('loginStep2').style.display='none';document.getElementById('loginStep1').style.display='block';document.getElementById('lpwd').value='';document.getElementById('adminPage').style.display='none';document.getElementById('loginPage').style.display='flex';editMode=false;animDone=false;runAnim();}
+function logout(){dockTheme(false);fetch('/api/logout',{method:'POST'});document.getElementById('loginStep2').style.display='none';document.getElementById('loginStep1').style.display='block';document.getElementById('lpwd').value='';document.getElementById('adminPage').style.display='none';document.getElementById('loginPage').style.display='flex';editMode=false;animDone=false;runAnim();}
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
 </script>
 </body>

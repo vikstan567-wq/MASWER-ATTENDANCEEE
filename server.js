@@ -12,6 +12,14 @@ const EDIT_PIN = process.env.EDIT_PIN || '011216';
  
 app.use(cors());
 app.use(express.json());
+// short-lived read cache (a few seconds) for hot config lookups; any write request clears it
+const _memo = new Map();
+function memo(key, fn, ttl = 6000) {
+  const e = _memo.get(key); if (e && Date.now() - e.t < ttl) return e.v;
+  const v = Promise.resolve().then(fn); _memo.set(key, { t: Date.now(), v }); v.catch(() => _memo.delete(key)); return v;
+}
+const allOf = (name) => memo('all:' + name, () => db.collection(name).find({}).toArray());
+app.use((req, res, next) => { if (req.method !== 'GET' && req.method !== 'HEAD') res.on('finish', () => _memo.clear()); next(); });
 
 app.set('trust proxy', 1);
 let dbReady = null;
@@ -41,7 +49,8 @@ function readSession(req) {
   if (!(parseInt(exp) > Date.now())) return null;
   return { id, role, proj: proj || '' };
 }
-async function baseScope(id) {
+function baseScope(id) { return memo('bs:' + id, () => baseScopeRaw(id)); }
+async function baseScopeRaw(id) {
   const ad = await db.collection('admins').findOne({ id });
   if (ad) return { scope: ad.allLocations ? '*' : (ad.locations || []), name: ad.name, departments: ad.departments || [], perms: { salary: true, docs: true, editPunch: true } };
   const emp = await db.collection('employees').findOne({ id, role: 'admin' });
@@ -49,8 +58,8 @@ async function baseScope(id) {
 }
 // is admin ke liye kaun-kaun se projects hain (scope ke andar)
 async function adminProjects(scope) {
-  const locs = await db.collection('locations').find({}).toArray();
-  const ps = await db.collection('projects').find({}).toArray();
+  const locs = await allOf('locations');
+  const ps = await allOf('projects');
   return ps.filter(p => locs.some(l => l.projectId === p.id && (scope === '*' || scope.includes(l.id)))).map(p => ({ id: p.id, name: p.name }));
 }
 function readCookie(req, name) {
@@ -67,11 +76,11 @@ function authWith(roles) {
         if (!roles.includes(role)) return res.status(403).json({ error: 'You do not have permission for this action' });
         let scope = '*', name = id;
         if (role === 'it') {
-          const it = await db.collection('it_users').findOne({ id });
+          const it = await memo('it:' + id, () => db.collection('it_users').findOne({ id }));
           if (!it) return res.status(401).json({ error: 'Login required' });
           name = it.name;
         } else if (role === 'manager') {
-          const m = await db.collection('managers').findOne({ id });
+          const m = await memo('mg:' + id, () => db.collection('managers').findOne({ id }));
           if (!m) return res.status(401).json({ error: 'Login required' });
           name = m.name; scope = await managerScope(m); req.deptScope = []; req.perms = {}; req.stateCodes = m.stateCodes || [];
         } else {
@@ -80,7 +89,7 @@ function authWith(roles) {
           if (!b) return res.status(401).json({ error: 'Login required' });
           name = b.name; scope = b.scope; req.deptScope = b.departments || []; req.perms = b.perms || { salary: true, docs: true, editPunch: true };
           if (proj && proj !== 'ALL') { // ek project tak seemit
-            const ids = (await db.collection('locations').find({}).toArray()).filter(l => l.projectId === proj).map(l => l.id);
+            const ids = (await allOf('locations')).filter(l => l.projectId === proj).map(l => l.id);
             scope = scope === '*' ? ids : ids.filter(i => scope.includes(i));
           }
         }
@@ -98,8 +107,8 @@ const requireView = authWith(['admin', 'it', 'manager']); // read-only views (Si
 // a Site Manager sees every location of every project in his states (new projects are included automatically)
 async function managerScope(m) {
   const codes = new Set(m.stateCodes || []);
-  const pids = new Set((await db.collection('projects').find({}).toArray()).filter(p => codes.has(p.stateCode)).map(p => p.id));
-  return (await db.collection('locations').find({}).toArray()).filter(l => pids.has(l.projectId)).map(l => l.id);
+  const pids = new Set((await allOf('projects')).filter(p => codes.has(p.stateCode)).map(p => p.id));
+  return (await allOf('locations')).filter(l => pids.has(l.projectId)).map(l => l.id);
 }
 const hasPerm = (req, p) => !!(req.perms && req.perms[p]);
 const noPerm = res => res.status(403).json({ error: 'You do not have permission for this action' });
@@ -838,8 +847,9 @@ app.delete('/api/admins/:id', requireIT, async (req, res) => {
 });
 
 // ── ME / IT TOOLS ──────────────────────────────────────────
+app.get('/api/ping', (req, res) => res.json({ ok: true }));
 app.get('/api/me', requireView, async (req, res) => {
-  const locs = await db.collection('locations').find({}).toArray();
+  const locs = await allOf('locations');
   const mine = req.scope === '*' ? locs : locs.filter(l => req.scope.includes(l.id));
   res.json({ ...req.user, scope: req.scope, stateCodes: req.stateCodes || undefined, states: req.stateCodes ? req.stateCodes.map(c => (stateByCode(c) || { name: c }).name) : undefined, departments: req.deptScope || [], perms: req.perms || {}, locations: mine.map(l => ({ id: l.id, name: l.name })) });
 });
@@ -932,7 +942,7 @@ app.get('/api/export/all', requireStaff, async (req, res) => {
 // ── LOCATIONS / GEOFENCE (IT manage karta hai) ────────────
 // public: scan page ko sirf yeh dikhana hai (naam + coordinates + radius)
 app.get('/api/locations', async (req, res) => {
-  const list = await db.collection('locations').find({}).sort({ createdAt: 1 }).toArray();
+  const list = (await allOf('locations')).slice().sort((x, y) => String(x.createdAt || '').localeCompare(String(y.createdAt || '')));
   res.json(list.map(l => ({ id: l.id, name: l.name, lat: l.lat, lng: l.lng, radius: l.radius, address: l.address || '', projectId: l.projectId || '', projectName: l.projectName || '' })));
 });
 
@@ -942,8 +952,8 @@ async function projectVisible(req, p) {
   return (await db.collection('locations').find({}).toArray()).some(l => l.projectId === p.id && req.scope.includes(l.id));
 }
 app.get('/api/projects', requireView, async (req, res) => {
-  const list = await db.collection('projects').find({}).sort({ createdAt: 1 }).toArray();
-  const locs = await db.collection('locations').find({}).toArray();
+  const list = (await allOf('projects')).slice().sort((x, y) => String(x.createdAt || '').localeCompare(String(y.createdAt || '')));
+  const locs = await allOf('locations');
   const mine = req.scope === '*' ? list : list.filter(p => p.createdBy === req.user.id || locs.some(l => l.projectId === p.id && req.scope.includes(l.id)));
   res.json(mine.map(p => ({ ...strip(p), locations: locs.filter(l => l.projectId === p.id).length })));
 });

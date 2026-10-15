@@ -618,3 +618,20 @@ body.admin .login-card{position:relative;z-index:2;}
 @media (max-width:1100px){.lp-team,.lp-chk{display:none}.lp-qr{left:2%}.lp-clock{right:2%}.lp-geo{left:3%}.lp-week{right:2%}}
 @media (max-width:760px){.lp-deco{opacity:.55}.lp-t{transform:scale(.7)!important}.lp-qr{left:-30px;top:2%}.lp-clock{right:-50px}.lp-geo{left:-30px}.lp-week{right:-50px}}
 @media (prefers-reduced-motion:reduce){.lp-t,.lp-scan,.lp-r{animation:none}}
+
+/* ── Top bar: tidy layout (menu + logo + breadcrumb left, account tools right) ── */
+.tnav{padding:10px 14px;gap:12px;justify-content:space-between;min-height:62px;}
+.tnav .tn-left{display:flex;align-items:center;gap:12px;min-width:0;flex:1;}
+.tnav .tn-sep{width:1px;height:26px;background:var(--edge2);flex:none;}
+.tnav .tn-crumb{margin-left:0;font-size:14px;}
+.tnav .tn-right{gap:8px;}
+.tnav .tn-btn{height:40px;padding:0 14px;border-radius:12px;font-size:13px;}
+.tnav .tn-dots{width:40px;padding:0;justify-content:center;}
+.tnav .tn-ic{width:40px;padding:0;justify-content:center;}
+.tnav .tn-user{height:40px;padding:0 14px 0 5px;gap:10px;border-radius:20px;background:linear-gradient(145deg,var(--g1),var(--g2));border:1px solid var(--edge2);box-shadow:var(--raised-xs);}
+.tnav .tn-av{width:30px;height:30px;}
+.tnav .tn-un{text-align:left;font-size:13px;line-height:1.15;} .tnav .tn-ur{text-align:left;font-size:10px;line-height:1.2;}
+.theme-fab.inline{position:static;width:40px;height:40px;font-size:16px;flex:none;}
+.tn-menu{left:0;right:auto;}
+.tn-menu-wrap{flex:none;}
+@media(max-width:800px){.tnav{padding-right:14px;flex-wrap:wrap}.tn-crumb,.tn-sep{display:none}.tnav .tn-un,.tnav .tn-ur{display:none}.tnav .tn-user{padding:0 5px}.tnav .tn-btn.edit-gate{display:none}}
