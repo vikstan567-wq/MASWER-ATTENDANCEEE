@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Maswer Attend – My Account</title>
+<link rel="icon" href="data:,"/>
+<link rel="stylesheet" href="/neo.css"/>
+<script src="/neo.js"></script>
+<style>
+body.me{min-height:100vh;background:var(--bg);color:var(--text);padding:16px 14px 96px;display:block;}
+.me-wrap{max-width:560px;margin:0 auto;}
+.me-top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 4px 14px;padding-right:56px;}
+.me-logo{display:flex;align-items:center;gap:7px;} .me-logo .sp{font-size:24px;font-weight:900;color:var(--brand);} .me-logo .sn{font-size:19px;font-weight:800;color:var(--dark,var(--text));}
+.me-logo .st{font-size:9px;background:linear-gradient(145deg,var(--brand2),var(--brand));color:#fff;padding:3px 7px;border-radius:7px;font-weight:800;}
+.me-card{background:var(--bg);border-radius:22px;box-shadow:var(--raised);padding:20px;margin-bottom:16px;}
+.me-card h2{font-size:16px;font-weight:800;margin-bottom:4px;} .me-sub{font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.5;}
+.me-f{margin-bottom:12px;} .me-f label{display:block;font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+.me-f input,.me-f select,.me-f textarea{width:100%;padding:12px 14px;font-size:15px;border:0;border-radius:14px;background:var(--bg);color:var(--text);box-shadow:var(--inset-sm);font-family:inherit;outline:none;}
+.me-f textarea{min-height:84px;resize:vertical;} .me-f input:focus,.me-f select:focus,.me-f textarea:focus{box-shadow:var(--inset-sm),0 0 0 2px var(--brand);}
+.me-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.me-btn{width:100%;padding:13px;border:0;border-radius:15px;font-size:14px;font-weight:800;cursor:pointer;background:linear-gradient(145deg,var(--brand2),var(--brand));color:#fff;box-shadow:5px 5px 12px var(--sh-d),-4px -4px 10px var(--sh-l);font-family:inherit;}
+.me-btn.sec{background:var(--bg);color:var(--text);box-shadow:var(--raised-xs);} .me-btn.sm{width:auto;padding:8px 14px;font-size:12px;border-radius:11px;}
+.me-btn:disabled{opacity:.55;cursor:default;}
+.me-link{background:none;border:0;color:var(--brand);font-weight:800;font-size:13px;cursor:pointer;padding:8px;font-family:inherit;}
+.me-err{color:var(--bad);font-size:12px;font-weight:700;min-height:16px;margin:6px 0;}
+.me-tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--bg);box-shadow:0 -6px 18px var(--sh-d);display:flex;justify-content:center;padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px));gap:4px;}
+.me-tabs button{flex:1;max-width:110px;border:0;background:none;color:var(--muted);font:800 11px inherit;font-family:inherit;padding:8px 4px;border-radius:12px;cursor:pointer;}
+.me-tabs button.on{color:var(--brand);box-shadow:var(--inset-sm);}
+.me-tabs svg{display:block;margin:0 auto 3px;width:20px;height:20px;}
+.me-hello{font-size:20px;font-weight:800;} .me-meta{font-size:12px;color:var(--muted);margin-top:2px;}
+.me-tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;}
+.me-tile{border-radius:16px;box-shadow:var(--inset-sm);padding:12px;} .me-tile b{display:block;font-size:24px;font-weight:900;} .me-tile span{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);}
+.me-quick{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:14px;}
+.me-quick button{border:0;border-radius:14px;padding:12px 4px;background:var(--bg);box-shadow:var(--raised-xs);font:800 12px inherit;font-family:inherit;color:var(--text);cursor:pointer;}
+.me-li{display:flex;align-items:center;gap:12px;padding:12px 2px;border-top:1px solid rgba(120,130,160,.18);}
+.me-li:first-child{border-top:0;} .me-li .g{flex:1;min-width:0;} .me-li b{display:block;font-size:14px;} .me-li small{display:block;font-size:12px;color:var(--muted);line-height:1.45;word-break:break-word;}
+.pill{display:inline-block;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:800;white-space:nowrap;}
+.p-ok{background:rgba(40,167,100,.16);color:#1b8a52;} .p-w{background:rgba(242,150,34,.18);color:#b86400;} .p-bad{background:rgba(220,60,60,.15);color:#c0392b;} .p-n{background:rgba(120,130,160,.18);color:var(--muted);} .p-i{background:rgba(60,110,220,.15);color:#2f58c9;}
+.me-seg{display:flex;gap:8px;margin-bottom:14px;} .me-seg button{flex:1;border:0;border-radius:12px;padding:10px 4px;font:800 12px inherit;font-family:inherit;cursor:pointer;background:var(--bg);color:var(--muted);box-shadow:var(--raised-xs);}
+.me-seg button.on{color:var(--brand);box-shadow:var(--inset-sm);}
+.me-empty{text-align:center;color:var(--muted);font-size:13px;padding:22px 8px;}
+.me-note{font-size:12px;background:rgba(242,101,34,.08);border-radius:12px;padding:8px 10px;margin-top:6px;line-height:1.5;}
+.hide{display:none!important;}
+</style>
+</head>
+<body class="me">
+<div class="me-wrap">
+  <div class="me-top"><div class="me-logo"><span class="sp">+</span><span class="sn">maswer</span><span class="st">attend</span></div><a class="me-link" href="/scan" style="text-decoration:none;">Punch page</a></div>
+
+  <!-- login -->
+  <div id="vLogin">
+    <div class="me-card">
+      <h2 id="lgTitle">My account</h2>
+      <div class="me-sub" id="lgSub">Log in to see your attendance, payslips and documents, apply for leave, or send a request to HR.</div>
+      <div class="me-f"><label for="lgId">EMP ID</label><input id="lgId" type="text" autocapitalize="characters" autocomplete="username" placeholder="e.g. MW001"/></div>
+      <div class="me-f hide" id="lgMobWrap"><label for="lgMob">Registered mobile number</label><input id="lgMob" type="tel" inputmode="numeric" autocomplete="tel" placeholder="10-digit number given to HR"/></div>
+      <div class="me-f"><label for="lgPw" id="lgPwL">Password</label><input id="lgPw" type="password" autocomplete="current-password" placeholder="Your password"/></div>
+      <div class="me-err" id="lgErr"></div>
+      <button class="me-btn" id="lgBtn" onclick="doLogin()">Log in</button>
+      <div style="text-align:center;margin-top:6px;"><button class="me-link" id="lgSwitch" onclick="toggleFirst()">First time here? Set your password</button></div>
+      <div class="me-sub" style="margin:8px 0 0;text-align:center;">Forgot your password? Ask HR to reset it, then set a new one with "First time here".</div>
+    </div>
+  </div>
+
+  <!-- app -->
+  <div id="vApp" class="hide">
+    <section id="tHome">
+      <div class="me-card"><div class="me-hello" id="hName">—</div><div class="me-meta" id="hMeta"></div>
+        <div class="me-tiles"><div class="me-tile"><b id="hLeave">0</b><span>Leave balance (days)</span></div><div class="me-tile"><b id="hPend">0</b><span>Pending requests</span></div></div>
+        <div class="me-note" id="hToday"></div>
+        <div class="me-quick"><button onclick="newReq('leave')">Apply leave</button><button onclick="newReq('correction')">Fix attendance</button><button onclick="newReq('query')">Ask HR</button></div>
+      </div>
+      <div class="me-card"><h2>Recent requests</h2><div id="hReqs"></div></div>
+      <div class="me-card"><h2>Change password</h2><div class="me-f" style="margin-top:10px"><label for="pwCur">Current password</label><input id="pwCur" type="password" autocomplete="current-password"/></div><div class="me-f"><label for="pwNew">New password (6+ characters)</label><input id="pwNew" type="password" autocomplete="new-password"/></div><div class="me-err" id="pwErr"></div><button class="me-btn sec" onclick="changePw()">Update password</button><button class="me-btn sec" style="margin-top:10px" onclick="logout()">Log out</button></div>
+    </section>
+    <section id="tAtt" class="hide">
+      <div class="me-card"><h2>My attendance</h2><div class="me-f" style="margin-top:10px"><label for="atMonth">Month</label><input id="atMonth" type="month" onchange="loadAtt()"/></div>
+        <div class="me-tiles" id="atSum"></div></div>
+      <div class="me-card"><div id="atList"></div><div class="me-note">Something wrong on a day? Use "Fix attendance" under Requests.</div></div>
+    </section>
+    <section id="tPay" class="hide"><div class="me-card"><h2>My payslips</h2><div class="me-sub">Payslips appear here after HR sends them to you.</div><div id="payList"></div></div></section>
+    <section id="tDoc" class="hide"><div class="me-card"><h2>My documents</h2><div class="me-sub">Offer letter, experience letter and other documents HR has uploaded for you.</div><div id="docList"></div></div></section>
+    <section id="tReq" class="hide">
+      <div class="me-card"><h2>New request</h2>
+        <div class="me-seg" style="margin-top:10px"><button id="sgLeave" onclick="newReq('leave')">Leave</button><button id="sgCorr" onclick="newReq('correction')">Fix attendance</button><button id="sgQuery" onclick="newReq('query')">Ask HR</button></div>
+        <div id="fLeave">
+          <div class="me-f"><label for="lvType">Leave type</label><select id="lvType"><option>Paid leave</option><option>Sick leave</option><option>Unpaid leave</option><option>Other</option></select></div>
+          <div class="me-row"><div class="me-f"><label for="lvFrom">From</label><input id="lvFrom" type="date"/></div><div class="me-f"><label for="lvTo">To</label><input id="lvTo" type="date"/></div></div>
+          <div class="me-f"><label for="lvWhy">Reason</label><textarea id="lvWhy" maxlength="300" placeholder="Short reason"></textarea></div>
+        </div>
+        <div id="fCorr" class="hide">
+          <div class="me-f"><label for="crType">What needs correcting?</label><select id="crType"><option>Missed punch-out</option><option>Missed punch-in</option><option>Wrong time</option><option>Absent but worked</option></select></div>
+          <div class="me-f"><label for="crDate">Date</label><input id="crDate" type="date"/></div>
+          <div class="me-row"><div class="me-f"><label for="crIn">Correct in time</label><input id="crIn" type="time"/></div><div class="me-f"><label for="crOut">Correct out time</label><input id="crOut" type="time"/></div></div>
+          <div class="me-f"><label for="crWhy">Reason</label><textarea id="crWhy" maxlength="300" placeholder="What happened?"></textarea></div>
+        </div>
+        <div id="fQuery" class="hide">
+          <div class="me-f"><label for="qSub">Subject</label><input id="qSub" type="text" maxlength="80" placeholder="e.g. Salary question"/></div>
+          <div class="me-f"><label for="qMsg">Your question</label><textarea id="qMsg" maxlength="600" placeholder="Write your question for HR"></textarea></div>
+        </div>
+        <div class="me-err" id="rqErr"></div><button class="me-btn" id="rqBtn" onclick="sendReq()">Send to HR</button>
+      </div>
+      <div class="me-card"><h2>My requests</h2><div id="rqList"></div></div>
+    </section>
+    <nav class="me-tabs" id="tabs">
+      <button data-t="Home" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8v10a1 1 0 01-1 1h-5v-7H9v7H4a1 1 0 01-1-1z"/></svg>Home</button>
+      <button data-t="Att"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/></svg>Attendance</button>
+      <button data-t="Pay"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V9z"/><path d="M14 3v6h6M8 14h8M8 18h5"/></svg>Payslips</button>
+      <button data-t="Doc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>Documents</button>
+      <button data-t="Req"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>Requests</button>
+    </nav>
+  </div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+async function api(url,opt){
+  const o=Object.assign({headers:{'Content-Type':'application/json'}},opt||{}); if(o.body&&typeof o.body!=='string')o.body=JSON.stringify(o.body);
+  try{const r=await fetch(url,o); const d=await r.json().catch(()=>({})); return {ok:r.ok,status:r.status,d};}catch(e){return {ok:false,status:0,d:{error:'Unable to connect. Check your internet and try again.'}};}
+}
+let first=false, ME=null, kind='leave';
+function toggleFirst(){
+  first=!first; $('lgMobWrap').classList.toggle('hide',!first); $('lgPwL').textContent=first?'Choose a password (6+ characters)':'Password';
+  $('lgPw').autocomplete=first?'new-password':'current-password'; $('lgBtn').textContent=first?'Set password and log in':'Log in';
+  $('lgTitle').textContent=first?'First time here':'My account'; $('lgSwitch').textContent=first?'Already have a password? Log in':'First time here? Set your password'; $('lgErr').textContent='';
+}
+async function doLogin(){
+  const b=$('lgBtn'); $('lgErr').textContent=''; b.disabled=true;
+  const body={empId:$('lgId').value.trim(),password:$('lgPw').value}; if(first)body.mobile=$('lgMob').value;
+  const r=await api(first?'/api/me/activate':'/api/me/login',{method:'POST',body}); b.disabled=false;
+  if(!r.ok){ if(r.d.error==='first_time'){toggleFirst(); $('lgErr').textContent=r.d.message;} else $('lgErr').textContent=r.d.error||'Could not log in'; return; }
+  $('lgPw').value=''; start();
+}
+async function logout(){await api('/api/me/logout',{method:'POST'}); location.reload();}
+async function start(){
+  const r=await api('/api/me/profile'); if(!r.ok){$('vLogin').classList.remove('hide'); $('vApp').classList.add('hide'); return;}
+  ME=r.d; $('vLogin').classList.add('hide'); $('vApp').classList.remove('hide'); renderHome(); loadReqs();
+  const t=new Date(); $('atMonth').value=t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0');
+}
+function renderHome(){
+  $('hName').textContent='Hello, '+ME.name; $('hMeta').textContent=[ME.id,ME.designation,ME.department,ME.locationName].filter(Boolean).join(' · ');
+  $('hLeave').textContent=ME.leave.left; $('hPend').textContent=ME.pendingRequests;
+  const t=ME.today; $('hToday').textContent=t?('Today: in '+t.in+(t.out?', out '+t.out:', not punched out yet')):'Today: no punch recorded yet.';
+}
+const TABS=['Home','Att','Pay','Doc','Req'];
+function go(t){
+  TABS.forEach(x=>$('t'+x).classList.toggle('hide',x!==t));
+  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
+  window.scrollTo(0,0);
+  if(t==='Att')loadAtt(); if(t==='Pay')loadPay(); if(t==='Doc')loadDocs(); if(t==='Req')loadReqs(); if(t==='Home')refreshHome();
+}
+document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>go(b.dataset.t));
+async function refreshHome(){const r=await api('/api/me/profile'); if(r.ok){ME=r.d; renderHome(); loadReqs();}}
+const ST={Present:'p-ok','Present (late)':'p-w','Half day':'p-w',Absent:'p-bad','Week off':'p-n',Holiday:'p-i','On leave':'p-i',Incomplete:'p-bad'};
+function fmtD(d){const x=new Date(d+'T00:00:00'); return x.toLocaleDateString('en-IN',{day:'2-digit',month:'short',weekday:'short'});}
+async function loadAtt(){
+  const m=$('atMonth').value; if(!m)return; const r=await api('/api/me/attendance?month='+m);
+  if(!r.ok){$('atList').innerHTML='<div class="me-empty">'+esc(r.d.error||'Could not load')+'</div>';return;}
+  const c=r.d.counts; $('atSum').innerHTML=[['Present',c.present],['Half day',c.half],['Absent',c.absent],['Late days',r.d.days.filter(d=>/late/i.test(d.label)).length]].map(([k,v])=>`<div class="me-tile"><b>${v}</b><span>${k}</span></div>`).join('');
+  $('atList').innerHTML=r.d.days.length?r.d.days.slice().reverse().map(d=>`<div class="me-li"><div class="g"><b>${fmtD(d.date)}</b><small>${d.in?('In '+esc(d.in)+(d.out?' · Out '+esc(d.out):'')):'No punch'}</small></div><span class="pill ${ST[d.label]||'p-n'}">${esc(d.label)}</span></div>`).join(''):'<div class="me-empty">No records for this month.</div>';
+}
+const MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+async function loadPay(){
+  const r=await api('/api/me/payslips'); const l=r.ok?r.d:[];
+  $('payList').innerHTML=l.length?l.map(p=>`<div class="me-li"><div class="g"><b>${MN[+p.month.slice(5)-1]} ${p.month.slice(0,4)}</b><small>Net pay Rs. ${Number(p.net||0).toLocaleString('en-IN')}</small></div><a class="me-btn sm" style="text-decoration:none;display:inline-block" href="/api/me/payslips/${encodeURIComponent(p.id)}/pdf">Download</a></div>`).join(''):'<div class="me-empty">No payslips yet.</div>';
+}
+async function loadDocs(){
+  const r=await api('/api/me/documents'); const l=r.ok?r.d:[];
+  $('docList').innerHTML=l.length?l.map(d=>`<div class="me-li"><div class="g"><b>${esc(d.label)}</b><small>${esc(d.fileName)}${d.size?' · '+Math.max(1,Math.round(d.size/1024))+' KB':''}</small></div><a class="me-btn sm" style="text-decoration:none;display:inline-block" href="/api/me/documents/${encodeURIComponent(d.id)}/file?download=1">Download</a></div>`).join(''):'<div class="me-empty">No documents yet.</div>';
+}
+function newReq(k){
+  kind=k; go('Req'); $('fLeave').classList.toggle('hide',k!=='leave'); $('fCorr').classList.toggle('hide',k!=='correction'); $('fQuery').classList.toggle('hide',k!=='query');
+  $('sgLeave').classList.toggle('on',k==='leave'); $('sgCorr').classList.toggle('on',k==='correction'); $('sgQuery').classList.toggle('on',k==='query'); $('rqErr').textContent='';
+  $('rqBtn').textContent=k==='query'?'Send question':'Send to HR';
+}
+async function sendReq(){
+  const b=$('rqBtn'); $('rqErr').textContent=''; let body={kind};
+  if(kind==='leave')body={kind,reqType:$('lvType').value,fromDate:$('lvFrom').value,toDate:$('lvTo').value,message:$('lvWhy').value};
+  if(kind==='correction')body={kind,reqType:$('crType').value,date:$('crDate').value,inTime:$('crIn').value,outTime:$('crOut').value,message:$('crWhy').value};
+  if(kind==='query')body={kind,subject:$('qSub').value,message:$('qMsg').value};
+  b.disabled=true; const r=await api('/api/me/requests',{method:'POST',body}); b.disabled=false;
+  if(!r.ok){$('rqErr').textContent=r.d.error||'Could not send'; return;}
+  ['lvFrom','lvTo','lvWhy','crDate','crIn','crOut','crWhy','qSub','qMsg'].forEach(i=>$(i).value=''); $('rqErr').textContent='';
+  loadReqs(); $('rqErr').style.color='var(--ok)'; $('rqErr').textContent='Sent. HR will respond here.'; setTimeout(()=>{$('rqErr').textContent='';$('rqErr').style.color='';},4000);
+}
+const KL={leave:'Leave',correction:'Attendance fix',query:'Question'}, SL={pending:['Pending','p-w'],approved:['Approved','p-ok'],rejected:['Rejected','p-bad'],answered:['Answered','p-i']};
+function reqHtml(x,cancel){
+  const s=SL[x.status]||['',''], line=x.kind==='leave'?`${esc(x.reqType)} · ${esc(x.fromDate)} to ${esc(x.toDate)} · ${x.days} day(s)`:x.kind==='correction'?`${esc(x.reqType)} · ${esc(x.date)}${x.inTime?' · in '+esc(x.inTime):''}${x.outTime?' · out '+esc(x.outTime):''}`:esc(x.subject);
+  return `<div class="me-li"><div class="g"><b>${KL[x.kind]}</b><small>${line}</small><small>${esc(x.message)}</small>${x.note?`<div class="me-note"><b style="display:inline">HR:</b> ${esc(x.note)}</div>`:''}${cancel&&x.status==='pending'?`<button class="me-link" style="padding:6px 0" onclick="cancelReq('${esc(x.id)}')">Cancel request</button>`:''}</div><span class="pill ${s[1]}">${s[0]}</span></div>`;
+}
+async function loadReqs(){
+  const r=await api('/api/me/requests'); const l=r.ok?r.d:[];
+  $('rqList').innerHTML=l.length?l.map(x=>reqHtml(x,true)).join(''):'<div class="me-empty">No requests yet.</div>';
+  $('hReqs').innerHTML=l.length?l.slice(0,3).map(x=>reqHtml(x,false)).join(''):'<div class="me-empty">No requests yet.</div>';
+  $('hPend').textContent=l.filter(x=>x.status==='pending').length;
+}
+async function cancelReq(id){const r=await api('/api/me/requests/'+encodeURIComponent(id),{method:'DELETE'}); if(!r.ok)alert(r.d.error); loadReqs();}
+async function changePw(){
+  const r=await api('/api/me/password',{method:'POST',body:{current:$('pwCur').value,password:$('pwNew').value}});
+  $('pwErr').style.color=r.ok?'var(--ok)':''; $('pwErr').textContent=r.ok?'Password updated.':(r.d.error||'Could not update'); if(r.ok){$('pwCur').value='';$('pwNew').value='';}
+}
+['lgId','lgPw','lgMob'].forEach(i=>$(i).addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();}));
+newReq('leave'); go('Home'); start();
+</script>
+</body>
+</html>

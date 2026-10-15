@@ -56,6 +56,10 @@ ALTER TABLE payadj ENABLE ROW LEVEL SECURITY;
 CREATE TABLE IF NOT EXISTS locpings (id TEXT PRIMARY KEY, emp_id TEXT NOT NULL, location_id TEXT, lat DOUBLE PRECISION, lng DOUBLE PRECISION, acc INTEGER, seen_at TEXT NOT NULL);
 CREATE INDEX IF NOT EXISTS locpings_emp_at ON locpings (emp_id, seen_at);
 ALTER TABLE locpings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE employees ADD COLUMN IF NOT EXISTS salt TEXT;
+ALTER TABLE employees ADD COLUMN IF NOT EXISTS pass_hash TEXT;
+CREATE TABLE IF NOT EXISTS requests (id TEXT PRIMARY KEY, emp_id TEXT NOT NULL, emp_name TEXT, department TEXT, location_id TEXT, kind TEXT, status TEXT, req_type TEXT, from_date TEXT, to_date TEXT, days DOUBLE PRECISION, date TEXT, in_time TEXT, out_time TEXT, subject TEXT, message TEXT, note TEXT, decided_by TEXT, decided_at TEXT, created_at TEXT);
+ALTER TABLE requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE attendance ADD COLUMN IF NOT EXISTS edit_reason TEXT;
 CREATE TABLE IF NOT EXISTS documents (
   id TEXT PRIMARY KEY, emp_id TEXT NOT NULL, type TEXT, file_name TEXT, mime TEXT, size INTEGER, path TEXT,

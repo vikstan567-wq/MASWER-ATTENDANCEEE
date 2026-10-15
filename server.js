@@ -159,8 +159,9 @@ function scopeFilter(req) {
 // PIN: IT ko PIN nahi lagta; Admin ko lagta hai
 const pinOk = (req, pin) => req.user.role === 'it' || pin === EDIT_PIN;
 // admin ka mobile (= uska password) sirf IT ko dikhta hai
-const staffView = (e, req) => (req.user && req.user.role !== 'it' && e.role === 'admin') ? { ...e, mobile: '' } : e;
-const publicEmp = e => (e && e.role === 'admin') ? { ...e, mobile: '' } : e;
+const noSecret = e => { if (!e) return e; const { salt, passHash, ...r } = e; return r; };
+const staffView = (e, req) => (req.user && req.user.role !== 'it' && e.role === 'admin') ? noSecret({ ...e, mobile: '' }) : noSecret(e);
+const publicEmp = e => (e && e.role === 'admin') ? noSecret({ ...e, mobile: '' }) : noSecret(e);
 const fs = require('fs');
 const PUBLIC_DIR = process.env.PUBLIC_DIR || path.join(__dirname, 'public');
 app.use(express.static(fs.existsSync(PUBLIC_DIR) ? PUBLIC_DIR : __dirname));
@@ -1768,6 +1769,218 @@ app.get('/api/sitewatch/radar', requireView, async (req, res) => {
   res.json({ at: new Date().toISOString(), site: { id: loc.id, name: loc.name, radius: loc.radius || 100, projectName: loc.projectName || '' },
     counts: { onDuty: people.length, insideRadar: c(p => p.inside), outsideRadar: c(p => p.live && !p.inside), noSignal: c(p => !p.live) }, people });
 });
+
+// ═══ EMPLOYEE PORTAL (own login: attendance, payslips, documents, leave, corrections, questions) ═══
+const empTok = (id) => { const p = `E|${id}|${Date.now() + 12 * 3600 * 1000}`; return `${p}.${sign(p)}`; };
+function readEmpSession(req) {
+  const t = readCookie(req, 'mw_emp'); if (!t) return null;
+  const i = t.lastIndexOf('.'), p = t.slice(0, i), sg = t.slice(i + 1), good = Buffer.from(sign(p)), got = Buffer.from(sg);
+  if (good.length !== got.length || !crypto.timingSafeEqual(good, got)) return null;
+  const [k, id, exp] = p.split('|'); return k === 'E' && parseInt(exp) > Date.now() ? id : null;
+}
+function setEmpSession(res, req, id) {
+  res.setHeader('Set-Cookie', `mw_emp=${encodeURIComponent(empTok(id))}; HttpOnly; SameSite=Lax; Path=/; Max-Age=43200${req.secure ? '; Secure' : ''}`);
+}
+async function requireEmp(req, res, next) {
+  const id = readEmpSession(req); if (!id) return res.status(401).json({ error: 'Please log in' });
+  const e = await db.collection('employees').findOne({ id });
+  if (!e || e.role === 'admin' || e.active === false) return res.status(401).json({ error: 'Please log in' });
+  req.emp = e; next();
+}
+const mePub = e => ({ id: e.id, name: e.name, designation: e.designation || '', department: e.department || '', joiningDate: e.joiningDate || '', mobile: e.mobile || '' });
+const normMobile = v => String(v || '').replace(/\D/g, '').slice(-10);
+function throttle(key) { const f = loginFails.get(key); return !!(f && f.n >= 5 && Date.now() - f.t < 15 * 60 * 1000); }
+function fail(key) { const f = loginFails.get(key); loginFails.set(key, { n: (f && Date.now() - f.t < 15 * 60 * 1000 ? f.n : 0) + 1, t: Date.now() }); }
+const okPw = pw => typeof pw === 'string' && pw.length >= 6 && pw.length <= 60;
+
+app.post('/api/me/login', async (req, res) => {
+  const id = String((req.body || {}).empId || '').trim().toUpperCase(), pw = (req.body || {}).password, key = 'me|' + (req.ip || '') + '|' + id;
+  if (throttle(key)) return res.status(429).json({ error: 'Too many attempts. Try again after 15 minutes.' });
+  const e = id ? await db.collection('employees').findOne({ id }) : null;
+  if (!e || e.role === 'admin' || e.active === false) { fail(key); return res.status(401).json({ error: 'Wrong EMP ID or password' }); }
+  if (!e.passHash) return res.status(409).json({ error: 'first_time', message: 'Set your password first (use "First time here?").' });
+  if (!checkPassword(pw, e)) { fail(key); return res.status(401).json({ error: 'Wrong EMP ID or password' }); }
+  loginFails.delete(key); setEmpSession(res, req, e.id); res.json({ success: true, employee: mePub(e) });
+});
+// first time: EMP ID + the mobile number HR registered, then choose a password
+app.post('/api/me/activate', async (req, res) => {
+  const b = req.body || {}, id = String(b.empId || '').trim().toUpperCase(), key = 'act|' + (req.ip || '') + '|' + id;
+  if (throttle(key)) return res.status(429).json({ error: 'Too many attempts. Try again after 15 minutes.' });
+  if (!okPw(b.password)) return res.status(400).json({ error: 'Password must be 6 to 60 characters' });
+  const e = id ? await db.collection('employees').findOne({ id }) : null;
+  const m = normMobile(b.mobile);
+  if (!e || e.role === 'admin' || e.active === false || !m || normMobile(e.mobile) !== m) { fail(key); return res.status(401).json({ error: 'EMP ID and mobile number do not match our records' }); }
+  if (e.passHash) return res.status(409).json({ error: 'This account is already activated. Please log in. If you forgot the password, ask HR to reset it.' });
+  const salt = crypto.randomBytes(16).toString('hex');
+  await db.collection('employees').updateOne({ id: e.id }, { $set: { salt, passHash: hashPassword(b.password, salt) } });
+  loginFails.delete(key); setEmpSession(res, req, e.id); res.json({ success: true, employee: mePub(e) });
+});
+app.post('/api/me/logout', (req, res) => { res.setHeader('Set-Cookie', 'mw_emp=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0'); res.json({ success: true }); });
+app.post('/api/me/password', requireEmp, async (req, res) => {
+  const b = req.body || {};
+  if (!checkPassword(b.current, req.emp)) return res.status(403).json({ error: 'Current password is wrong' });
+  if (!okPw(b.password)) return res.status(400).json({ error: 'New password must be 6 to 60 characters' });
+  const salt = crypto.randomBytes(16).toString('hex');
+  await db.collection('employees').updateOne({ id: req.emp.id }, { $set: { salt, passHash: hashPassword(b.password, salt) } });
+  res.json({ success: true });
+});
+// HR/IT: employee forgot the password
+app.post('/api/employees/:id/reset-login', requireStaff, async (req, res) => {
+  const e = await db.collection('employees').findOne({ id: req.params.id });
+  if (!e || e.role === 'admin' || !scopeFilter({ ...req, query: {} })(e)) return res.status(404).json({ error: 'Employee not found' });
+  await db.collection('employees').updateOne({ id: e.id }, { $set: { salt: '', passHash: '' } });
+  await audit(req, 'employee.resetLogin', e.id, {});
+  res.json({ success: true });
+});
+
+async function leaveLeft(emp) {
+  const adj = await db.collection('payadj').find({ empId: emp.id }).toArray();
+  const used = adj.reduce((t, a) => t + (Number(a.leaveAvailed) || 0), 0), opening = Number(emp.leaveOpening) || 0;
+  return { opening: Math.round(opening * 100) / 100, used: Math.round(used * 100) / 100, left: Math.round((opening - used) * 100) / 100 };
+}
+app.get('/api/me/profile', requireEmp, async (req, res) => {
+  const e = req.emp, td = today();
+  const rec = await db.collection('attendance').findOne({ empId: e.id, date: td });
+  const pend = (await db.collection('requests').find({ empId: e.id }).toArray()).filter(r => r.status === 'pending').length;
+  res.json({ ...mePub(e), locationName: (await locName(e.locationId)) || '', leave: await leaveLeft(e), pendingRequests: pend,
+    today: rec ? { in: rec.time, out: rec.checkOut || '', status: rec.status } : null });
+});
+app.get('/api/me/attendance', requireEmp, async (req, res) => {
+  const month = String(req.query.month || today().slice(0, 7));
+  if (!MONTH_RE.test(month)) return res.status(400).json({ error: 'Invalid month' });
+  const c = await calcFor(req.emp, month, await getSalarySettings());
+  const recs = await db.collection('attendance').find({ empId: req.emp.id }).toArray();
+  const R = Object.fromEntries(recs.filter(r => String(r.date).startsWith(month)).map(r => [r.date, r]));
+  const leaves = (await db.collection('requests').find({ empId: req.emp.id }).toArray()).filter(r => r.kind === 'leave' && r.status === 'approved');
+  const onLeave = d => leaves.some(r => d >= r.fromDate && d <= r.toDate);
+  res.json({ month, counts: c.counts, days: c.days.filter(d => d.status !== 'future' && d.status !== 'prejoin').map(d => ({ date: d.date, dow: d.dow, status: d.status, label: d.status === 'absent' && onLeave(d.date) ? 'On leave' : d.label, in: d.in || (R[d.date] && R[d.date].time) || '', out: d.out || (R[d.date] && R[d.date].checkOut) || '', hours: d.hours })) });
+});
+app.get('/api/me/payslips', requireEmp, async (req, res) => {
+  const list = (await db.collection('payslips').find({ empId: req.emp.id }).toArray()).filter(p => p.deliveredAt);
+  list.sort((a, b) => String(b.month).localeCompare(String(a.month)));
+  res.json(list.map(p => ({ id: p.id, month: p.month, net: p.net, finalized: !!p.finalized, deliveredAt: p.deliveredAt })));
+});
+app.get('/api/me/payslips/:id/pdf', requireEmp, async (req, res) => {
+  const p = await db.collection('payslips').findOne({ id: req.params.id });
+  if (!p || p.empId !== req.emp.id || !p.deliveredAt) return res.status(404).json({ error: 'Payslip not found' });
+  if (!PDFDocument) return res.status(501).json({ error: 'PDF library not installed' });
+  const buf = await payslipPdf(p);
+  res.setHeader('Content-Type', 'application/pdf'); res.setHeader('Content-Disposition', `attachment; filename="${p.id}.pdf"`); res.setHeader('Cache-Control', 'private, no-store');
+  res.send(buf);
+});
+app.get('/api/me/documents', requireEmp, async (req, res) => {
+  const list = (await db.collection('documents').find({ empId: req.emp.id }).toArray()).filter(d => d.status === 'ok');
+  list.sort((a, b) => String(b.uploadedAt || '').localeCompare(String(a.uploadedAt || '')));
+  res.json(list.map(d => ({ id: d.id, type: d.type, label: d.label || d.fileName, fileName: d.fileName, mime: d.mime, size: d.size, createdAt: d.uploadedAt || '' })));
+});
+app.get('/api/me/documents/:id/file', requireEmp, async (req, res) => {
+  const d = await db.collection('documents').findOne({ id: req.params.id });
+  if (!d || d.empId !== req.emp.id || d.status !== 'ok') return res.status(404).json({ error: 'Document not found' });
+  res.setHeader('Content-Type', d.mime); res.setHeader('Cache-Control', 'private, no-store');
+  res.setHeader('Content-Disposition', `${req.query.download ? 'attachment' : 'inline'}; filename="${String(d.fileName).replace(/"/g, '')}"`);
+  if (useSB) { const r = await fetch(`${SB_URL}/storage/v1/object/${SB_BUCKET}/${d.path}`, { headers: sbH() }); if (!r.ok) return res.status(404).json({ error: 'File missing in storage' }); return res.send(Buffer.from(await r.arrayBuffer())); }
+  const fp = path.join(UP_DIR, d.path); if (!fs.existsSync(fp)) return res.status(404).json({ error: 'File missing' }); res.send(fs.readFileSync(fp));
+});
+
+// requests: kind = leave | correction | query
+const LEAVE_TYPES = ['Paid leave', 'Sick leave', 'Unpaid leave', 'Other'], FIX_TYPES = ['Missed punch-out', 'Missed punch-in', 'Wrong time', 'Absent but worked'];
+const isDate = v => /^\d{4}-\d{2}-\d{2}$/.test(String(v || '')) && !isNaN(Date.parse(v));
+const to12 = hhmm => { const m = /^([01]?\d|2[0-3]):([0-5]\d)$/.exec(String(hhmm || '').trim()); if (!m) return ''; let h = +m[1]; const ap = h >= 12 ? 'pm' : 'am'; h = h % 12 || 12; return `${String(h).padStart(2, '0')}:${m[2]} ${ap}`; };
+const dayList = (from, to) => { const out = []; for (let t = Date.parse(from); t <= Date.parse(to); t += 86400000) out.push(new Date(t).toISOString().slice(0, 10)); return out; };
+async function leaveDays(from, to) {
+  const S = await getSalarySettings(), off = new Set((S.weeklyOffDays || []).map(Number)), hol = new Set((S.holidays || []).map(h => h.date));
+  return dayList(from, to).filter(d => !off.has(new Date(d + 'T00:00:00Z').getUTCDay()) && !hol.has(d));
+}
+const reqView = r => ({ id: r.id, kind: r.kind, status: r.status, reqType: r.reqType || '', fromDate: r.fromDate || '', toDate: r.toDate || '', days: r.days || 0, date: r.date || '', inTime: r.inTime || '', outTime: r.outTime || '', subject: r.subject || '', message: r.message || '', note: r.note || '', createdAt: r.createdAt, decidedAt: r.decidedAt || '', empId: r.empId, empName: r.empName, department: r.department || '' });
+app.get('/api/me/requests', requireEmp, async (req, res) => {
+  const list = await db.collection('requests').find({ empId: req.emp.id }).toArray();
+  list.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))); res.json(list.map(reqView));
+});
+app.post('/api/me/requests', requireEmp, async (req, res) => {
+  const b = req.body || {}, e = req.emp, kind = String(b.kind || ''), clean = (v, n) => String(v || '').replace(/[<>]/g, '').trim().slice(0, n);
+  const r = { id: newId('R'), empId: e.id, empName: e.name, department: e.department || '', locationId: e.locationId || '', kind, status: 'pending', createdAt: new Date().toISOString() };
+  if (await db.collection('requests').find({ empId: e.id }).toArray().then(l => l.filter(x => x.status === 'pending').length >= 20)) return res.status(429).json({ error: 'You already have many pending requests. Please wait for HR to respond.' });
+  if (kind === 'leave') {
+    if (!LEAVE_TYPES.includes(b.reqType)) return res.status(400).json({ error: 'Choose a leave type' });
+    if (!isDate(b.fromDate) || !isDate(b.toDate) || b.toDate < b.fromDate) return res.status(400).json({ error: 'Choose valid from and to dates' });
+    if (Date.parse(b.toDate) - Date.parse(b.fromDate) > 60 * 86400000) return res.status(400).json({ error: 'Leave cannot be longer than 60 days in one request' });
+    const days = (await leaveDays(b.fromDate, b.toDate)).length;
+    if (!days) return res.status(400).json({ error: 'These dates are all weekly offs or holidays, so no leave is needed' });
+    if (!clean(b.message, 300)) return res.status(400).json({ error: 'Please write a short reason' });
+    Object.assign(r, { reqType: b.reqType, fromDate: b.fromDate, toDate: b.toDate, days, message: clean(b.message, 300) });
+  } else if (kind === 'correction') {
+    if (!FIX_TYPES.includes(b.reqType)) return res.status(400).json({ error: 'Choose what needs correction' });
+    if (!isDate(b.date) || b.date > today() || Date.now() - Date.parse(b.date) > 45 * 86400000) return res.status(400).json({ error: 'Choose a date from the last 45 days' });
+    const inT = b.inTime ? to12(b.inTime) : '', outT = b.outTime ? to12(b.outTime) : '';
+    if ((b.inTime && !inT) || (b.outTime && !outT)) return res.status(400).json({ error: 'Enter times like 09:30' });
+    if (!inT && !outT) return res.status(400).json({ error: 'Enter the correct in time or out time' });
+    if (!clean(b.message, 300)) return res.status(400).json({ error: 'Please write a short reason' });
+    Object.assign(r, { reqType: b.reqType, date: b.date, inTime: inT, outTime: outT, message: clean(b.message, 300) });
+  } else if (kind === 'query') {
+    if (!clean(b.subject, 80) || !clean(b.message, 600)) return res.status(400).json({ error: 'Write a subject and your question' });
+    Object.assign(r, { subject: clean(b.subject, 80), message: clean(b.message, 600) });
+  } else return res.status(400).json({ error: 'Invalid request' });
+  await db.collection('requests').insertOne(r); res.json({ success: true, request: reqView(r) });
+});
+app.delete('/api/me/requests/:id', requireEmp, async (req, res) => {
+  const r = await db.collection('requests').findOne({ id: req.params.id });
+  if (!r || r.empId !== req.emp.id || r.status !== 'pending') return res.status(404).json({ error: 'Request not found or already answered' });
+  await db.collection('requests').deleteOne({ id: r.id }); res.json({ success: true });
+});
+
+// HR side
+app.get('/api/requests', requireStaff, async (req, res) => {
+  if (!hasPerm(req, 'salary')) return noPerm(res);
+  const ok = scopeFilter(req), st = String(req.query.status || '');
+  let list = (await db.collection('requests').find({}).toArray()).filter(r => ok({ locationId: r.locationId, department: r.department }));
+  if (st) list = list.filter(r => r.status === st);
+  if (req.query.kind) list = list.filter(r => r.kind === req.query.kind);
+  list.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+  const all = (await db.collection('requests').find({}).toArray()).filter(r => ok({ locationId: r.locationId, department: r.department }));
+  res.json({ pending: all.filter(r => r.status === 'pending').length, requests: list.slice(0, 300).map(reqView) });
+});
+app.post('/api/requests/:id/decide', requireStaff, async (req, res) => {
+  if (!hasPerm(req, 'salary')) return noPerm(res);
+  const r = await db.collection('requests').findOne({ id: req.params.id });
+  if (!r || !scopeFilter(req)({ locationId: r.locationId, department: r.department })) return res.status(404).json({ error: 'Request not found' });
+  if (r.status !== 'pending') return res.status(409).json({ error: 'This request was already answered' });
+  const decision = String((req.body || {}).decision || ''), note = String((req.body || {}).note || '').replace(/[<>]/g, '').trim().slice(0, 300);
+  const e = await db.collection('employees').findOne({ id: r.empId }); if (!e) return res.status(404).json({ error: 'Employee not found' });
+  let status;
+  if (r.kind === 'query') { if (!note) return res.status(400).json({ error: 'Write a reply' }); status = 'answered'; }
+  else if (decision === 'reject') { if (!note) return res.status(400).json({ error: 'Give a short reason for rejecting' }); status = 'rejected'; }
+  else if (decision === 'approve') {
+    if (r.kind === 'leave') {
+      const days = await leaveDays(r.fromDate, r.toDate), byMonth = {};
+      days.forEach(d => { byMonth[d.slice(0, 7)] = (byMonth[d.slice(0, 7)] || 0) + 1; });
+      for (const m of Object.keys(byMonth)) if (await isLocked(e.id, m + '-01')) return res.status(423).json({ error: `Payslip for ${m} is finalized. Unlock it first.` });
+      if (r.reqType !== 'Unpaid leave') for (const [m, n] of Object.entries(byMonth)) {
+        const id = e.id + '-' + m, cur = (await db.collection('payadj').findOne({ id })) || {};
+        await db.collection('payadj').updateOne({ id }, { $set: { id, empId: e.id, month: m, leaveAvailed: (Number(cur.leaveAvailed) || 0) + n, extraDays: cur.extraDays || 0, leaveWages: cur.leaveWages || 0, updatedBy: req.user.id, updatedAt: new Date().toISOString() } }, { upsert: true });
+      }
+    } else if (r.kind === 'correction') {
+      if (!hasPerm(req, 'editPunch')) return noPerm(res);
+      if (await isLocked(e.id, r.date)) return res.status(423).json({ error: 'Payslip for that month is finalized. Unlock it first.' });
+      const rec = await db.collection('attendance').findOne({ empId: e.id, date: r.date }), why = `Employee request ${r.id}: ${r.reqType}`;
+      if (rec) {
+        const inT = r.inTime || rec.time, outT = r.outTime || rec.checkOut || '', u = { editedAt: new Date().toISOString(), editedBy: req.user.id, editReason: why };
+        if (r.inTime) u.time = r.inTime; if (r.outTime) u.checkOut = r.outTime;
+        if (outT) u.totalHours = calcTotalHours(convertTo24(inT), convertTo24(outT), r.date);
+        await db.collection('attendance').updateOne({ id: rec.id }, { $set: u });
+      } else {
+        if (!r.inTime) return res.status(400).json({ error: 'No punch exists for that day and the employee gave no in time' });
+        await db.collection('attendance').insertOne({ id: Date.now().toString(), empId: e.id, empName: e.name, date: r.date, time: r.inTime, shift: 'G', status: checkShiftStatus('G', convertTo24(r.inTime)), checkOut: r.outTime || null,
+          totalHours: r.outTime ? calcTotalHours(convertTo24(r.inTime), convertTo24(r.outTime), r.date) : 'N/A', deviceId: 'manual', markedAt: new Date().toISOString(), manuallyAdded: true, addedBy: req.user.id, editReason: why,
+          locationId: e.locationId || undefined, locationName: (await locName(e.locationId)) || undefined, department: e.department || undefined });
+      }
+    }
+    status = 'approved';
+  } else return res.status(400).json({ error: 'Choose approve or reject' });
+  await db.collection('requests').updateOne({ id: r.id }, { $set: { status, note, decidedBy: req.user.id, decidedAt: new Date().toISOString() } });
+  await audit(req, 'request.' + status, r.empId, { kind: r.kind, id: r.id, type: r.reqType || r.subject });
+  res.json({ success: true, status });
+});
+// ═══ EMPLOYEE PORTAL END ═══
 // ── SITE WATCH END ─────────────────────────────────────────
 
 // ── ATTENDANCE LEDGER (project-wise view + Excel) ──────────
@@ -1864,6 +2077,7 @@ app.delete('/api/managers/:id', requireStaff, async (req, res) => {
 const PUB = (process.env.PUBLIC_DIR || (fs.existsSync(path.join(__dirname,'public')) ? path.join(__dirname,'public') : __dirname));
 app.get('/', (req, res) => res.sendFile(path.join(PUB, 'index.html')));
 app.get('/scan', (req, res) => res.sendFile(path.join(PUB, 'scan.html')));
+app.get('/me', (req, res) => res.sendFile(path.join(PUB, 'me.html')));
 app.get('/attendance', (req, res) => res.sendFile(path.join(PUB, 'attendance.html')));
  
 // ── START ──────────────────────────────────────────────────

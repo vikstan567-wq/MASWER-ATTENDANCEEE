@@ -355,6 +355,18 @@
       </div>
 
       <!-- MISSED PUNCH-OUT PANEL -->
+      <div class="panel" id="panel-requests">
+        <div class="card">
+          <div class="card-top"><h3>Employee Requests (<span id="rqCnt">0</span> pending)</h3></div>
+          <div style="padding:0 22px 8px;font-size:12px;color:var(--muted);">Leave applications, attendance correction requests and questions sent by employees from their account page. Approving leave updates payroll. Approving a correction updates the attendance record.</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;padding:0 22px 12px;">
+            <select id="rqSt" style="padding:8px 12px;border-radius:10px;" onchange="loadRequests()"><option value="pending">Pending</option><option value="">All</option><option value="approved">Approved</option><option value="rejected">Rejected</option><option value="answered">Answered</option></select>
+            <select id="rqKind" style="padding:8px 12px;border-radius:10px;" onchange="loadRequests()"><option value="">All types</option><option value="leave">Leave</option><option value="correction">Attendance fix</option><option value="query">Questions</option></select>
+          </div>
+          <div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>Sent</th><th>Employee</th><th>Type</th><th>Details</th><th>Status</th><th></th></tr></thead><tbody id="rqBody"></tbody></table></div>
+        </div>
+      </div>
+
       <div class="panel" id="panel-missed">
         <div class="card">
           <div class="card-top"><h3>Missed Punch-outs (<span id="msCnt">0</span>)</h3></div>
@@ -608,6 +620,7 @@
       </div>
       <div id="docMsg" style="font-size:11px;color:var(--muted);margin-top:4px;"></div>
     </div>
+    <div style="margin:4px 0 8px;"><button type="button" class="btn" onclick="resetEmpLogin()">Reset employee login (forgot password)</button></div>
     <div class="modal-err" id="eeErr"></div>
     <div class="modal-btns">
       <button class="mb-cancel" onclick="closeOverlay('empEditOverlay')">Cancel</button>
@@ -969,7 +982,7 @@ function showPanel(p,el){
   document.querySelectorAll('.nav-i').forEach(x=>x.classList.remove('on'));
   document.getElementById('panel-'+p).classList.add('on');
   if(el)el.classList.add('on');
-  const titles={day:'Today\'s Attendance',monthly:'Monthly Report',all:'Full History',emp:'Employees',qr:'QR Code',projects:'Projects',loc:'Locations (Geofence)',admins:'HR Logins',bypass:'Location Bypass',itools:'IT Tools',psites:'Projects, GPS Radar & Site QR',managers:'Site Managers',attendance:'Attendance',sitewatch:'Live Site Watch',salary:'Attendance Payroll',missed:'Missed Punch-outs',sset:'Company & Salary Rules',audit:'Audit Log',itusers:'IT Users',docs:'Employee Documents'};
+  const titles={day:'Today\'s Attendance',monthly:'Monthly Report',all:'Full History',emp:'Employees',qr:'QR Code',projects:'Projects',loc:'Locations (Geofence)',admins:'HR Logins',bypass:'Location Bypass',itools:'IT Tools',psites:'Projects, GPS Radar & Site QR',managers:'Site Managers',attendance:'Attendance',sitewatch:'Live Site Watch',requests:'Employee Requests',salary:'Attendance Payroll',missed:'Missed Punch-outs',sset:'Company & Salary Rules',audit:'Audit Log',itusers:'IT Users',docs:'Employee Documents'};
   document.getElementById('panelTitle').textContent=titles[p]||p;
   if(['day','monthly','all'].includes(p)&&ME)refreshLocs();
   if(p==='all')loadAll();
@@ -992,6 +1005,7 @@ function showPanel(p,el){
   if(p==='sitewatch'){loadWatch(); watchTimer=setInterval(()=>{if(document.hidden)return; loadWatch();},30000);}
   if(p==='salary')initSalary();
   if(p==='missed')loadMissed();
+  if(p==='requests')loadRequests();
   if(p==='sset')loadSset();
   if(p==='audit')loadAudit();
 }
@@ -1578,7 +1592,7 @@ async function delMgr(id,name){ if(!confirm('Delete Site Manager '+id+' ('+name+
 const NAV=[
   {id:'att',label:'📋 Attendance',panels:[['attendance','Attendance'],['monthly','Monthly Report'],['missed','Missed Punch-outs','salary']]},
   {id:'watch',label:'📡 Site Watch',panels:[['sitewatch','Live Site Watch']]},
-  {id:'emp',label:'👥 Employees',panels:[['emp','Employees']]},
+  {id:'emp',label:'👥 Employees',panels:[['emp','Employees'],['requests','Requests','salary']]},
   {id:'pay',label:'💰 Payroll',perm:'salary',panels:[['salary','Attendance Payroll'],['docs','Employee Documents','docs'],['sset','Company & Salary Rules']]},
   {id:'site',label:'🏗 Projects & Sites',panels:[['psites','Projects & Sites'],['qr','QR Codes'],['managers','Site Managers']]},
   {id:'it',label:'🛠 IT Admin',it:true,panels:[['itools','IT Tools'],['admins','HR Logins'],['itusers','IT Users'],['bypass','Location Bypass'],['audit','Audit Log']]}
@@ -1593,7 +1607,7 @@ function renderTopNav(){
   document.getElementById('tnName').textContent=nm; document.getElementById('tnRole').textContent=rl;
   document.getElementById('tnAv').textContent=(nm||'?').trim().split(/\s+/).map(x=>x[0]).join('').substring(0,2).toUpperCase();
   document.getElementById('tnMenu').innerHTML=navGroups().map(g=>`<div class="tm-g" id="tg-${g.id}"><div class="tm-h">${esc(stripEmoji(g.label))}</div>${g.panels.map(([id,l])=>`<div class="tm-i" data-p="${id}" role="menuitem" onclick="showPanel('${id}',null);closeNavMenu()">${esc(l)}</div>`).join('')}</div>`).join('');
-  syncNav(CURP);
+  syncNav(CURP); loadReqBadge();
 }
 function toggleNavMenu(e){e.stopPropagation();document.getElementById('tnMenu').classList.toggle('open');}
 function closeNavMenu(){const m=document.getElementById('tnMenu');if(m)m.classList.remove('open');}
@@ -1714,6 +1728,37 @@ document.addEventListener('mousemove',e=>{
   const b=cv.getBoundingClientRect(), x=e.clientX-b.left, y=e.clientY-b.top; const h=RD.hits.find(h=>Math.hypot(h.x-x,h.y-y)<11);
   if(h){tip.style.display='block'; tip.style.left=(x+12)+'px'; tip.style.top=(y+12)+'px'; tip.innerHTML=`<b>${esc(h.p.name)}</b><br>${h.p.distance==null?'':h.p.distance+' m from centre · '}${h.p.live?'live':ago(h.p.ageSec)}`;} else tip.style.display='none';
 });
+
+
+// ── EMPLOYEE REQUESTS (leave / attendance fix / questions) ──
+const RQK={leave:'Leave',correction:'Attendance fix',query:'Question'};
+const RQS={pending:['Pending','p-w'],approved:['Approved','p-ok'],rejected:['Rejected','p-bad'],answered:['Answered','p-i']};
+let RQ=[];
+function setReqBadge(n){document.querySelectorAll('.tm-i[data-p="requests"]').forEach(x=>{x.textContent='Requests'+(n?' ('+n+')':'');});}
+async function loadReqBadge(){ if(!PERMS.salary)return; try{const r=await fetch('/api/requests?status=pending'); if(r.ok){const d=await r.json(); setReqBadge(d.pending);}}catch{} }
+async function loadRequests(){
+  const st=document.getElementById('rqSt').value, k=document.getElementById('rqKind').value;
+  const r=await fetch('/api/requests?status='+encodeURIComponent(st)+'&kind='+encodeURIComponent(k)); const d=await r.json();
+  if(!r.ok){toast('❌ '+(d.error||'Failed'));return;}
+  RQ=d.requests; document.getElementById('rqCnt').textContent=d.pending; setReqBadge(d.pending);
+  document.getElementById('rqBody').innerHTML=RQ.length?RQ.map(x=>{
+    const det=x.kind==='leave'?`${esc(x.reqType)} · ${esc(x.fromDate)} to ${esc(x.toDate)} · <b>${x.days}</b> day(s)<br><small>${esc(x.message)}</small>`:x.kind==='correction'?`${esc(x.reqType)} · ${esc(x.date)}${x.inTime?' · in '+esc(x.inTime):''}${x.outTime?' · out '+esc(x.outTime):''}<br><small>${esc(x.message)}</small>`:`<b>${esc(x.subject)}</b><br><small>${esc(x.message)}</small>`;
+    const s=RQS[x.status]||['',''], note=x.note?`<br><small style="color:var(--muted)">Reply: ${esc(x.note)}</small>`:'';
+    const act=x.status!=='pending'?'':x.kind==='query'?`<button class="btn btn-blue" onclick="decideReq('${jsq(x.id)}','reply')">Reply</button>`:`<button class="btn btn-green" onclick="decideReq('${jsq(x.id)}','approve')">Approve</button> <button class="btn" style="color:var(--bad)" onclick="decideReq('${jsq(x.id)}','reject')">Reject</button>`;
+    return `<tr><td style="white-space:nowrap">${new Date(x.createdAt).toLocaleDateString('en-IN',{day:'2-digit',month:'short',timeZone:'Asia/Kolkata'})}</td><td><b>${esc(x.empName)}</b><br><small>${esc(x.empId)}${x.department?' · '+esc(x.department):''}</small></td><td>${RQK[x.kind]}</td><td style="min-width:240px">${det}${note}</td><td><span class="pill ${s[1]}">${s[0]}</span></td><td style="white-space:nowrap">${act}</td></tr>`;
+  }).join(''):'<tr><td colspan="6" class="no-data">No requests here</td></tr>';
+}
+async function decideReq(id,decision){
+  let note='';
+  if(decision!=='approve'){note=await askReason(decision==='reply'?'Reply to employee':'Reason for rejecting'); if(!note)return;}
+  const r=await jpost('/api/requests/'+encodeURIComponent(id)+'/decide',{decision,note});
+  if(!r.ok){toast('❌ '+(r.d.error||'Failed'));return;}
+  toast(decision==='approve'?'✅ Approved':decision==='reject'?'Rejected':'✅ Reply sent'); loadRequests();
+}
+async function resetEmpLogin(){
+  const r=await jpost('/api/employees/'+encodeURIComponent(editEmpId)+'/reset-login',{});
+  toast(r.ok?'✅ Login reset. The employee can set a new password on the My Account page.':'❌ '+(r.d.error||'Failed'));
+}
 
 // ── PERMISSIONS ──
 function applyPerms(){
