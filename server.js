@@ -1724,6 +1724,50 @@ app.get('/api/sitewatch', requireView, async (req, res) => {
   const sum = k => sites.reduce((a, s) => a + s[k], 0);
   res.json({ at: new Date().toISOString(), totals: { sites: locs.length, staff: emps.length, inside: sum('inside'), left: sum('left'), absent: sum('absent'), late: sum('late') }, sites });
 });
+// ── LIVE RADAR: employee phones send their position while punched in ──
+const PING_MIN_GAP_MS = 8000, PING_LIVE_MS = 3 * 60 * 1000, PING_KEEP_MS = 12 * 3600 * 1000;
+app.post('/api/live-ping', async (req, res) => {
+  const b = req.body || {}, id = String(b.empId || '').trim().toUpperCase();
+  const lat = parseFloat(b.lat), lng = parseFloat(b.lng), acc = Math.round(parseFloat(b.acc) || 0);
+  if (!id || !isFinite(lat) || !isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return res.status(400).json({ error: 'Invalid location' });
+  const rec = await findActive(id);
+  if (!rec || rec.checkOut) return res.json({ success: true, tracking: false }); // not punched in: nothing is stored
+  const deviceId = getDeviceId(req);
+  if (rec.deviceId && deviceId && rec.deviceId !== deviceId) return res.status(403).json({ error: 'wrong_device' });
+  const last = await db.collection('locpings').find({ empId: id }).sort({ seenAt: -1 }).limit(1).toArray();
+  if (last[0] && Date.now() - new Date(last[0].seenAt).getTime() < PING_MIN_GAP_MS) return res.json({ success: true, tracking: true });
+  await db.collection('locpings').insertOne({ id: id + '-' + Date.now(), empId: id, locationId: rec.locationId || '', lat, lng, acc, seenAt: new Date().toISOString() });
+  await db.collection('locpings').deleteMany({ empId: id, seenAt: { $lte: new Date(Date.now() - PING_KEEP_MS).toISOString() } });
+  res.json({ success: true, tracking: true });
+});
+// radar for one site: who is inside the geofence right now, where everyone else is, and their recent path
+app.get('/api/sitewatch/radar', requireView, async (req, res) => {
+  const siteOk = scopeFilter({ ...req, query: {}, deptScope: [] }), empOk = scopeFilter(req);
+  const loc = await db.collection('locations').findOne({ id: String(req.query.location || '') });
+  if (!loc || !siteOk({ locationId: loc.id })) return res.status(404).json({ error: 'Site not found' });
+  const td = today(), yd = yesterday();
+  const emps = (await db.collection('employees').find({}).toArray()).filter(e => e.role !== 'admin' && e.active !== false).filter(empOk);
+  const att = (await db.collection('attendance').find({}).toArray()).filter(a => !a.checkOut && (a.date === td || (a.date === yd && a.markedAt && Date.now() - new Date(a.markedAt).getTime() < OPEN_MAX_HOURS * 3600 * 1000)));
+  const open = {}; att.forEach(a => { open[a.empId] = a; });
+  const pings = await db.collection('locpings').find({ seenAt: { $gte: new Date(Date.now() - 30 * 60 * 1000).toISOString() } }).sort({ seenAt: 1 }).toArray();
+  const byEmp = {}; pings.forEach(p => { (byEmp[p.empId] = byEmp[p.empId] || []).push(p); });
+  const R = 6371000, rad = Math.PI / 180, cosL = Math.cos(loc.lat * rad);
+  const xy = p => ({ x: Math.round((p.lng - loc.lng) * rad * R * cosL), y: Math.round((p.lat - loc.lat) * rad * R) });
+  const people = [];
+  for (const e of emps) {
+    const a = open[e.id]; if (!a) continue;
+    if ((a.locationId || e.locationId || '') !== loc.id) continue;
+    const trail = (byEmp[e.id] || []).slice(-14), lastP = trail[trail.length - 1];
+    const ageSec = lastP ? Math.round((Date.now() - new Date(lastP.seenAt).getTime()) / 1000) : null;
+    const live = ageSec !== null && ageSec * 1000 <= PING_LIVE_MS;
+    const d = lastP ? Math.round(distMeters(lastP.lat, lastP.lng, loc.lat, loc.lng)) : null;
+    people.push({ id: e.id, name: e.name, designation: e.designation || '', in: a.time || '', live, ageSec, distance: d,
+      inside: live && d <= (loc.radius || 100), pos: lastP ? xy(lastP) : null, acc: lastP ? lastP.acc : null, trail: trail.map(xy) });
+  }
+  const c = f => people.filter(f).length;
+  res.json({ at: new Date().toISOString(), site: { id: loc.id, name: loc.name, radius: loc.radius || 100, projectName: loc.projectName || '' },
+    counts: { onDuty: people.length, insideRadar: c(p => p.inside), outsideRadar: c(p => p.live && !p.inside), noSignal: c(p => !p.live) }, people });
+});
 // ── SITE WATCH END ─────────────────────────────────────────
 
 // ── ATTENDANCE LEDGER (project-wise view + Excel) ──────────

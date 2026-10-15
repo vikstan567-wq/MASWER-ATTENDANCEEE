@@ -268,13 +268,44 @@ function applyStatus(data) {
   }
 }
  
+
+// ── live site tracking: only while punched in, only while this page is open ──
+let pingTimer = null, pingWatch = null, lastFix = null, pingEmp = '';
+function pingNote(on) {
+  let n = document.getElementById('pingNote');
+  if (!n) { n = document.createElement('div'); n.id = 'pingNote'; n.style.cssText = 'font-size:11px;color:var(--muted);text-align:center;margin:8px 0;line-height:1.5;';
+    const b = document.getElementById('statusBadge'); b.parentNode.insertBefore(n, b.nextSibling); }
+  n.textContent = on ? 'Live location is shared with your site team while you are punched in. Keep this page open. It stops when you punch out.' : '';
+}
+async function sendPing() {
+  const id = pingEmp;
+  if (!lastFix || !id) return;
+  try {
+    const r = await fetch('/api/live-ping', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ empId: id, deviceId: DEVICE_ID, lat: lastFix.latitude, lng: lastFix.longitude, acc: lastFix.accuracy }) });
+    const d = await r.json().catch(() => ({}));
+    if (d && d.tracking === false) stopPing();
+  } catch (e) {}
+}
+function startPing() {
+  const cur = document.getElementById('empId').value.trim().toUpperCase(); if (cur) pingEmp = cur;
+  if (pingTimer || !navigator.geolocation || !pingEmp) return;
+  pingWatch = navigator.geolocation.watchPosition(p => { lastFix = p.coords; }, () => {}, { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 });
+  pingTimer = setInterval(sendPing, 20000); setTimeout(sendPing, 3000); pingNote(true);
+}
+function stopPing() {
+  if (pingTimer) clearInterval(pingTimer); pingTimer = null;
+  if (pingWatch !== null) navigator.geolocation.clearWatch(pingWatch); pingWatch = null; lastFix = null; pingNote(false);
+}
 function setButtonIn() {
+  stopPing();
   const btn = document.getElementById('mainBtn');
   btn.className = 'submit-btn in-btn';
   btn.innerHTML = '🟢 Punch In – Record Attendance';
   if (locationAllowed) { btn.disabled = false; btn.style.opacity = '1'; }
 }
 function setButtonOut() {
+  startPing();
   const btn = document.getElementById('mainBtn');
   btn.className = 'submit-btn out-btn';
   btn.innerHTML = '🔵 Punch Out – Check Out';
@@ -373,7 +404,7 @@ async function doPunchOut() {
       btn.disabled = false; setButtonOut(); return;
     }
  
-    saveEmp(empId);
+    stopPing(); saveEmp(empId);
     document.getElementById('poName').textContent = data.employee.name;
     document.getElementById('poTime').textContent = `Check-out: ${data.record.checkOut} · Worked: ${data.record.totalHours}`;
     document.getElementById('punchOutOverlay').classList.add('show');

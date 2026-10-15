@@ -677,6 +677,20 @@
 </div>
 
 <!-- ADD EMPLOYEE MODAL -->
+<div class="overlay" id="radarOverlay">
+  <div class="modal rd-modal">
+    <div class="rd-head"><div><h3 id="rdTitle">Live Radar</h3><div class="rd-sub" id="rdSub"></div></div><button class="mb-cancel rd-x" onclick="closeRadar()" aria-label="Close">Close</button></div>
+    <div class="rd-tabs" id="rdTabs"></div>
+    <div class="rd-grid">
+      <div class="rd-stage"><canvas id="rdCanvas" width="520" height="520"></canvas><div class="rd-tip" id="rdTip"></div></div>
+      <div class="rd-side">
+        <div class="rd-counts" id="rdCounts"></div>
+        <div class="rd-list" id="rdList"></div>
+      </div>
+    </div>
+    <div class="rd-foot" id="rdFoot"></div>
+  </div>
+</div>
 <div class="overlay" id="addOverlay">
   <div class="modal">
     <h3>Add New Employee</h3>
@@ -1617,11 +1631,11 @@ function renderWatch(){
   const chip=(st)=>({inside:'<span class="sw-chip g">Working</span>',left:'<span class="sw-chip a">Out</span>',absent:'<span class="sw-chip r">Not in</span>'}[st]);
   document.getElementById('swBody').innerHTML=sites.length?Object.entries(groups).map(([pn,list])=>{
     const pin=list.reduce((a,s)=>a+s.inside,0), pas=list.reduce((a,s)=>a+s.assigned,0);
-    return `<div class="sw-proj"><div class="sw-ph"><b>${esc(pn)}</b><span>${list.length} site(s) · <b style="color:var(--ok)">${pin}</b> working now · ${pas} assigned</span></div><div class="sw-grid">`+list.map(s=>{
+    return `<div class="sw-proj"><div class="sw-ph"><b>${esc(pn)} <a href="#" class="sw-rd" onclick="openRadar(${esc(JSON.stringify(list.map(x=>x.id)))});return false;">Project radar</a></b><span>${list.length} site(s) · <b style="color:var(--ok)">${pin}</b> working now · ${pas} assigned</span></div><div class="sw-grid">`+list.map(s=>{
       const pct=s.assigned?Math.min(100,Math.round(s.inside*100/s.assigned)):0;
       const ppl=s.people.filter(p=>!q||p.name.toLowerCase().includes(q)||p.id.toLowerCase().includes(q));
       const open=!!q;
-      return `<div class="sw-card"><div class="sw-top"><div class="sw-name">${esc(s.name)}</div><div class="sw-live ${s.inside?'on':''}"><span></span>${s.inside?'LIVE':'EMPTY'}</div></div>
+      return `<div class="sw-card"><div class="sw-top"><div class="sw-name">${esc(s.name)} ${s.id?`<a href="#" class="sw-rd" onclick="openRadar(['${jsq(s.id)}']);return false;">Live radar</a>`:''}</div><div class="sw-live ${s.inside?'on':''}"><span></span>${s.inside?'LIVE':'EMPTY'}</div></div>
         <div class="sw-big"><b>${s.inside}</b><small> working now</small></div>
         <div class="sw-bar"><i style="width:${pct}%"></i></div>
         <div class="sw-stats"><div><b>${s.assigned}</b>Assigned</div><div><b>${s.left}</b>Out</div><div><b style="color:var(--bad)">${s.absent}</b>Not in</div><div><b style="color:#B26A00">${s.late}</b>Late</div></div>
@@ -1629,6 +1643,77 @@ function renderWatch(){
     }).join('')+'</div></div>';
   }).join(''):'<div class="no-data" style="padding:30px;">No sites match.</div>';
 }
+
+
+// ── LIVE SITE RADAR ──
+let RD={sites:[],cur:'',data:null,timer:null,raf:0,hits:[]};
+function openRadar(ids,pick){
+  const all=(WATCH&&WATCH.sites)||[]; RD.sites=all.filter(x=>ids.includes(x.id));
+  if(!RD.sites.length)return; RD.cur=pick&&ids.includes(pick)?pick:RD.sites[0].id; RD.data=null;
+  document.getElementById('radarOverlay').classList.add('open'); drawRdTabs(); loadRadar();
+  clearInterval(RD.timer); RD.timer=setInterval(()=>{if(!document.hidden)loadRadar();},10000);
+  cancelAnimationFrame(RD.raf); rdLoop();
+}
+function closeRadar(){document.getElementById('radarOverlay').classList.remove('open'); clearInterval(RD.timer); cancelAnimationFrame(RD.raf);}
+function pickRdSite(id){RD.cur=id; RD.data=null; drawRdTabs(); loadRadar();}
+function drawRdTabs(){
+  const t=document.getElementById('rdTabs'); t.style.display=RD.sites.length>1?'flex':'none';
+  t.innerHTML=RD.sites.map(x=>`<button class="rd-tab${x.id===RD.cur?' on':''}" onclick="pickRdSite('${jsq(x.id)}')">${esc(x.name)}</button>`).join('');
+}
+async function loadRadar(){
+  const id=RD.cur; let d,ok;
+  try{const r=await fetch('/api/sitewatch/radar?location='+encodeURIComponent(id)); d=await r.json(); ok=r.ok;}catch{return;}
+  if(id!==RD.cur)return;
+  if(!ok){document.getElementById('rdFoot').textContent=d.error||'Could not load radar';return;}
+  RD.data=d; renderRdSide();
+}
+function ago(s){return s==null?'no signal yet':s<60?s+'s ago':Math.round(s/60)+' min ago';}
+function renderRdSide(){
+  const d=RD.data; if(!d)return; const c=d.counts;
+  document.getElementById('rdTitle').textContent=d.site.name+' · Live Radar';
+  document.getElementById('rdSub').textContent=(d.site.projectName?d.site.projectName+' · ':'')+'Perimeter '+d.site.radius+' m';
+  document.getElementById('rdCounts').innerHTML=
+    `<div class="rd-c g"><b>${c.insideRadar}</b><span>Inside radar</span></div><div class="rd-c o"><b>${c.outsideRadar}</b><span>Outside radar</span></div><div class="rd-c n"><b>${c.noSignal}</b><span>No signal</span></div><div class="rd-c"><b>${c.onDuty}</b><span>Punched in</span></div>`;
+  const rank=p=>p.inside?0:p.live?1:2;
+  const ppl=d.people.slice().sort((a,b)=>rank(a)-rank(b)||a.name.localeCompare(b.name));
+  document.getElementById('rdList').innerHTML=ppl.length?ppl.map(p=>`<div class="rd-row"><span class="rd-dot ${p.inside?'g':p.live?'o':'n'}"></span><div class="rd-nm"><b>${esc(p.name)}</b><small>${esc(p.id)}${p.designation?' · '+esc(p.designation):''}</small></div><div class="rd-d">${p.distance==null?'—':p.distance+' m'}<small>${p.live?'live':ago(p.ageSec)}</small></div></div>`).join(''):'<div class="no-data" style="padding:18px;">Nobody is punched in at this site right now.</div>';
+  document.getElementById('rdFoot').textContent='Updated '+new Date(d.at).toLocaleTimeString('en-IN',{timeZone:'Asia/Kolkata',hour:'2-digit',minute:'2-digit',second:'2-digit'})+' · refreshes every 10 s. Positions come from employee phones while they are punched in with the scan page open.';
+}
+function rdLoop(){
+  const cv=document.getElementById('rdCanvas'); if(!cv||!document.getElementById('radarOverlay').classList.contains('open'))return;
+  const dpr=window.devicePixelRatio||1, W=cv.clientWidth||460; if(cv.width!==Math.round(W*dpr)){cv.width=Math.round(W*dpr);cv.height=Math.round(W*dpr);}
+  const g=cv.getContext('2d'); g.setTransform(dpr,0,0,dpr,0,0); g.clearRect(0,0,W,W);
+  const cx=W/2, R=W/2-6, d=RD.data, t=Date.now()/1000;
+  const bg=g.createRadialGradient(cx,cx,10,cx,cx,R); bg.addColorStop(0,'#1d2550'); bg.addColorStop(1,'#0c1129');
+  g.beginPath(); g.arc(cx,cx,R,0,7); g.fillStyle=bg; g.fill(); g.strokeStyle='#2c3668'; g.lineWidth=2; g.stroke();
+  let rad=d?d.site.radius:100, maxR=rad*2.2;
+  const k=R/maxR;
+  g.strokeStyle='rgba(255,255,255,.08)'; g.lineWidth=1; g.beginPath(); g.moveTo(cx-R,cx); g.lineTo(cx+R,cx); g.moveTo(cx,cx-R); g.lineTo(cx,cx+R); g.stroke();
+  g.setLineDash([3,5]); g.beginPath(); g.arc(cx,cx,rad*k/2,0,7); g.stroke(); g.setLineDash([]);
+  // sweep
+  const a=(t*1.1)%(Math.PI*2), sw=g.createConicGradient?g.createConicGradient(a-1.2,cx,cx):null;
+  if(sw){sw.addColorStop(0,'rgba(23,191,131,0)'); sw.addColorStop(0.19,'rgba(23,191,131,.22)'); sw.addColorStop(0.2,'rgba(23,191,131,0)'); g.beginPath(); g.moveTo(cx,cx); g.arc(cx,cx,R,0,7); g.fillStyle=sw; g.fill();}
+  // perimeter
+  g.beginPath(); g.arc(cx,cx,rad*k,0,7); g.strokeStyle='#17bf83'; g.lineWidth=2; g.stroke();
+  g.fillStyle='#8fa0d6'; g.font='600 10px Segoe UI,system-ui,sans-serif'; g.textAlign='center'; g.fillText('PERIMETER '+rad+' m',cx,cx-rad*k-6);
+  g.beginPath(); g.arc(cx,cx,4,0,7); g.fillStyle='#fff'; g.fill(); g.fillText('SITE CENTRE',cx,cx+16);
+  RD.hits=[];
+  if(d)d.people.forEach(p=>{
+    if(!p.pos)return; const col=p.inside?'#17bf83':p.live?'#F26522':'#7b84a8';
+    if(p.trail.length>1){g.beginPath(); p.trail.forEach((q,i)=>{const qd=Math.hypot(q.x,q.y)*k, qs=qd>R-9?(R-9)/qd:1, x=cx+q.x*k*qs,y=cx-q.y*k*qs; i?g.lineTo(x,y):g.moveTo(x,y);}); g.strokeStyle=col; g.globalAlpha=.35; g.lineWidth=2; g.stroke(); g.globalAlpha=1;}
+    const dd=Math.hypot(p.pos.x,p.pos.y)*k, sc=dd>R-9?(R-9)/dd:1, x=cx+p.pos.x*k*sc, y=cx-p.pos.y*k*sc;
+    if(p.live){const pr=((t*1.2)%1); g.beginPath(); g.arc(x,y,7+pr*12,0,7); g.strokeStyle=col; g.globalAlpha=1-pr; g.lineWidth=2; g.stroke(); g.globalAlpha=1;}
+    g.beginPath(); g.arc(x,y,6,0,7); g.fillStyle=col; g.globalAlpha=p.live?1:.55; g.fill(); g.globalAlpha=1; g.strokeStyle='#fff'; g.lineWidth=1.5; g.stroke();
+    RD.hits.push({x,y,p});
+  });
+  if(d&&!d.people.some(p=>p.pos)){g.fillStyle='#aab4dc'; g.font='600 12px Segoe UI,system-ui,sans-serif'; g.fillText('Waiting for employee locations',cx,cx+R/2);}
+  RD.raf=requestAnimationFrame(rdLoop);
+}
+document.addEventListener('mousemove',e=>{
+  const cv=document.getElementById('rdCanvas'), tip=document.getElementById('rdTip'); if(!cv||!tip||!RD.hits.length)return;
+  const b=cv.getBoundingClientRect(), x=e.clientX-b.left, y=e.clientY-b.top; const h=RD.hits.find(h=>Math.hypot(h.x-x,h.y-y)<11);
+  if(h){tip.style.display='block'; tip.style.left=(x+12)+'px'; tip.style.top=(y+12)+'px'; tip.innerHTML=`<b>${esc(h.p.name)}</b><br>${h.p.distance==null?'':h.p.distance+' m from centre · '}${h.p.live?'live':ago(h.p.ageSec)}`;} else tip.style.display='none';
+});
 
 // ── PERMISSIONS ──
 function applyPerms(){
