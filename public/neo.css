@@ -586,3 +586,35 @@ body.admin .card,body.admin .stat-box,.sw-card{transition:transform .2s,box-shad
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
   body.admin .sidebar,body.admin .topbar,body.admin .card,body.admin .modal,body.scan .card,.me-card{background:var(--page1)!important;}
 }
+
+/* ── Login page: attendance-themed glass decoration behind the card ── */
+body.admin #loginPage{position:relative;overflow:hidden;}
+body.admin .login-card{position:relative;z-index:2;}
+.lp-deco{position:absolute;inset:0;z-index:0;pointer-events:none;color:var(--dark);}
+.lp-t{position:absolute;display:flex;align-items:center;gap:12px;padding:16px 18px;border-radius:22px;color:var(--dark);
+  background:linear-gradient(145deg,var(--g1),var(--g2));border:1px solid var(--edge);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);
+  box-shadow:var(--raised);animation:lpf 7s ease-in-out infinite;}
+.lp-t strong{display:block;font-size:20px;font-weight:800;color:var(--text);} .lp-t small{display:block;font-size:12px;color:var(--muted);font-weight:700;}
+.lp-t b{font-size:12px;font-weight:800;letter-spacing:.4px;color:var(--text);text-transform:uppercase;}
+.lp-qr{left:7%;top:12%;flex-direction:column;width:170px;padding:18px;overflow:hidden;animation-delay:-1s;transform:rotate(-6deg);}
+.lp-qr svg{width:116px;height:116px;--bg0:rgba(255,255,255,.9);}
+.lp-scan{position:absolute;left:14px;right:14px;top:22px;height:3px;border-radius:3px;background:linear-gradient(90deg,transparent,#F26522,transparent);box-shadow:0 0 14px #F26522;animation:lps 3s ease-in-out infinite;}
+@keyframes lps{0%,100%{top:24px;opacity:.3}50%{top:128px;opacity:1}}
+.lp-clock{right:8%;top:14%;animation-delay:-3s;transform:rotate(4deg);}
+.lp-c svg{width:46px;height:46px;} .lp-ok{width:28px;height:28px;border-radius:50%;background:#17BF83;color:#fff;display:grid;place-items:center;font-weight:900;font-size:16px;}
+.lp-geo{left:9%;bottom:10%;flex-direction:column;animation-delay:-2s;transform:rotate(5deg);padding:14px 20px 16px;}
+.lp-geo svg{width:130px;height:130px;}
+.lp-r{transform-origin:60px 60px;animation:lpr 2.6s ease-out infinite;} .lp-r.r2{animation-delay:1.3s;}
+@keyframes lpr{0%{transform:scale(.6);opacity:.9}100%{transform:scale(2.2);opacity:0}}
+.lp-week{right:7%;bottom:12%;flex-direction:column;align-items:stretch;width:210px;gap:8px;animation-delay:-4s;transform:rotate(-4deg);}
+.lp-bars{display:flex;align-items:flex-end;gap:8px;height:86px;} .lp-bars i{flex:1;border-radius:7px;background:linear-gradient(180deg,#FF8450,#F05A22);box-shadow:0 4px 12px rgba(242,101,34,.4);}
+.lp-bars i.off{background:var(--sh-d);box-shadow:none;opacity:.5;}
+.lp-days{display:flex;gap:8px;} .lp-days span{flex:1;text-align:center;font-size:11px;font-weight:800;color:var(--muted);}
+.lp-team{left:4%;top:52%;animation-delay:-5s;transform:rotate(-3deg);}
+.lp-av{display:flex;} .lp-av i{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font:800 11px 'Segoe UI',sans-serif;font-style:normal;color:#fff;background:linear-gradient(135deg,#3A4A8F,#1B2347);border:2px solid #fff;margin-left:-8px;}
+.lp-av i:first-child{margin-left:0;} .lp-av i.o{background:linear-gradient(135deg,#FF8450,#F05A22);}
+.lp-chk{right:22%;top:5%;padding:10px;border-radius:50%;animation-delay:-2.5s;} .lp-chk svg{width:40px;height:40px;}
+@keyframes lpf{0%,100%{translate:0 0}50%{translate:0 -14px}}
+@media (max-width:1100px){.lp-team,.lp-chk{display:none}.lp-qr{left:2%}.lp-clock{right:2%}.lp-geo{left:3%}.lp-week{right:2%}}
+@media (max-width:760px){.lp-deco{opacity:.55}.lp-t{transform:scale(.7)!important}.lp-qr{left:-30px;top:2%}.lp-clock{right:-50px}.lp-geo{left:-30px}.lp-week{right:-50px}}
+@media (prefers-reduced-motion:reduce){.lp-t,.lp-scan,.lp-r{animation:none}}
