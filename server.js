@@ -1346,7 +1346,7 @@ function payslipPdfLegacy(p) {
     const doc = new PDFDocument({ size: 'A4', margin: 40 }); const bufs = [];
     doc.on('data', d => bufs.push(d)); doc.on('end', () => resolve(Buffer.concat(bufs))); doc.on('error', reject);
     let y = 40;
-    try { doc.image(MASWER_LOGO, 40, y, { fit: [60, 60] }); } catch (e) {}
+    try { doc.image(MASWER_LOGO, 40, y, { fit: [64, 24] }); } catch (e) {}
     doc.font('Helvetica-Bold').fontSize(16).text(s.company.name || '', 110, y, { width: 445 });
     doc.font('Helvetica').fontSize(9).fillColor('#555').text(s.company.address || '', 110, doc.y, { width: 445 });
     doc.fillColor('#000'); y = 100;
@@ -1413,7 +1413,7 @@ function payslipPdf(p) {
     const X = v => v * K, Y = v => v * K;
     const txt = (t, x, y, o = {}) => doc.text(String(t == null ? '' : t), X(x), Y(y), { lineBreak: false, ...o });
     const rtxt = (t, xr, y, w = 120) => doc.text(String(t), X(xr) - w, Y(y), { width: w, align: 'right', lineBreak: false });
-    try { doc.image(MASWER_LOGO, X(40), Y(30), { fit: [X(92), Y(92)] }); } catch (e) {} // Maswer logo, top-left
+    try { doc.image(MASWER_LOGO, X(40), Y(40), { fit: [X(190), Y(62)] }); } catch (e) {} // Maswer logo, top-left
     if (s.company.logo) { try { doc.image(Buffer.from(s.company.logo.split(',')[1], 'base64'), X(760), Y(48), { fit: [X(150), Y(60)], align: 'right' }); } catch (e) {} }
     doc.font(TB).fontSize(12).text(s.company.name || '', 0, Y(42), { width: X(954), align: 'center' });
     const addr = String(s.company.address || '').replace(/\r/g, '').split('\n').map(x => x.trim()).filter(Boolean);
