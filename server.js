@@ -28,6 +28,18 @@ app.use('/api', async (req, res, next) => {
   catch (e) { dbReady = null; console.error('DB error:', e.message); res.status(503).json({ error: 'Could not connect to the database: ' + e.message }); }
 });
 process.on('unhandledRejection', e => console.error('Unhandled:', e && e.message));
+// Any error inside an async route becomes a clear JSON error (instead of a hang / vague "Something went wrong")
+['get', 'post', 'put', 'patch', 'delete'].forEach(m => {
+  const orig = app[m].bind(app);
+  app[m] = (path, ...hs) => {
+    if (m === 'get' && hs.length === 0) return orig(path); // app.get('setting')
+    return orig(path, ...hs.map(h => typeof h !== 'function' ? h : (req, res, next) => {
+      try { const r = h(req, res, next); if (r && typeof r.catch === 'function') r.catch(e => { console.error(m.toUpperCase(), req.path, e && e.stack || e); if (!res.headersSent) res.status(500).json({ error: 'server_error', message: 'Server error: ' + (e && e.message || 'unknown') }); }); }
+      catch (e) { next(e); }
+    }));
+  };
+});
+
 
 // ── ADMIN AUTH (signed cookie) ─────────────────────────────
 const SESSION_SECRET = process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex');
@@ -1325,6 +1337,7 @@ async function slipForReq(req, res) {
 app.get('/api/payslips/:id', requireStaff, async (req, res) => { const p = await slipForReq(req, res); if (p) res.json(p); });
 
 // PDF
+const MASWER_LOGO = require('./maswer-logo.js');
 const PDFDocument = (() => { try { return require('pdfkit'); } catch (e) { return null; } })();
 function payslipPdfLegacy(p) {
   return new Promise((resolve, reject) => {
@@ -1333,7 +1346,7 @@ function payslipPdfLegacy(p) {
     const doc = new PDFDocument({ size: 'A4', margin: 40 }); const bufs = [];
     doc.on('data', d => bufs.push(d)); doc.on('end', () => resolve(Buffer.concat(bufs))); doc.on('error', reject);
     let y = 40;
-    if (s.company.logo) { try { doc.image(Buffer.from(s.company.logo.split(',')[1], 'base64'), 40, y, { fit: [60, 50] }); } catch (e) {} }
+    try { doc.image(MASWER_LOGO, 40, y, { fit: [60, 60] }); } catch (e) {}
     doc.font('Helvetica-Bold').fontSize(16).text(s.company.name || '', 110, y, { width: 445 });
     doc.font('Helvetica').fontSize(9).fillColor('#555').text(s.company.address || '', 110, doc.y, { width: 445 });
     doc.fillColor('#000'); y = 100;
@@ -1400,7 +1413,8 @@ function payslipPdf(p) {
     const X = v => v * K, Y = v => v * K;
     const txt = (t, x, y, o = {}) => doc.text(String(t == null ? '' : t), X(x), Y(y), { lineBreak: false, ...o });
     const rtxt = (t, xr, y, w = 120) => doc.text(String(t), X(xr) - w, Y(y), { width: w, align: 'right', lineBreak: false });
-    if (s.company.logo) { try { doc.image(Buffer.from(s.company.logo.split(',')[1], 'base64'), X(40), Y(48), { fit: [X(180), Y(50)] }); } catch (e) {} }
+    try { doc.image(MASWER_LOGO, X(40), Y(30), { fit: [X(92), Y(92)] }); } catch (e) {} // Maswer logo, top-left
+    if (s.company.logo) { try { doc.image(Buffer.from(s.company.logo.split(',')[1], 'base64'), X(760), Y(48), { fit: [X(150), Y(60)], align: 'right' }); } catch (e) {} }
     doc.font(TB).fontSize(12).text(s.company.name || '', 0, Y(42), { width: X(954), align: 'center' });
     const addr = String(s.company.address || '').replace(/\r/g, '').split('\n').map(x => x.trim()).filter(Boolean);
     doc.font(T).fontSize(6.8);
@@ -2014,6 +2028,40 @@ app.post('/api/requests/:id/decide', requireStaff, async (req, res) => {
 });
 // ═══ EMPLOYEE PORTAL END ═══
 // ── SITE WATCH END ─────────────────────────────────────────
+
+// ── DASHBOARD: overall + per-site attendance ───────────────
+app.get('/api/dashboard', requireView, async (req, res) => {
+  const days = Math.min(Math.max(parseInt(req.query.days) || 7, 3), 31);
+  const empOk = scopeFilter(req);
+  const siteOk = scopeFilter({ ...req, query: { location: req.query.location }, deptScope: [] });
+  const [locsAll, empsAll, att] = await Promise.all([db.collection('locations').find({}).toArray(), db.collection('employees').find({}).toArray(), db.collection('attendance').find({ date: { $gte: new Date(Date.now() - (days + 1) * 86400000).toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }) } }).toArray()]);
+  const locs = locsAll.filter(l => siteOk({ locationId: l.id })).sort((a, b) => String(a.createdAt || '').localeCompare(String(b.createdAt || '')));
+  const emps = empsAll.filter(e => e.role !== 'admin' && e.active !== false).filter(empOk);
+  const ids = new Set(emps.map(e => e.id)), td = today();
+  const mine = att.filter(a => ids.has(a.empId));
+  const byDate = {}; mine.forEach(a => { (byDate[a.date] = byDate[a.date] || []).push(a); });
+  const rate = (n, t) => t ? Math.round(n * 100 / t) : 0;
+  const trend = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(Date.now() - i * 86400000).toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+    const r = byDate[d] || [], late = r.filter(a => a.status === 'late').length;
+    trend.push({ date: d, present: r.length, late, onTime: r.length - late, absent: Math.max(emps.length - r.length, 0), rate: rate(r.length, emps.length) });
+  }
+  const tAtt = byDate[td] || [];
+  const sites = locs.map(l => {
+    const se = emps.filter(e => e.locationId === l.id || (Array.isArray(e.locationIds) && e.locationIds.includes(l.id)));
+    const sid = new Set(se.map(e => e.id)), ra = tAtt.filter(a => sid.has(a.empId));
+    return { id: l.id, name: l.name, projectId: l.projectId || '', projectName: l.projectName || '', total: se.length, present: ra.length, late: ra.filter(a => a.status === 'late').length, onSite: ra.filter(a => !a.checkOut).length, rate: rate(ra.length, se.length) };
+  });
+  const out = { today: td, days, employees: emps.length, present: tAtt.length, late: tAtt.filter(a => a.status === 'late').length, onSite: tAtt.filter(a => !a.checkOut).length,
+    absent: Math.max(emps.length - tAtt.length, 0), rate: rate(tAtt.length, emps.length), trend, sites,
+    sitesReporting: { n: sites.filter(x => x.present > 0).length, total: sites.length } };
+  if (hasPerm(req, 'salary')) {
+    const ym = td.slice(0, 7), ps = (await db.collection('payslips').find({ month: ym }).toArray()).filter(p => ids.has(p.empId));
+    out.payslips = { sent: ps.filter(p => p.finalized).length, total: emps.length, month: ym };
+  }
+  res.json(out);
+});
 
 // ── ATTENDANCE LEDGER (project-wise view + Excel) ──────────
 async function ledgerRows(req) {

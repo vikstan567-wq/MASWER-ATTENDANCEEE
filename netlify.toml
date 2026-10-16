@@ -5,7 +5,7 @@
 [functions]
   node_bundler = "esbuild"
   external_node_modules = ["pdfkit"]
-  included_files = ["server.js", "pgdb.js", "localdb.js", "payroll.js", "node_modules/pdfkit/js/data/**"]
+  included_files = ["server.js", "pgdb.js", "localdb.js", "payroll.js", "maswer-logo.js", "node_modules/pdfkit/js/data/**"]
 
 [[redirects]]
   from = "/api/*"

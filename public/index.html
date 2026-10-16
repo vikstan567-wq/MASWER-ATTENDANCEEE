@@ -152,8 +152,27 @@
     </div>
     <div class="content">
  
+      <!-- DASHBOARD PANEL -->
+      <div class="panel" id="panel-dash">
+        <div class="dash-head">
+          <div><h2 id="dhTitle">All sites · overview</h2><p id="dhSub"></p></div>
+          <div class="dash-ctl">
+            <select id="dhSite" onchange="loadDash()"><option value="">All sites (overall)</option></select>
+            <div class="seg" id="dhDays"><button data-d="7" class="on" onclick="dashDays(7)">7 days</button><button data-d="14" onclick="dashDays(14)">14 days</button><button data-d="30" onclick="dashDays(30)">30 days</button></div>
+            <button class="btn" onclick="loadDash()">⟳</button>
+          </div>
+        </div>
+        <div class="stats-row" id="dhKpi"></div>
+        <div class="dash-grid">
+          <div class="card"><div class="card-top"><h3>Attendance trend</h3><span class="chip" id="dhTrendTag"></span></div><div id="dhTrend" class="dash-pad"></div>
+            <div class="dash-leg dash-pad"><span><i class="o"></i>Present (marked)</span><span><i class="n"></i>On time</span></div></div>
+          <div class="card"><div class="card-top"><h3 id="dhSitesTitle">Attendance by site</h3><span class="chip">Today</span></div><div id="dhSites" class="dash-pad"></div></div>
+        </div>
+        <div class="dash-grid dash-grid2" id="dhRings"></div>
+      </div>
+
       <!-- DAY PANEL -->
-      <div class="panel on" id="panel-day">
+      <div class="panel" id="panel-day">
         <div class="stats-row">
           <div class="stat-box"><div class="sv g" id="sP">0</div><div class="sl">Present</div></div>
           <div class="stat-box"><div class="sv r" id="sA">0</div><div class="sl">Absent</div></div>
@@ -989,7 +1008,7 @@ async function enterApp(){
     if(userRole==='manager'&&ME&&ME.states)document.getElementById('sbRole').textContent='Site Manager · '+ME.states.join(', ');
     applyPerms();
     if(userRole!=='manager'){loadDay(); loadQR();}
-    if(userRole==='it') showPanel('itools',document.getElementById('nav-itools')); else showPanel('attendance',null);
+    if(userRole==='it') showPanel('itools',document.getElementById('nav-itools')); else showPanel('dash',null);
 }
  
 // ── PANELS ──
@@ -998,7 +1017,7 @@ function showPanel(p,el){
   document.querySelectorAll('.nav-i').forEach(x=>x.classList.remove('on'));
   document.getElementById('panel-'+p).classList.add('on');
   if(el)el.classList.add('on');
-  const titles={day:'Today\'s Attendance',monthly:'Monthly Report',all:'Full History',emp:'Employees',qr:'QR Code',projects:'Projects',loc:'Locations (Geofence)',admins:'HR Logins',bypass:'Location Bypass',itools:'IT Tools',psites:'Projects, GPS Radar & Site QR',managers:'Site Managers',attendance:'Attendance',sitewatch:'Live Site Watch',requests:'Employee Requests',salary:'Attendance Payroll',missed:'Missed Punch-outs',sset:'Company & Salary Rules',audit:'Audit Log',itusers:'IT Users',docs:'Employee Documents'};
+  const titles={dash:'Dashboard',day:'Today\'s Attendance',monthly:'Monthly Report',all:'Full History',emp:'Employees',qr:'QR Code',projects:'Projects',loc:'Locations (Geofence)',admins:'HR Logins',bypass:'Location Bypass',itools:'IT Tools',psites:'Projects, GPS Radar & Site QR',managers:'Site Managers',attendance:'Attendance',sitewatch:'Live Site Watch',requests:'Employee Requests',salary:'Attendance Payroll',missed:'Missed Punch-outs',sset:'Company & Salary Rules',audit:'Audit Log',itusers:'IT Users',docs:'Employee Documents'};
   document.getElementById('panelTitle').textContent=titles[p]||p;
   if(['day','monthly','all'].includes(p)&&ME)refreshLocs(false);
   if(p==='all')loadAll();
@@ -1024,6 +1043,7 @@ function showPanel(p,el){
   if(p==='requests')loadRequests();
   if(p==='sset')loadSset();
   if(p==='audit')loadAudit();
+  if(p==='dash')loadDash();
 }
  
 function avHtml(name,i){
@@ -1608,8 +1628,78 @@ async function saveMgr(){
 }
 async function delMgr(id,name){ if(!confirm('Delete Site Manager '+id+' ('+name+')?'))return; await fetch('/api/managers/'+encodeURIComponent(id),{method:'DELETE'}); toast('🗑 Deleted'); loadManagers(); }
 
+
+// ── DASHBOARD ──
+let DASH_DAYS=7, DASH=null;
+function dashDays(n){DASH_DAYS=n;document.querySelectorAll('#dhDays button').forEach(b=>b.classList.toggle('on',+b.dataset.d===n));loadDash();}
+function dashQS(){
+  const site=document.getElementById('dhSite').value;
+  let q=site?'?location='+encodeURIComponent(site):locQS();
+  return q+(q?'&':'?')+'days='+DASH_DAYS;
+}
+function dashFillSites(){
+  const f=document.getElementById('dhSite'), cur=f.value, p=document.getElementById('projFilter').value;
+  const list=p&&p!=='all'?LOCS.filter(l=>l.projectId===p):LOCS;
+  f.innerHTML='<option value="">All sites (overall)</option>'+list.map(l=>`<option value="${esc(l.id)}">${esc(l.name)}${l.projectName?' · '+esc(l.projectName):''}</option>`).join('');
+  f.value=list.some(l=>l.id===cur)?cur:'';
+}
+async function loadDash(){
+  dashFillSites();
+  const one=document.getElementById('dhSite').value;
+  try{
+    const r=await fetch('/api/dashboard'+dashQS()); const d=await r.json();
+    if(!r.ok){toast('❌ '+(d.error||'Failed'));return;}
+    DASH=d; renderDash(one);
+  }catch{toast('❌ Could not load dashboard');}
+}
+function ring(pct,color,label,size=104){
+  const R=42,C=2*Math.PI*R,o=C*(1-Math.min(Math.max(pct,0),100)/100);
+  return `<svg width="${size}" height="${size}" viewBox="0 0 104 104"><circle cx="52" cy="52" r="${R}" fill="none" stroke="var(--text)" stroke-opacity=".14" stroke-width="10"/><circle cx="52" cy="52" r="${R}" fill="none" stroke="${color}" stroke-width="10" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${o}" transform="rotate(-90 52 52)"/><text x="52" y="58" text-anchor="middle" font-size="19" font-weight="800" fill="var(--text)">${label}</text></svg>`;
+}
+function trendSvg(t){
+  const W=700,H=250,L=36,R=14,T=26,B=34,n=t.length, max=Math.max(4,...t.map(x=>x.present)), top=Math.ceil(max/4)*4||4;
+  const X=i=>n>1?L+(W-L-R)*i/(n-1):L, Y=v=>T+(H-T-B)*(1-v/top);
+  const line=k=>t.map((x,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+Y(x[k]).toFixed(1)).join(' ');
+  let g=''; for(let i=0;i<=4;i++){const v=top*i/4,y=Y(v);g+=`<line x1="${L}" x2="${W-R}" y1="${y}" y2="${y}" stroke="var(--edge2)"/><text x="${L-8}" y="${y+4}" text-anchor="end" font-size="11" fill="var(--muted)">${Math.round(v)}</text>`;}
+  const step=n>14?Math.ceil(n/8):1;
+  const lab=t.map((x,i)=>i%step?'':`<text x="${X(i)}" y="${H-10}" text-anchor="middle" font-size="11" fill="var(--muted)">${n>10?x.date.slice(8)+'/'+x.date.slice(5,7):new Date(x.date+'T00:00:00').toLocaleDateString('en-IN',{weekday:'short'})}</text>`).join('');
+  const dots=n<=14?t.map((x,i)=>`<circle cx="${X(i)}" cy="${Y(x.present)}" r="4.5" fill="var(--solid)" stroke="var(--brand)" stroke-width="3"><title>${x.date}: ${x.present} present (${x.rate}%), ${x.late} late</title></circle>`).join(''):'';
+  const area=line('present')+` L${X(n-1)} ${Y(0)} L${X(0)} ${Y(0)} Z`;
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;max-height:290px"><defs><linearGradient id="dg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--brand)" stop-opacity=".38"/><stop offset="1" stop-color="var(--brand)" stop-opacity="0"/></linearGradient></defs>${g}<path d="${area}" fill="url(#dg)"/><path d="${line('onTime')}" fill="none" stroke="var(--dark)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="${line('present')}" fill="none" stroke="var(--brand)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>${dots}${lab}</svg>`;
+}
+async function renderDash(one){
+  const d=DASH, site=one&&d.sites[0];
+  document.getElementById('dhTitle').textContent=one&&site?site.name+' · site view':'All sites · overall';
+  document.getElementById('dhSub').textContent=(one&&site&&site.projectName?site.projectName+' · ':'')+new Date(d.today+'T00:00:00').toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'})+' · '+d.sites.length+' site'+(d.sites.length===1?'':'s');
+  const k=[['g',d.present,'Present today'],['a',d.late,'Late'],['r',d.absent,'Absent / not arrived'],['b',d.onSite,'Working now'],['b',d.rate+'%','Attendance rate']];
+  document.getElementById('dhKpi').innerHTML=k.map(([c,v,l])=>`<div class="stat-box"><div class="sv ${c}">${v}</div><div class="sl">${l}</div></div>`).join('');
+  const avg=d.trend.length?Math.round(d.trend.reduce((s,x)=>s+x.rate,0)/d.trend.length):0;
+  document.getElementById('dhTrendTag').textContent='Last '+d.days+' days · avg '+avg+'%';
+  document.getElementById('dhTrend').innerHTML=trendSvg(d.trend);
+  const sitesEl=document.getElementById('dhSites'), tEl=document.getElementById('dhSitesTitle');
+  if(one){
+    tEl.textContent='Today at this site';
+    sitesEl.innerHTML='<div class="muted-s">Loading…</div>';
+    try{
+      const r=await fetch('/api/attendance/today?location='+encodeURIComponent(one)); const rows=r.ok?await r.json():[];
+      const w={present:0,late:1,absent:2}; rows.sort((a,b)=>(w[a.status]??3)-(w[b.status]??3)||String(a.name).localeCompare(String(b.name)));
+      const pill=s=>`<span class="dh-pill ${s}">${s==='absent'?'Absent':s==='late'?'Late':'Present'}</span>`;
+      sitesEl.innerHTML=rows.length?`<div class="dh-list">${rows.map(e=>`<div class="dh-row"><div><b>${esc(e.name)}</b><small>${esc(e.id)}${e.department?' · '+esc(e.department):''}</small></div><div class="dh-r"><small>${e.attended?esc(e.time)+(e.checkOut&&e.checkOut!=='—'?' → '+esc(e.checkOut):''):''}</small>${pill(e.status)}</div></div>`).join('')}</div>`:'<div class="muted-s">No employees on this site.</div>';
+    }catch{sitesEl.innerHTML='<div class="muted-s">Could not load.</div>';}
+  }else{
+    tEl.textContent='Attendance by site';
+    const s=[...d.sites].sort((a,b)=>b.rate-a.rate);
+    sitesEl.innerHTML=s.length?s.map(x=>`<div class="dh-bar" onclick="dashPick('${esc(x.id)}')" title="Open ${esc(x.name)}"><div class="dh-bt"><span>${esc(x.name)}</span><b>${x.rate}%</b></div><div class="dh-track"><i style="width:${x.rate}%;${x.rate<60?'background:linear-gradient(90deg,#E5484D,#FF7A73)':''}"></i></div><small>${x.present}/${x.total} present${x.late?' · '+x.late+' late':''}${x.onSite?' · '+x.onSite+' on site':''}</small></div>`).join('')+'<div class="muted-s">Tap a site to see its own dashboard.</div>':'<div class="muted-s">No sites yet.</div>';
+  }
+  const sr=d.sitesReporting, rings=[`<div class="card dh-ring"><h3>Site status</h3><div class="dh-rb">${ring(sr.total?sr.n*100/sr.total:0,'var(--ok)',sr.n+'/'+sr.total)}<div><b class="sm ${sr.n===sr.total?'okc':''}">${sr.n===sr.total?'● All reporting':'● '+(sr.total-sr.n)+' site(s) with no punches'}</b><small>Sites with at least one punch today</small></div></div></div>`,
+    `<div class="card dh-ring"><h3>Attendance today</h3><div class="dh-rb">${ring(d.rate,'var(--brand)',d.rate+'%')}<div><b>${d.present}<span class="dim">/${d.employees}</span></b><small>employees marked present${d.late?' · '+d.late+' late':''}</small></div></div></div>`];
+  if(d.payslips)rings.push(`<div class="card dh-ring"><h3>Payslips finalized</h3><div class="dh-rb">${ring(d.payslips.total?d.payslips.sent*100/d.payslips.total:0,'var(--brand)',(d.payslips.total?Math.round(d.payslips.sent*100/d.payslips.total):0)+'%')}<div><b>${d.payslips.sent}<span class="dim">/${d.payslips.total}</span></b><small>for ${d.payslips.month}</small></div></div></div>`);
+  document.getElementById('dhRings').innerHTML=rings.join('');
+}
+function dashPick(id){document.getElementById('dhSite').value=id;loadDash();window.scrollTo({top:0,behavior:'smooth'});}
 // ── TOP NAVIGATION ──
 const NAV=[
+  {id:'dash',label:'📊 Dashboard',panels:[['dash','Dashboard']]},
   {id:'att',label:'📋 Attendance',panels:[['attendance','Attendance'],['monthly','Monthly Report'],['missed','Missed Punch-outs','salary']]},
   {id:'watch',label:'📡 Site Watch',panels:[['sitewatch','Live Site Watch']]},
   {id:'emp',label:'👥 Employees',panels:[['emp','Employees'],['requests','Requests','salary']]},
@@ -1619,7 +1709,7 @@ const NAV=[
 ];
 let CURP='day';
 function navGroups(){
-  if(userRole==='manager')return [{id:'att',label:'📋 Attendance',panels:[['attendance','Attendance'],['monthly','Monthly Report']]},{id:'watch',label:'📡 Site Watch',panels:[['sitewatch','Live Site Watch']]},{id:'req',label:'📨 Requests',panels:[['requests','Employee Requests']]}];
+  if(userRole==='manager')return [{id:'dash',label:'📊 Dashboard',panels:[['dash','Dashboard']]},{id:'att',label:'📋 Attendance',panels:[['attendance','Attendance'],['monthly','Monthly Report']]},{id:'watch',label:'📡 Site Watch',panels:[['sitewatch','Live Site Watch']]},{id:'req',label:'📨 Requests',panels:[['requests','Employee Requests']]}];
   return NAV.filter(g=>(!g.it||userRole==='it')&&(!g.perm||PERMS[g.perm])).map(g=>({...g,panels:g.panels.filter(x=>!x[2]||PERMS[x[2]])})).filter(g=>g.panels.length);}
 function stripEmoji(t){return String(t).replace(/^[^A-Za-z]+/,'');}
 function renderTopNav(){
@@ -2218,7 +2308,7 @@ function fillLocFilter(){
 function applyProjFilter(){document.getElementById('locFilter').value='all';fillLocFilter();applyLocFilter();}
 function applyLocFilter(){
   const on=document.querySelector('.panel.on');
-  if(on&&on.id){const p=on.id.replace('panel-','');if(['day','monthly','all','sitewatch','attendance'].includes(p))showPanel(p,null);}
+  if(on&&on.id){const p=on.id.replace('panel-','');if(['day','monthly','all','sitewatch','attendance','dash'].includes(p))showPanel(p,null);}
 }
 function locOptions(sel,blank){return (blank?`<option value="">— No location —</option>`:'')+LOCS.map(l=>`<option value="${esc(l.id)}"${l.id===sel?' selected':''}>${esc(l.name)}</option>`).join('');}
 function fillLocSelect(el,blank){el.innerHTML=locOptions(LOCS.length===1?LOCS[0].id:'',blank);}

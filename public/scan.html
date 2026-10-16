@@ -211,8 +211,8 @@ async function checkBypass(empId) {
       const locText = document.getElementById('locText');
       locIcon.textContent = '✅';
       locText.textContent = 'Location bypass ON (approved by admin)';
-      locBar.style.background = '#EAF3DE';
-      locText.style.color = '#3B6D11';
+      locBar.classList.add('ok'); locBar.classList.remove('bad');
+      locText.style.color = '';
       // Enable button for both punch in AND punch out
       if (currentMode !== 'already_out' && currentMode !== 'blocked') {
         btn.disabled = false; btn.style.opacity = '1';
@@ -532,8 +532,8 @@ function blockBtn(icon, msg, showRetry=false) {
   const locBar = document.getElementById('locationStatus');
   const btn = document.getElementById('mainBtn');
   locIcon.textContent = icon;
-  locBar.style.background = '#FCEBEB';
-  locText.style.color = '#A32D2D';
+  locBar.classList.add('bad'); locBar.classList.remove('ok');
+  locText.style.color = '';
   locationAllowed = false;
   btn.disabled = true; btn.style.opacity = '0.5';
   if (showRetry) {
@@ -569,8 +569,8 @@ function allowBtn(icon, msg) {
   const btn = document.getElementById('mainBtn');
   locIcon.textContent = icon;
   locText.textContent = msg;
-  locBar.style.background = '#EAF3DE';
-  locText.style.color = '#3B6D11';
+  locBar.classList.add('ok'); locBar.classList.remove('bad');
+  locText.style.color = '';
   locationAllowed = true;
   if (currentMode !== 'already_out' && currentMode !== 'blocked') {
     btn.disabled = false; btn.style.opacity = '1';
