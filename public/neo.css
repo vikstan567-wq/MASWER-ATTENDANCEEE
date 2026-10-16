@@ -518,6 +518,7 @@ body.admin .rd-modal{width:980px;}
   --inset:inset 0 2px 10px rgba(27,35,71,.14),inset 0 0 0 1px rgba(255,255,255,.5);
   --inset-sm:inset 0 2px 7px rgba(27,35,71,.12),inset 0 0 0 1px rgba(255,255,255,.55);
   --row-hover:rgba(255,255,255,.45); --field:rgba(255,255,255,.55); --opt:#EEF1F9;
+  --solid:#FFFFFF; --solid2:#F1F4FB; --scrim:rgba(20,26,56,.58);
   --glow1:rgba(242,101,34,.34); --glow2:rgba(27,35,71,.26); --glow3:rgba(80,110,220,.2); --page1:#DCE4F6; --page2:#F8E9DF;
 }
 :root[data-theme="dark"]{
@@ -529,6 +530,7 @@ body.admin .rd-modal{width:980px;}
   --inset:inset 0 2px 10px rgba(0,0,0,.4),inset 0 0 0 1px rgba(255,255,255,.07);
   --inset-sm:inset 0 2px 7px rgba(0,0,0,.35),inset 0 0 0 1px rgba(255,255,255,.07);
   --row-hover:rgba(255,255,255,.06); --field:rgba(255,255,255,.08); --opt:#1B2347;
+  --solid:#1B2347; --solid2:#252E5A; --scrim:rgba(4,7,22,.72);
   --glow1:rgba(242,101,34,.42); --glow2:rgba(90,120,255,.22); --glow3:rgba(242,101,34,.18); --page1:#0A0F2C; --page2:#1B2347;
 }
 @media (prefers-color-scheme:dark){
@@ -541,7 +543,8 @@ body.admin .rd-modal{width:980px;}
     --inset:inset 0 2px 10px rgba(0,0,0,.4),inset 0 0 0 1px rgba(255,255,255,.07);
     --inset-sm:inset 0 2px 7px rgba(0,0,0,.35),inset 0 0 0 1px rgba(255,255,255,.07);
     --row-hover:rgba(255,255,255,.06); --field:rgba(255,255,255,.08); --opt:#1B2347;
-    --glow1:rgba(242,101,34,.42); --glow2:rgba(90,120,255,.22); --glow3:rgba(242,101,34,.18); --page1:#0A0F2C; --page2:#1B2347;
+    --solid:#1B2347; --solid2:#252E5A; --scrim:rgba(4,7,22,.72);
+  --glow1:rgba(242,101,34,.42); --glow2:rgba(90,120,255,.22); --glow3:rgba(242,101,34,.18); --page1:#0A0F2C; --page2:#1B2347;
   }
 }
 
@@ -635,3 +638,20 @@ body.admin .login-card{position:relative;z-index:2;}
 .tn-menu{left:0;right:auto;}
 .tn-menu-wrap{flex:none;}
 @media(max-width:800px){.tnav{padding-right:14px;flex-wrap:wrap}.tn-crumb,.tn-sep{display:none}.tnav .tn-un,.tnav .tn-ur{display:none}.tnav .tn-user{padding:0 5px}.tnav .tn-btn.edit-gate{display:none}}
+
+/* ── Popups, menus, modals: SOLID (readable) — glass only for page cards ── */
+.tn-menu,body.admin .modal,.toast,body.scan .overlay > div:first-child,#addOverlay .modal,#radarOverlay .modal,.overlay .modal{
+  background:var(--solid)!important;background-image:none!important;border:1px solid var(--edge2);
+  -webkit-backdrop-filter:none!important;backdrop-filter:none!important;
+  box-shadow:0 22px 60px rgba(10,15,44,.38),0 2px 8px rgba(10,15,44,.18)!important;color:var(--text);}
+.tn-menu{border-radius:16px;padding:8px;min-width:260px;}
+.tn-menu *{text-shadow:none;}
+.tn-menu button,.tn-menu a{background:transparent;color:var(--text);}
+.tn-menu button:hover,.tn-menu a:hover{background:var(--solid2)!important;}
+body.admin .overlay,.overlay,.mb-overlay,#addOverlay,#radarOverlay{background:var(--scrim)!important;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);}
+body.scan .overlay{background:var(--page1)!important;}
+.modal input,.modal select,.modal textarea{background:var(--solid2)!important;}
+.tm-i:hover{background:var(--solid2);box-shadow:none;} .tm-i.on{background:var(--solid2);box-shadow:none;}
+.tm-g+.tm-g{border-top-color:var(--edge2);}
+body.admin .modal-btns{background:var(--solid)!important;border-top:1px solid var(--edge2);}
+.modal-btns .mb-cancel{background:var(--solid2)!important;}
